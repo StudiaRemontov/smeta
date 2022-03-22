@@ -1,5 +1,6 @@
 <script>
 import JobTable from './CreateForm/JobTable.vue'
+import { mapActions } from 'vuex'
 
 export default {
   components: { JobTable },
@@ -17,6 +18,7 @@ export default {
     }
   },
   methods: {
+    ...mapActions('subcategory', ['create']),
     createRow() {
       const row = {
         name: '',
@@ -26,12 +28,15 @@ export default {
       }
       this.jobs.push(row)
     },
-    submitHandler() {
+    async submitHandler() {
       const data = {
         name: this.name,
         jobs: this.jobs,
       }
-      console.log(data)
+
+      const response = await this.create(data)
+      //обработка resosnse
+      console.log(response)
     },
     removeJob(id) {
       this.jobs = this.jobs.filter(job => job.id !== id)
@@ -44,7 +49,12 @@ export default {
   <form class="create-form form" @submit.prevent>
     <div class="form__group">
       <label class="form__label"> Название </label>
-      <input class="form__input input" placeholder="Название" type="text" />
+      <input
+        v-model="name"
+        class="form__input input"
+        placeholder="Название"
+        type="text"
+      />
     </div>
 
     <div class="create-form__form">

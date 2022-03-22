@@ -3,27 +3,10 @@ import SubcategoryTable from '@/components/Admin/Subcategory/SubcategoryTable.vu
 
 export default {
   components: { SubcategoryTable },
-  data() {
-    return {
-      subcategories: [
-        {
-          id: 1,
-          name: 'Полы',
-          jobs: [
-            {
-              name: 'Уборка',
-              unit: 'м2',
-              price: 10.12,
-            },
-            {
-              name: 'Уборка 2',
-              unit: 'м2',
-              price: 14.12,
-            },
-          ],
-        },
-      ],
-    }
+  computed: {
+    subcategories() {
+      return this.$store.getters['subcategory/subcategories']
+    },
   },
 }
 </script>

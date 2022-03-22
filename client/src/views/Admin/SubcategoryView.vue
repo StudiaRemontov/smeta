@@ -1,3 +1,11 @@
+<script>
+export default {
+  async mounted() {
+    await this.$store.dispatch('subcategory/fetchAll')
+  },
+}
+</script>
+
 <template>
   <div class="admin-subpage">
     <div class="admin-subpage__header">
