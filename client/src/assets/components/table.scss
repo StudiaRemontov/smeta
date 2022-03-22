@@ -1,0 +1,25 @@
+.table-cell {
+  text-align: left;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  padding: 8px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+
+  &--head {
+    background-color: #04aa6d;
+    color: #fff;
+  }
+}
+
+.table-input,
+.table-select {
+  outline: none;
+  border: none;
+  width: 100%;
+
+  &:focus {
+    border-bottom: 1px #ddd solid;
+  }
+}

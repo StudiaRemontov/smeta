@@ -1,11 +1,11 @@
-<script></script>
+<script>
+export default {}
+</script>
 
 <template>
-  <div>
-    <header>
-      <span>App</span>
-    </header>
-
+  <main>
     <RouterView />
-  </div>
+  </main>
 </template>
+
+<style lang="scss" scoped></style>

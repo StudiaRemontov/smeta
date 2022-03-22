@@ -9,6 +9,39 @@ const router = createRouter({
       name: 'home',
       component: HomeView,
     },
+    {
+      path: '/admin',
+      name: 'admin',
+      component: () => import('@/views/AdminView.vue'),
+      children: [
+        {
+          path: 'rooms',
+          name: 'rooms',
+          component: () => import('@/views/Admin/SubcategoryView.vue'),
+        },
+        {
+          path: 'subcategories',
+          name: 'subcategories',
+          component: () => import('@/views/Admin/SubcategoryView.vue'),
+          children: [
+            {
+              path: '',
+              component: () =>
+                import('@/views/Admin/Subcategory/IndexView.vue'),
+            },
+            {
+              path: 'add',
+              component: () => import('@/views/Admin/Subcategory/AddView.vue'),
+            },
+          ],
+        },
+        {
+          path: 'categories',
+          name: 'categories',
+          component: () => import('@/views/Admin/SubcategoryView.vue'),
+        },
+      ],
+    },
   ],
 })
 

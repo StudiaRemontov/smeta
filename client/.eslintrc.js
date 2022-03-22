@@ -1,16 +1,13 @@
 /* eslint-env node */
-require("@rushstack/eslint-patch/modern-module-resolution");
+require('@rushstack/eslint-patch/modern-module-resolution')
 
 module.exports = {
-  "root": true,
-  "extends": [
-    "plugin:vue/vue3-essential",
-    "eslint:recommended",
-  ],
-  "env": {
-    "vue/setup-compiler-macros": true
+  root: true,
+  extends: ['plugin:vue/vue3-essential', 'eslint:recommended'],
+  env: {
+    'vue/setup-compiler-macros': true,
   },
-  "rules": {
+  rules: {
     'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
     'no-debugger': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
     'no-var': 'error',
@@ -22,5 +19,5 @@ module.exports = {
     'prefer-const': 'error',
     'no-use-before-define': 'error',
     'vue/multi-word-component-names': ['error'],
-  }
+  },
 }
