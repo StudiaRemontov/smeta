@@ -1,19 +1,18 @@
 <script>
-import SubcategoryTable from '@/components/Admin/Subcategory/SubcategoryTable.vue'
+import SubcategoryTable from '@/components/Admin/Subcategories/SubcategoryTable.vue'
+import { mapGetters } from 'vuex'
 
 export default {
   components: { SubcategoryTable },
   computed: {
-    subcategories() {
-      return this.$store.getters['subcategory/subcategories']
-    },
+    ...mapGetters('subcategory', ['subcategories']),
   },
 }
 </script>
 
 <template>
   <div>
-    <AppButton variant="primary" to="/admin/subcategories/add">
+    <AppButton variant="primary" :to="{ name: 'subcategoriesAdd' }">
       Добавить подкатегорию
     </AppButton>
     <SubcategoryTable :data="subcategories" />

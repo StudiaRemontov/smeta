@@ -10,6 +10,14 @@ class RoomTypeService {
     await roomType.save()
     return roomType
   }
+
+  static async update(id, data) {
+    const room = await RoomType.findByIdAndUpdate(id, data, {
+      new: true,
+      runValidators: true,
+    })
+    return room
+  }
 }
 
 module.exports = RoomTypeService

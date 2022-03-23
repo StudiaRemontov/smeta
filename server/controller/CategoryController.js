@@ -1,13 +1,12 @@
 const CategoryService = require('../services/CategoryService')
 
 class CategoryController {
-  static async getAll(req, res) {
+  static async getAll(req, res, next) {
     try {
       const response = await CategoryService.get()
-
       return res.json(response)
     } catch (error) {
-      res.json(error)
+      next(error)
     }
   }
 
@@ -19,6 +18,18 @@ class CategoryController {
       return res.json(response)
     } catch (error) {
       res.json(error)
+    }
+  }
+
+  static async update(req, res) {
+    try {
+      const id = req.params.id
+      const data = req.body
+      const response = await CategoryService.update(id, data)
+
+      return res.json(response)
+    } catch (error) {
+      res.status(400).json(error)
     }
   }
 }

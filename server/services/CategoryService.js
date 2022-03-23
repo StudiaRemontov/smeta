@@ -10,6 +10,14 @@ class CategoryService {
     await category.save()
     return category
   }
+
+  static async update(id, data) {
+    const category = await Category.findByIdAndUpdate(id, data, {
+      new: true,
+      runValidators: true,
+    })
+    return category
+  }
 }
 
 module.exports = CategoryService

@@ -1,24 +1,23 @@
 <script>
-import JobTable from './CreateForm/JobTable.vue'
+import JobTable from '../JobTable.vue'
 import { mapActions } from 'vuex'
 
 export default {
   components: { JobTable },
+  props: {
+    subcategory: {
+      type: Object,
+      required: true,
+    },
+  },
   data() {
     return {
       name: '',
-      jobs: [
-        {
-          name: '',
-          price: 0,
-          unit: '',
-          id: Date.now(),
-        },
-      ],
+      jobs: [],
     }
   },
   methods: {
-    ...mapActions('subcategory', ['create']),
+    ...mapActions('subcategory', ['update']),
     createRow() {
       const row = {
         name: '',
@@ -34,19 +33,26 @@ export default {
         jobs: this.jobs,
       }
 
-      const response = await this.create(data)
-      //обработка resosnse
-      console.log(response)
+      try {
+        await this.update({ id: this.subcategory._id, data })
+      } catch (error) {
+        console.log(error)
+      }
     },
     removeJob(id) {
       this.jobs = this.jobs.filter(job => job.id !== id)
     },
   },
+  mounted() {
+    const clone = JSON.parse(JSON.stringify(this.subcategory))
+    this.name = clone.name
+    this.jobs = clone.jobs
+  },
 }
 </script>
 
 <template>
-  <form class="create-form form" @submit.prevent>
+  <form class="subcategory-form form" @submit.prevent>
     <div class="form__group">
       <label class="form__label"> Название </label>
       <input
@@ -57,19 +63,19 @@ export default {
       />
     </div>
 
-    <div class="create-form__form">
-      <div class="create-form__header">
-        <span class="create-form__title"> Список работ </span>
+    <div class="subcategory-form__form">
+      <div class="subcategory-form__header">
+        <span class="subcategory-form__title"> Список работ </span>
         <AppButton variant="success" @click="createRow">+</AppButton>
       </div>
       <JobTable :data="jobs" @remove="removeJob" />
     </div>
-    <AppButton variant="success" @click="submitHandler">Создать</AppButton>
+    <AppButton variant="primary" @click="submitHandler">Изменить</AppButton>
   </form>
 </template>
 
 <style lang="scss" scoped>
-.create-form {
+.subcategory-form {
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -99,12 +105,5 @@ export default {
   &__button {
     align-self: flex-start;
   }
-}
-
-.input {
-  padding: 10px 5px;
-  border: none;
-  box-shadow: $shadow-dark;
-  outline: none;
 }
 </style>

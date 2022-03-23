@@ -1,7 +1,9 @@
 <script>
 export default {
-  async mounted() {
-    await this.$store.dispatch('subcategory/fetchAll')
+  computed: {
+    pageTitle() {
+      return this.$route.meta.title
+    },
   },
 }
 </script>
@@ -9,7 +11,7 @@ export default {
 <template>
   <div class="admin-subpage">
     <div class="admin-subpage__header">
-      <span class="page-title">Подкатегории</span>
+      <span class="page-title">{{ pageTitle }}</span>
     </div>
     <div class="admin-subpage__body">
       <RouterView />

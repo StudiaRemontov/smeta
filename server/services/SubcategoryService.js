@@ -10,6 +10,14 @@ class SubcategoryService {
     await subcategory.save()
     return subcategory
   }
+
+  static async update(id, data) {
+    const subcategory = await Subcategory.findByIdAndUpdate(id, data, {
+      new: true,
+      runValidators: true,
+    })
+    return subcategory
+  }
 }
 
 module.exports = SubcategoryService

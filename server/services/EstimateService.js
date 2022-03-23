@@ -12,7 +12,7 @@ class EstimateService {
   }
 
   static async update(id, data) {
-    const estimate = await Estimate.findByIdAndUpdate(id, data, { new: true })
+    const estimate = await Estimate.findByIdAndUpdate(id, data, { new: true, runValidators: true })
     return estimate
   }
 }

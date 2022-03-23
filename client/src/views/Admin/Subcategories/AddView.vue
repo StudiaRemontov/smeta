@@ -1,5 +1,5 @@
 <script>
-import CreateForm from '@/components/Admin/Subcategory/Add/CreateForm.vue'
+import CreateForm from '@/components/Admin/Subcategories/Add/CreateForm.vue'
 
 export default {
   components: { CreateForm },

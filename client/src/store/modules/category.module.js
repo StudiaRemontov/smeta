@@ -3,24 +3,24 @@ import axios from '../../axios/index.js'
 export default {
   namespaced: true,
   state: {
-    subcategories: [],
+    categories: [],
     loading: false,
     contentLoaded: false,
   },
   mutations: {
-    setSubcategories(state, payload) {
-      state.subcategories = payload
+    setCategories(state, payload) {
+      state.categories = payload
     },
-    pushSubcategory(state, payload) {
-      state.subcategories.push(payload)
+    pushCategory(state, payload) {
+      state.categories.push(payload)
     },
-    updateSubcategory(state, { id, data }) {
-      state.subcategories = state.subcategories.map(subcategory => {
-        if (subcategory._id === id) {
+    updateCategory(state, { id, data }) {
+      state.categories = state.categories.map(category => {
+        if (category._id === id) {
           return data
         }
 
-        return subcategory
+        return category
       })
     },
     setContentLoaded(state, payload) {
@@ -37,8 +37,8 @@ export default {
       }
       commit('setLoading', true)
       try {
-        const response = await axios.get('/subcategory')
-        commit('setSubcategories', response.data)
+        const response = await axios.get('/category')
+        commit('setCategories', response.data)
         commit('setContentLoaded', true)
         commit('setLoading', false)
         return response
@@ -48,8 +48,8 @@ export default {
     },
     async create({ commit }, payload) {
       try {
-        const response = await axios.post('/subcategory', payload)
-        commit('pushSubcategory', response.data)
+        const response = await axios.post('/category', payload)
+        commit('pushCategory', response.data)
         return response
       } catch (error) {
         return Promise.reject(error)
@@ -57,8 +57,8 @@ export default {
     },
     async update({ commit }, { id, data }) {
       try {
-        const response = await axios.put(`/subcategory/${id}`, data)
-        commit('updateSubcategory', { id, data: response.data })
+        const response = await axios.put(`/category/${id}`, data)
+        commit('updateCategory', { id, data: response.data })
         return response
       } catch (error) {
         return Promise.reject(error)
@@ -66,6 +66,6 @@ export default {
     },
   },
   getters: {
-    subcategories: s => s.subcategories,
+    categories: s => s.categories,
   },
 }

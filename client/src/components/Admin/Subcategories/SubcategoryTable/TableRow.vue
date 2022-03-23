@@ -30,7 +30,12 @@ export default {
       {{ jobNames }}
     </td>
     <td class="table-cell">
-      <AppButton variant="primary"> Редактировать </AppButton>
+      <AppButton
+        variant="primary"
+        :to="{ name: 'subcategoriesEdit', params: { id: rowData._id } }"
+      >
+        Редактировать
+      </AppButton>
     </td>
   </tr>
 </template>
