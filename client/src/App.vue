@@ -1,11 +1,24 @@
 <script>
-export default {}
+import AppSidebar from '@/components/Layout/AppSidebar.vue'
+import AppContainer from '@/components/Layout/AppContainer.vue'
+
+export default {
+  components: { AppSidebar, AppContainer },
+}
 </script>
 
 <template>
-  <main>
-    <RouterView />
+  <main class="main">
+    <AppSidebar />
+    <AppContainer />
   </main>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.main {
+  height: 100vh;
+  width: 100vw;
+  display: grid;
+  grid-template-columns: min-content 1fr;
+}
+</style>

@@ -1,8 +1,19 @@
 const RoomType = require('../models/RoomType')
+const ApiError = require('../utils/ApiError')
 
 class RoomTypeService {
   static async get() {
     return await RoomType.find().lean()
+  }
+
+  static async getById(id) {
+    const room = await RoomType.findById(id)
+
+    if (!room) {
+      throw ApiError.BadRequest('Room not found')
+    }
+
+    return room
   }
 
   static async create(data) {
@@ -16,6 +27,11 @@ class RoomTypeService {
       new: true,
       runValidators: true,
     })
+
+    if (!room) {
+      throw ApiError.BadRequest('Room not found')
+    }
+
     return room
   }
 

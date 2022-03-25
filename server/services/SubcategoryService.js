@@ -1,8 +1,17 @@
 const Subcategory = require('../models/Subcategory')
+const ApiError = require('../utils/ApiError')
 
 class SubcategoryService {
   static async get() {
     return await Subcategory.find().lean()
+  }
+
+  static async getById(id) {
+    const subcategory = await Subcategory.findById(id)
+    if (!subcategory) {
+      throw ApiError.BadRequest('Subcategory not found')
+    }
+    return subcategory
   }
 
   static async create(data) {
@@ -16,6 +25,11 @@ class SubcategoryService {
       new: true,
       runValidators: true,
     })
+
+    if (!subcategory) {
+      throw ApiError.BadRequest('Subcategory not found')
+    }
+
     return subcategory
   }
 

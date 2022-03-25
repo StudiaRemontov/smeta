@@ -3,10 +3,10 @@ import App from './App.vue'
 import router from './router'
 import store from './store'
 
+import 'normalize.css'
 import '@/assets/index.scss'
 
-//app components
-import AppButton from './components/App/AppButton.vue'
+import AppButton from '@/components/UI/AppButton.vue'
 
 const app = createApp(App)
 

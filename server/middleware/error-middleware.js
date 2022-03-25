@@ -1,8 +1,13 @@
+const ApiError = require('../utils/ApiError')
 const Logger = require('../utils/Logger')
 
 const error = (error, req, res, next) => {
   Logger.log('ERROR', error.message)
-  res.status(400).json({ error })
+  if (error instanceof ApiError) {
+    return res.status(error.status).json({ message: error.message })
+  }
+
+  return res.status(500).json({ message: 'Server error' })
 }
 
 module.exports = error
