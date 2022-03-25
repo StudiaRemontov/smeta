@@ -11,10 +11,6 @@ export default {
       return this.$route.params?.id
     },
     subcategory() {
-      if (!this.id) {
-        return null
-      }
-
       return this.subcategories.find(subcategory => subcategory._id === this.id)
     },
   },

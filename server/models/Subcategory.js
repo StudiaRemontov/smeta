@@ -12,9 +12,19 @@ const schema = new mongoose.Schema(
         name: {
           required: true,
           type: String,
+          unique: true,
         },
         price: Number,
-        unit: String,
+        unit: {
+          type: String,
+          required: true,
+          enum: ['м/п', 'м2', 'т', 'кг', 'шт'],
+        },
+        formula: {
+          type: String,
+          enum: ['P', 'SW', 'SF', 'none'],
+          default: 'none',
+        },
         _id: false,
       },
     ],

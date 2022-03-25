@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import AdminView from '@/views/AdminView.vue'
-import AdminSubpage from '@/views/Admin/SubpageView.vue'
 
 import CategoryIndexView from '../views/Admin/Categories/IndexView.vue'
 import CategoryAddView from '../views/Admin/Categories/AddView.vue'
@@ -27,6 +26,9 @@ const router = createRouter({
       path: '/admin',
       name: 'admin',
       component: AdminView,
+      meta: {
+        title: 'Главная',
+      },
       children: [
         {
           path: 'rooms',
@@ -34,24 +36,17 @@ const router = createRouter({
           meta: {
             title: 'Комнаты',
           },
-          component: AdminSubpage,
-          children: [
-            {
-              path: '',
-              name: 'roomsIndex',
-              component: RoomIndexView,
-            },
-            {
-              path: 'add',
-              name: 'roomsAdd',
-              component: RoomAddView,
-            },
-            {
-              path: 'edit/:id',
-              name: 'roomsEdit',
-              component: RoomEditView,
-            },
-          ],
+          component: RoomIndexView,
+        },
+        {
+          path: 'rooms/add',
+          name: 'roomsAdd',
+          component: RoomAddView,
+        },
+        {
+          path: 'rooms/edit/:id',
+          name: 'roomsEdit',
+          component: RoomEditView,
         },
         {
           path: 'subcategories',
@@ -59,24 +54,17 @@ const router = createRouter({
           meta: {
             title: 'Подкатегории',
           },
-          component: AdminSubpage,
-          children: [
-            {
-              path: '',
-              name: 'subcategoriesIndex',
-              component: SubcategoryIndexView,
-            },
-            {
-              path: 'add',
-              name: 'subcategoriesAdd',
-              component: SubcategoryAddView,
-            },
-            {
-              path: 'edit/:id',
-              name: 'subcategoriesEdit',
-              component: SubcategoryEditView,
-            },
-          ],
+          component: SubcategoryIndexView,
+        },
+        {
+          path: 'subcategories/add',
+          name: 'subcategoriesAdd',
+          component: SubcategoryAddView,
+        },
+        {
+          path: 'subcategories/edit/:id',
+          name: 'subcategoriesEdit',
+          component: SubcategoryEditView,
         },
         {
           path: 'categories',
@@ -84,24 +72,17 @@ const router = createRouter({
           meta: {
             title: 'Категории',
           },
-          component: AdminSubpage,
-          children: [
-            {
-              path: '',
-              name: 'categoriesIndex',
-              component: CategoryIndexView,
-            },
-            {
-              path: 'add',
-              name: 'categoriesAdd',
-              component: CategoryAddView,
-            },
-            {
-              path: 'edit/:id',
-              name: 'categoriesEdit',
-              component: CategoryEditView,
-            },
-          ],
+          component: CategoryIndexView,
+        },
+        {
+          path: 'categories/add',
+          name: 'categoriesAdd',
+          component: CategoryAddView,
+        },
+        {
+          path: 'categories/edit/:id',
+          name: 'categoriesEdit',
+          component: CategoryEditView,
         },
       ],
     },

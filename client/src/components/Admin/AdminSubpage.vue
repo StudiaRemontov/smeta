@@ -13,7 +13,7 @@ export default {
     <div class="admin-subpage__header">
       <span class="page-title">{{ pageTitle }}</span>
     </div>
-    <div class="admin-subpage__body">
+    <div class="admin-subpage__content">
       <RouterView />
     </div>
   </div>
@@ -21,6 +21,7 @@ export default {
 
 <style lang="scss" scoped>
 .admin-subpage {
+  padding: 10px;
   max-height: 100%;
   height: 100%;
   overflow-y: auto;
@@ -28,7 +29,6 @@ export default {
   flex-direction: column;
 
   &__header {
-    margin-bottom: 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -36,8 +36,10 @@ export default {
     border-bottom: 1px #ccc solid;
   }
 
-  &__body {
-    flex: 1;
+  &__content {
+    padding-top: 10px;
+    height: 100%;
+    overflow-y: auto;
   }
 }
 </style>

@@ -1,7 +1,9 @@
 <script>
 import unitMixin from '@/mixins/units.mixin.js'
+import formulaMixin from '@/mixins/formulas.mixin.js'
 
 export default {
+  mixins: [unitMixin, formulaMixin],
   props: {
     name: {
       required: true,
@@ -17,13 +19,16 @@ export default {
       required: true,
       default: 0,
     },
+    formula: {
+      default: 'none',
+      type: String,
+    },
     rowIndex: {
       type: Number,
       required: true,
     },
   },
-  emits: ['update:name', 'update:unit', 'update:price'],
-  mixins: [unitMixin],
+  emits: ['update:name', 'update:unit', 'update:price', 'update:formula'],
 }
 </script>
 
@@ -59,6 +64,21 @@ export default {
         step="0.01"
         @input="$emit('update:price', $event.target.value)"
       />
+    </td>
+    <td class="table-cell">
+      <select
+        class="table-select"
+        :value="formula"
+        @change="$emit('update:formula', $event.target.value)"
+      >
+        <option
+          v-for="formula in formulas"
+          :key="formula.value"
+          :value="formula.value"
+        >
+          {{ formula.text }}
+        </option>
+      </select>
     </td>
     <td class="table-cell">
       <AppButton variant="danger" @click="$emit('remove')">Удалить</AppButton>

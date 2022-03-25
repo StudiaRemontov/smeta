@@ -10,11 +10,7 @@ export default {
       return this.$route.params?.id
     },
     category() {
-      if (!this.id) {
-        return null
-      }
-
-      return this.categories.find(c => c._id == this.id)
+      return this.categories.find(c => c._id === this.id)
     },
   },
 }

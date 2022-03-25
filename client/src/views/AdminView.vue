@@ -1,20 +1,16 @@
 <script>
-import AdminLeftbar from '@/components/Admin/AdminLeftbar.vue'
 import { mapActions } from 'vuex'
 
+import AdminLeftbar from '@/components/Admin/AdminLeftbar.vue'
+import AdminSubpage from '@/components/Admin/AdminSubpage.vue'
+
 export default {
-  components: { AdminLeftbar },
+  components: { AdminLeftbar, AdminSubpage },
   data() {
     return {
       loading: true,
     }
   },
-  computed: {
-    pageTitle() {
-      return this.$route.meta.title
-    },
-  },
-
   async mounted() {
     await Promise.all([
       this.fetchSubcategories(),
@@ -40,9 +36,8 @@ export default {
 <template>
   <div class="admin-view">
     <AdminLeftbar />
-    <div class="admin-view__content">
-      <RouterView />
-    </div>
+    <span v-if="loading"> Загрузка </span>
+    <AdminSubpage v-else />
   </div>
 </template>
 
@@ -52,11 +47,5 @@ export default {
   width: 100vw;
   display: grid;
   grid-template-columns: 200px 1fr;
-
-  &__content {
-    height: 100%;
-    overflow-y: auto;
-    padding: 10px;
-  }
 }
 </style>

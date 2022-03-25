@@ -18,6 +18,10 @@ class RoomTypeService {
     })
     return room
   }
+
+  static async delete(id) {
+    return await RoomType.deleteOne({ _id: id })
+  }
 }
 
 module.exports = RoomTypeService

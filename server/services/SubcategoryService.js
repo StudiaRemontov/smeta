@@ -18,6 +18,10 @@ class SubcategoryService {
     })
     return subcategory
   }
+
+  static async delete(id) {
+    return await Subcategory.deleteOne({ _id: id })
+  }
 }
 
 module.exports = SubcategoryService

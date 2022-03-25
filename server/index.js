@@ -3,7 +3,7 @@ const cors = require('cors')
 const mongoose = require('mongoose')
 
 //utils
-const logger = require('./utils/logger')
+const Logger = require('./utils/Logger')
 
 //config
 const config = require('./config/index')
@@ -14,27 +14,33 @@ const category = require('./router/category')
 const roomtype = require('./router/roomType')
 const estimate = require('./router/estimate')
 
+//middleware
+const errorMiddleware = require('./middleware/error-middleware')
+
 const app = express()
-app.use(cors())
+app.use(
+  cors({
+    origin: config.frontend,
+  })
+)
 app.use(express.json())
 
+//routes
 app.use('/api/subcategory', subcategory)
 app.use('/api/category', category)
 app.use('/api/roomtype', roomtype)
 app.use('/api/estimate', estimate)
 
-app.use((err, req, res, next) => {
-  logger.log('ERROR', err.message)
-  res.status(400).json({ message: err.message })
-})
+//middleware
+app.use(errorMiddleware)
 
 app.listen(config.port, async () => {
   try {
-    await mongoose.connect(config.mongoDB)
+    await mongoose.connect(config.mongo_url)
   } catch (error) {
-    logger.log('ERROR', 'Ошибка при подключении к базе')
+    Logger.log('ERROR', 'Ошибка при подключении к базе')
   }
-  console.log(`successfully connected to mongoDb ${config.mongoDB}`)
+  console.log(`successfully connected to mongoDb ${config.mongo_url}`)
 
   console.log(`app started on port ${config.port}`)
 })

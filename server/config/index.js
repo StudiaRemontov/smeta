@@ -1,8 +1,9 @@
 require('dotenv').config()
 
-const { PORT, mongoDB } = process.env
+const { PORT, MONGO_URL, FRONTEND } = process.env
 
 module.exports = {
   port: PORT,
-  mongoDB: mongoDB,
+  mongo_url: MONGO_URL,
+  frontend: FRONTEND,
 }

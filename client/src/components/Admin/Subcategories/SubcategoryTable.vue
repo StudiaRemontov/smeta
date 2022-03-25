@@ -36,7 +36,7 @@ export default {
 
 <style lang="scss" scoped>
 .subcategory-table {
-  table-layout: fixed;
+  table-layout: auto;
   width: 100%;
   border-collapse: collapse;
 }

@@ -13,7 +13,7 @@ export default {
   },
   data() {
     return {
-      keys: ['Название', 'Ед. изм.', 'Цена', 'Действия'],
+      keys: ['Название', 'Ед. изм.', 'Цена', 'Формула', 'Действия'],
     }
   },
   methods: {
@@ -37,6 +37,7 @@ export default {
       v-model:name="row.name"
       v-model:unit="row.unit"
       v-model:price="row.price"
+      v-model:formula="row.formula"
       :key="row.id"
       :rowIndex="index"
       @remove="removeJob(row.id)"
@@ -46,7 +47,7 @@ export default {
 
 <style lang="scss" scoped>
 .job-table {
-  table-layout: fixed;
+  table-layout: auto;
   width: 100%;
   height: 100%;
   border-collapse: collapse;

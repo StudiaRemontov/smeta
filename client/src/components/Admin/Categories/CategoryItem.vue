@@ -25,13 +25,11 @@ export default {
 
 <template>
   <li class="category-item">
-    <div class="category-item__header">
-      <span
-        class="category-item__title"
-        @click="isSubcategoriesVisible = !isSubcategoriesVisible"
-      >
-        {{ category.name }}</span
-      >
+    <div
+      class="category-item__header"
+      @click="isSubcategoriesVisible = !isSubcategoriesVisible"
+    >
+      <span class="category-item__title"> {{ category.name }}</span>
       <AppButton
         variant="primary"
         :to="{ name: 'categoriesEdit', params: { id: category._id } }"
@@ -61,6 +59,7 @@ export default {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    cursor: pointer;
   }
 
   &__title {

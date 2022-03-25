@@ -18,6 +18,10 @@ class CategoryService {
     })
     return category
   }
+
+  static async delete(id) {
+    return await Category.deleteOne({ _id: id })
+  }
 }
 
 module.exports = CategoryService

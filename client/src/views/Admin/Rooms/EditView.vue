@@ -10,11 +10,7 @@ export default {
       return this.$route.params?.id
     },
     room() {
-      if (!this.id) {
-        return null
-      }
-
-      return this.roomTypes.find(c => c._id == this.id)
+      return this.roomTypes.find(c => c._id === this.id)
     },
   },
 }

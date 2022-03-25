@@ -3,8 +3,8 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview --port 5050",
+    "build": "vite build --mode staging",
+    "preview": "vite preview --port 3000",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
   },
   "dependencies": {

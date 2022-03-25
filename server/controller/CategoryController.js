@@ -10,18 +10,18 @@ class CategoryController {
     }
   }
 
-  static async create(req, res) {
+  static async create(req, res, next) {
     try {
       const data = req.body
       const response = await CategoryService.create(data)
 
       return res.json(response)
     } catch (error) {
-      res.json(error)
+      next(error)
     }
   }
 
-  static async update(req, res) {
+  static async update(req, res, next) {
     try {
       const id = req.params.id
       const data = req.body
@@ -29,7 +29,18 @@ class CategoryController {
 
       return res.json(response)
     } catch (error) {
-      res.status(400).json(error)
+      next(error)
+    }
+  }
+
+  static async delete(req, res, next) {
+    try {
+      const id = req.params.id
+      const response = await CategoryService.delete(id)
+
+      return res.json(response)
+    } catch (error) {
+      next(error)
     }
   }
 }
