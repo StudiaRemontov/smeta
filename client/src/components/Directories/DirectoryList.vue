@@ -1,11 +1,11 @@
 <script>
 import DirectoryItem from './DirectoryItem.vue'
-import DirectoryCreate from './DirectoryCreate.vue'
+import CreateButton from './CreateButton.vue'
 
 export default {
   components: {
     DirectoryItem,
-    DirectoryCreate,
+    CreateButton,
   },
   props: {
     items: {
@@ -17,8 +17,8 @@ export default {
 
 <template>
   <ul class="directory-list">
-    <DirectoryItem />
-    <DirectoryCreate />
+    <DirectoryItem v-for="item in items" :key="item.id" :directory="item" />
+    <CreateButton text="Создать папку" @click="$emit('create')" />
   </ul>
 </template>
 

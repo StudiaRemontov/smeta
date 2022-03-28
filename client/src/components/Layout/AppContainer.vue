@@ -24,7 +24,7 @@ export default {
   &__content {
     flex: 1;
     padding: 24px 31px;
-    overflow: auto;
+    min-height: 0px;
   }
 }
 </style>

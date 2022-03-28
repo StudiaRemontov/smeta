@@ -35,9 +35,10 @@ export default {}
     display: flex;
     flex-direction: column;
     gap: 30px;
-    overflow-y: auto;
+    min-height: 0px;
 
     &-content {
+      flex: 1;
       padding-right: 5px;
       overflow-y: auto;
     }

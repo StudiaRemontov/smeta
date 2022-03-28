@@ -5,6 +5,12 @@ export default {
   components: {
     PlusIcon,
   },
+  props: {
+    text: {
+      type: String,
+      default: '',
+    },
+  },
 }
 </script>
 
@@ -12,7 +18,7 @@ export default {
   <li class="directory-create">
     <div class="directory-create__body">
       <PlusIcon />
-      <span class="directory-create__text"> Добавить папку </span>
+      <span class="directory-create__text"> {{ text }} </span>
     </div>
   </li>
 </template>

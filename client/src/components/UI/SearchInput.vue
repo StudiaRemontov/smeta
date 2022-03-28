@@ -10,7 +10,7 @@ export default {
 <template>
   <div class="search-input">
     <SearchIcon />
-    <AppInput placeholder="Search" />
+    <AppInput placeholder="Введите для поиска..." />
   </div>
 </template>
 
