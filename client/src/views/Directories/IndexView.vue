@@ -1,10 +1,11 @@
 <script>
+import { mapActions, mapGetters, mapMutations } from 'vuex'
+
 import AppContent from '@/components/Layout/AppContent.vue'
 import SearchInput from '@/components/UI/SearchInput.vue'
 import DirectoryList from '@/components/Directories/DirectoryList.vue'
 import SquaredPlusIcon from '@/components/UI/Icons/SquaredPlusIcon.vue'
-import CreateDirectory from '@/components/Directories/Modals/CreateModal.vue'
-import { mapActions, mapGetters, mapMutations } from 'vuex'
+import DataTable from '@/components/Directories/DataTable.vue'
 
 export default {
   components: {
@@ -12,7 +13,7 @@ export default {
     SearchInput,
     DirectoryList,
     SquaredPlusIcon,
-    CreateDirectory,
+    DataTable,
   },
   data() {
     return {
@@ -20,18 +21,23 @@ export default {
     }
   },
   computed: {
-    ...mapGetters('directory', ['isCreateModalVisible']),
+    ...mapGetters('directory', ['directories', 'selectedDirectory', 'parent']),
+  },
+  async mounted() {
+    await this.fetchAll()
   },
   methods: {
-    ...mapMutations('directory', ['setIsCreateModalVisible']),
-    ...mapActions('directory', ['createDirectory']),
-    async openCreateModal() {
-      const response = await this.$refs['create-modal'].show({
-        title: 'Создать папку',
-        okButton: 'Создать',
-        cancelButton: 'отмена',
-      })
-      this.createDirectory(response)
+    ...mapMutations('directory', [
+      'createSubdirectory',
+      'setSelectedDirectory',
+      'createArchitecture',
+    ]),
+    ...mapActions('directory', ['createDirectory', 'fetchAll']),
+    openCreateModal() {
+      this.createDirectory('Название папки')
+    },
+    createSubfolder() {
+      this.createSubdirectory('Название папки')
     },
   },
 }
@@ -40,7 +46,10 @@ export default {
 <template>
   <AppContent>
     <template #header>
-      <span class="page-title"> Справочники </span>
+      <span class="page-title">
+        Справочники
+        <span v-if="parent" @click="setSelectedDirectory(parent)"> </span>
+      </span>
     </template>
     <template #body-header>
       <div class="header">
@@ -54,9 +63,30 @@ export default {
       </div>
     </template>
     <template #body-content>
-      <div class="directories">
-        <DirectoryList />
-        <CreateDirectory ref="create-modal" />
+      <div v-if="!selectedDirectory" class="directories">
+        <DirectoryList :items="directories" @create="openCreateModal" />
+      </div>
+      <div
+        v-else-if="selectedDirectory.dirs.length > 0 && !selectedDirectory.data"
+        class="directories"
+      >
+        <DirectoryList
+          :parent="selectedDirectory"
+          :items="selectedDirectory.dirs"
+          @create="createSubfolder"
+        />
+      </div>
+      <div v-else-if="!selectedDirectory.data">
+        <AppButton outlined @click="createArchitecture">
+          Создать архитекруту
+        </AppButton>
+        <AppButton outlined> Создать папку </AppButton>
+      </div>
+      <div v-else>
+        <DataTable
+          :keys="selectedDirectory.data.keys"
+          :values="selectedDirectory.data.values"
+        />
       </div>
     </template>
   </AppContent>

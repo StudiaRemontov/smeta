@@ -11,13 +11,21 @@ export default {
     items: {
       type: Array,
     },
+    parent: {
+      type: Object,
+    },
   },
 }
 </script>
 
 <template>
   <ul class="directory-list">
-    <DirectoryItem v-for="item in items" :key="item.id" :directory="item" />
+    <DirectoryItem
+      v-for="item in items"
+      :key="item.id"
+      :parent="parent"
+      :directory="item"
+    />
     <CreateButton text="Создать папку" @click="$emit('create')" />
   </ul>
 </template>

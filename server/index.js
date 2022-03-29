@@ -13,6 +13,7 @@ const subcategory = require('./router/subcategory')
 const category = require('./router/category')
 const roomtype = require('./router/roomType')
 const estimate = require('./router/estimate')
+const directory = require('./router/directory')
 
 //middleware
 const errorMiddleware = require('./middleware/error-middleware')
@@ -30,6 +31,7 @@ app.use('/api/subcategory', subcategory)
 app.use('/api/category', category)
 app.use('/api/roomtype', roomtype)
 app.use('/api/estimate', estimate)
+app.use('/api/directory', directory)
 
 //middleware
 app.use(errorMiddleware)

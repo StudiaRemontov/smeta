@@ -1,78 +1,153 @@
+import axios from '../../axios'
+import { updatableMutations } from '../mutations/directory'
+
 export default {
   namespaced: true,
   state: {
-    directories: [
-      {
-        data: false,
-        dirs: [],
-        id: 1,
-        name: 'Test',
-      },
-    ],
-    isCreateModalVisible: false,
+    directories: [],
+    selectedDirectory: null,
+    parent: null,
+    contentLoaded: false,
   },
   mutations: {
-    setIsCreateModalVisible(state, payload) {
-      state.isCreateModalVisible = payload
+    setDirectories(state, payload) {
+      state.directories = payload
+    },
+    setContentLoaded(state, payload) {
+      state.contentLoaded = payload
+    },
+    setSelectedDirectory(state, payload) {
+      state.selectedDirectory = payload
+    },
+    setParent(state, payload) {
+      state.parent = payload
     },
     pushDirectory(state, payload) {
       state.directories.push(payload)
     },
     updateDirectory(state, { id, data }) {
       state.directories = state.directories.map(d => {
-        if (d.id === id) {
+        if (d._id === id) {
           return data
         }
         return d
       })
     },
-    createSubdirectory(state, { dirId, name }) {
-      const directory = state.directories.find(d => d.id === dirId)
-      if (!directory) {
+    removeDirectory(state, payload) {
+      state.directories = state.directories.filter(d => d._id !== payload)
+    },
+    [updatableMutations.UPDATE_SUBDIRECTORY](state, { id, data }) {
+      state.selectedDirectory.dirs = state.selectedDirectory.dirs.map(d => {
+        if (d._id === id) {
+          return data
+        }
+        return d
+      })
+    },
+    [updatableMutations.CREATE_SUBDIRECTORY](state, name) {
+      if (!state.selectedDirectory) {
         return
       }
-      const subDirectory = {
-        id: Date.now(),
+      const directory = {
         name,
-        data: false,
         dirs: [],
+        data: false,
       }
 
-      directory.data = false
-      directory.dirs.push(subDirectory)
+      state.selectedDirectory.dirs.push(directory)
     },
-    removeSubDirectory(state, { dirId, subId }) {
-      const directory = state.directories.find(({ id }) => id === dirId)
-      if (!directory) {
-        return
-      }
-
-      directory.dirs = directory.dirs.filter(({ id }) => id !== subId)
+    [updatableMutations.REMOVE_SUBDIRECTORY](_, { parent, subId }) {
+      parent.dirs = parent.dirs.filter(d => d._id !== subId)
     },
-    createArchitecture(state, payload) {
-      const directory = state.directories.find(d => d.id === payload)
-      if (!directory) {
-        return
-      }
-      directory.data = {
+    [updatableMutations.CREATE_ARCHITECTURE](state) {
+      state.selectedDirectory.data = {
         keys: [],
         values: [],
+      }
+    },
+    [updatableMutations.UPDATE_ARCHITECTURE](state, data) {
+      console.log(data)
+      state.selectedDirectory.data = {
+        ...state.selectedDirectory.data,
+        ...data,
       }
     },
   },
   actions: {
     async createDirectory({ commit }, name) {
-      const directory = {
-        id: Date.now(),
-        name,
-        data: false,
-        dirs: [],
+      try {
+        const response = await axios.post('/directory', {
+          name,
+        })
+        commit('pushDirectory', response.data)
+        return response
+      } catch (error) {
+        console.log(error)
+        return Promise.reject(error)
       }
-      commit('pushDirectory', directory)
+    },
+    async fetchAll({ state, commit }) {
+      if (state.contentLoaded) {
+        return
+      }
+      try {
+        const response = await axios.get('/directory')
+        commit('setDirectories', response.data)
+        commit('setContentLoaded', true)
+        return response
+      } catch (error) {
+        console.log(error)
+      }
+    },
+    async updateDirectory({ commit, getters }) {
+      const parent = getters.parent
+      if (!parent) {
+        return
+      }
+      try {
+        const response = await axios.put(`/directory/${parent._id}`, parent)
+        commit('updateDirectory', {
+          id: response.data._id,
+          data: response.data,
+        })
+
+        return response
+      } catch (error) {
+        console.log(error)
+        return Promise.reject(error)
+      }
+    },
+    async updateById({ commit }, { id, data }) {
+      try {
+        const response = await axios.put(`/directory/${id}`, data)
+        commit('updateDirectory', {
+          id: response.data._id,
+          data: response.data,
+        })
+
+        return response
+      } catch (error) {
+        console.log(error)
+        return Promise.reject(error)
+      }
+    },
+    async removeDirectory({ commit }, payload) {
+      if (!payload) {
+        return
+      }
+      try {
+        const response = await axios.delete(`/directory/${payload}`)
+        commit('removeDirectory', payload)
+        return response
+      } catch (error) {
+        console.log(error)
+        return Promise.reject(error)
+      }
     },
   },
   getters: {
-    isCreateModalVisible: s => s.isCreateModalVisible,
     directories: s => s.directories,
+    selectedDirectory: s => s.selectedDirectory,
+    parent: s => s.parent,
   },
 }
