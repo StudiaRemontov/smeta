@@ -84,7 +84,11 @@ export default {
 <template>
   <li class="directory-item">
     <div class="directory-item__header">
-      <span v-if="!isEditing" class="directory-item__name" @click="openFolder">
+      <span
+        v-if="!isEditing"
+        class="directory-item__name"
+        @dblclick="openFolder"
+      >
         {{ directory.name }}
       </span>
       <input
@@ -129,6 +133,7 @@ export default {
   &__name {
     font-size: $font-medium;
     font-weight: 700;
+    user-select: none;
   }
 
   &__input {

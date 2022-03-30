@@ -1,11 +1,12 @@
 <script>
 import { mapGetters, mapMutations } from 'vuex'
 import CreateKey from './Modals/CreateKey.vue'
+import EditKey from './Modals/EditKey.vue'
 import OutlinedPlusIcon from '@/components/UI/Icons/SquaredOutlinedPlusIcon.vue'
 import PlusIcon from '@/components/UI/Icons/SquaredPlusIcon.vue'
 
 export default {
-  components: { CreateKey, OutlinedPlusIcon, PlusIcon },
+  components: { CreateKey, OutlinedPlusIcon, PlusIcon, EditKey },
   props: {
     keys: {
       type: Array,
@@ -23,10 +24,10 @@ export default {
     ...mapMutations('directory', ['updateArchitecture']),
     updateKey(key, value) {
       const keys = this.keys.map(item => {
-        if (item.name === key) {
+        if (item.id === key) {
           return {
             ...item,
-            name: value,
+            ...value,
           }
         }
         return item
@@ -54,6 +55,21 @@ export default {
       const keys = [...this.keys, response]
       this.updateArchitecture({ keys })
     },
+    async openEditModal(key) {
+      const response = await this.$refs['edit-key'].show({
+        title: 'Изменить колонку',
+        okButton: 'Сохранить',
+        cancelButton: 'Отмена',
+        key,
+      })
+      if (!response) {
+        return
+      }
+      if (response.remove) {
+        return this.removeKey(key.id)
+      }
+      this.updateKey(key.id, response)
+    },
     createRow() {
       const row = this.keys.reduce((acc, item) => {
         acc[item.id] = ''
@@ -62,24 +78,39 @@ export default {
       const values = [...this.values, row]
       this.updateArchitecture({ values })
     },
+    removeKey(keyId) {
+      const keys = this.keys.filter(({ id }) => id !== keyId)
+      const values = this.values.map(row => {
+        return Object.entries(row).reduce((acc, [key, value]) => {
+          if (+key !== keyId) {
+            acc[key] = value
+          }
+          return acc
+        }, {})
+      })
+      this.updateArchitecture({ keys, values })
+    },
   },
 }
 </script>
 
 <template>
+  <EditKey ref="edit-key" />
   <table class="table">
     <tr class="table__row">
       <th
         v-for="key in keys"
         :key="key.name"
         class="table__cell table__cell--head"
+        @click="openEditModal(key)"
       >
-        <input
+        {{ key.name }}
+        <!-- <input
           :value="key.name"
           class="table__input"
           type="text"
           @change="updateKey(key.name, $event.target.value)"
-        />
+        /> -->
       </th>
       <th
         class="table__cell table__cell--head table__cell--clickable"
@@ -125,6 +156,7 @@ export default {
 
     &--head {
       background-color: #f5f5f5;
+      cursor: pointer;
 
       input {
         font-weight: 700;

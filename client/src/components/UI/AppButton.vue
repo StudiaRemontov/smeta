@@ -2,12 +2,13 @@
 export default {
   props: {
     outlined: Boolean,
+    variant: String,
   },
 }
 </script>
 
 <template>
-  <button class="app-button" :class="{ outlined }">
+  <button :class="[`app-button`, variant, { outlined }]">
     <slot />
   </button>
 </template>
@@ -23,6 +24,11 @@ export default {
     padding: 10px;
     border: 1px solid #a7a7a7;
     border-radius: 3px;
+  }
+
+  &.danger {
+    border-color: $color-danger;
+    color: $color-danger;
   }
 }
 </style>

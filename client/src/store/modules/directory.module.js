@@ -1,4 +1,6 @@
 import axios from '../../axios'
+
+import { createMongoId } from '@/helpers/createMongoId'
 import { updatableMutations } from '../mutations/directory'
 
 export default {
@@ -8,6 +10,7 @@ export default {
     selectedDirectory: null,
     parent: null,
     contentLoaded: false,
+    selectedDirectoryBackup: null,
   },
   mutations: {
     setDirectories(state, payload) {
@@ -17,6 +20,7 @@ export default {
       state.contentLoaded = payload
     },
     setSelectedDirectory(state, payload) {
+      state.selectedDirectoryBackup = JSON.parse(JSON.stringify(payload))
       state.selectedDirectory = payload
     },
     setParent(state, payload) {
@@ -49,6 +53,7 @@ export default {
         return
       }
       const directory = {
+        _id: createMongoId(),
         name,
         dirs: [],
         data: false,
@@ -66,7 +71,6 @@ export default {
       }
     },
     [updatableMutations.UPDATE_ARCHITECTURE](state, data) {
-      console.log(data)
       state.selectedDirectory.data = {
         ...state.selectedDirectory.data,
         ...data,
@@ -99,7 +103,7 @@ export default {
         console.log(error)
       }
     },
-    async updateDirectory({ commit, getters }) {
+    async updateDirectory({ commit, getters, state }) {
       const parent = getters.parent
       if (!parent) {
         return
@@ -110,10 +114,9 @@ export default {
           id: response.data._id,
           data: response.data,
         })
-
         return response
       } catch (error) {
-        console.log(error)
+        commit('setSelectedDirectory', state.selectedDirectoryBackup)
         return Promise.reject(error)
       }
     },

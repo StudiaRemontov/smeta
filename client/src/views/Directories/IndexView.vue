@@ -27,13 +27,9 @@ export default {
     await this.fetchAll()
   },
   methods: {
-    ...mapMutations('directory', [
-      'createSubdirectory',
-      'setSelectedDirectory',
-      'createArchitecture',
-    ]),
+    ...mapMutations('directory', ['createSubdirectory', 'createArchitecture']),
     ...mapActions('directory', ['createDirectory', 'fetchAll']),
-    openCreateModal() {
+    createFolder() {
       this.createDirectory('Название папки')
     },
     createSubfolder() {
@@ -46,15 +42,12 @@ export default {
 <template>
   <AppContent>
     <template #header>
-      <span class="page-title">
-        Справочники
-        <span v-if="parent" @click="setSelectedDirectory(parent)"> </span>
-      </span>
+      <span class="page-title"> Справочники </span>
     </template>
     <template #body-header>
       <div class="header">
         <SearchInput v-model="search" class="search-input" />
-        <AppButton outlined @click="openCreateModal">
+        <AppButton v-if="!parent" outlined @click="createFolder">
           <div class="button-create">
             <SquaredPlusIcon />
             <span> Создать </span>
@@ -64,7 +57,7 @@ export default {
     </template>
     <template #body-content>
       <div v-if="!selectedDirectory" class="directories">
-        <DirectoryList :items="directories" @create="openCreateModal" />
+        <DirectoryList :items="directories" @create="createFolder" />
       </div>
       <div
         v-else-if="selectedDirectory.dirs.length > 0 && !selectedDirectory.data"
@@ -80,7 +73,7 @@ export default {
         <AppButton outlined @click="createArchitecture">
           Создать архитекруту
         </AppButton>
-        <AppButton outlined> Создать папку </AppButton>
+        <AppButton outlined @click="createSubfolder"> Создать папку </AppButton>
       </div>
       <div v-else>
         <DataTable

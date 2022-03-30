@@ -1,8 +1,6 @@
 <script>
 import PopupModal from '../../UI/PopupModal.vue'
-import SelectDirectories from '../Select/SelectDirectories.vue'
 import keyTypes from '@/mixins/keyTypes.mixin'
-import { mapGetters } from 'vuex'
 
 const getInitState = () => ({
   title: undefined,
@@ -11,24 +9,23 @@ const getInitState = () => ({
   resolvePromise: undefined,
   rejectPromise: undefined,
   name: '',
-  type: 'string',
+  type: '',
   options: '',
 })
 
 export default {
-  components: { PopupModal, SelectDirectories },
+  components: { PopupModal },
   mixins: [keyTypes],
   data() {
     return getInitState()
-  },
-  computed: {
-    ...mapGetters('directory', ['directories']),
   },
   methods: {
     async show(options) {
       this.title = options.title
       this.okButton = options.okButton
       this.cancelButton = options.cancelButton
+      this.name = options.key.name
+      this.type = options.key.type
 
       this.$refs.popup.open()
 
@@ -42,7 +39,6 @@ export default {
     _confirm() {
       this.$refs.popup.close()
       this.resolvePromise({
-        id: Date.now(),
         name: this.name,
         type: this.type,
       })
@@ -54,6 +50,13 @@ export default {
       this.resolvePromise(false)
       this.reset()
     },
+
+    _remove() {
+      this.$refs.popup.close()
+      this.resolvePromise({ remove: true })
+      this.reset()
+    },
+
     reset() {
       Object.assign(this.$data, getInitState())
     },
@@ -88,10 +91,8 @@ export default {
             </option>
           </select>
         </div>
-        <div class="form__group">
-          <SelectDirectories />
-        </div>
       </form>
+      <AppButton outlined variant="danger" @click="_remove">Удалить</AppButton>
       <div class="modal__actions">
         <AppButton outlined @click="_cancel">
           {{ cancelButton }}
