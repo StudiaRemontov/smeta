@@ -1,11 +1,13 @@
 <script>
 import DirectoryItem from './DirectoryItem.vue'
 import CreateButton from './CreateButton.vue'
+import DirectoryForm from './DirectoryForm.vue'
 
 export default {
   components: {
     DirectoryItem,
     CreateButton,
+    DirectoryForm,
   },
   props: {
     items: {
@@ -14,6 +16,11 @@ export default {
     parent: {
       type: Object,
     },
+  },
+  data() {
+    return {
+      formVisible: false,
+    }
   },
 }
 </script>
@@ -26,7 +33,8 @@ export default {
       :parent="parent"
       :directory="item"
     />
-    <CreateButton text="Создать папку" @click="$emit('create')" />
+    <DirectoryForm v-if="formVisible" @created="formVisible = false" />
+    <CreateButton text="Создать папку" @click="formVisible = true" />
   </ul>
 </template>
 

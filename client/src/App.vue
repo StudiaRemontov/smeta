@@ -1,9 +1,16 @@
 <script>
 import AppSidebar from '@/components/Layout/AppSidebar.vue'
 import AppContainer from '@/components/Layout/AppContainer.vue'
+import { mapActions } from 'vuex'
 
 export default {
   components: { AppSidebar, AppContainer },
+  async mounted() {
+    await this.fetchAll()
+  },
+  methods: {
+    ...mapActions('directory', ['fetchAll']),
+  },
 }
 </script>
 

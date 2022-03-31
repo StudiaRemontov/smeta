@@ -8,14 +8,10 @@ export default {
     ThreeDotsIcon,
     AppDropdowm,
   },
-  inject: ['parent'],
   props: {
     directory: {
       type: Object,
       required: true,
-    },
-    parent: {
-      type: Object,
     },
   },
   data() {
@@ -32,14 +28,8 @@ export default {
         },
         {
           text: 'Удалить',
-          handler: () => {
-            if (!this.parent) {
-              return this.removeDirectory(this.directory._id)
-            }
-            this.removeSubdirectory({
-              parent: this.parent,
-              subId: this.directory._id,
-            })
+          handler: async () => {
+            await this.removeDirectory(this.directory._id)
           },
         },
       ],
@@ -54,27 +44,17 @@ export default {
     ]),
     ...mapActions('directory', ['removeDirectory', 'updateById']),
     openFolder() {
-      if (!this.parent) {
-        this.setParent(this.directory)
-      }
-      this.setSelectedDirectory(this.directory)
+      this.$router.push(`/directories/${this.directory._id}`)
     },
-    update(e) {
+    async update(e) {
       this.$refs.input.blur()
       const name = e.target.value
-      const data = {
-        ...this.directory,
-        name,
-      }
-      if (this.parent) {
-        return this.updateSubDirectory({
-          id: this.directory._id,
-          data,
-        })
-      }
-      this.updateById({
+
+      await this.updateById({
         id: this.directory._id,
-        data,
+        data: {
+          name,
+        },
       })
     },
   },
@@ -82,13 +62,9 @@ export default {
 </script>
 
 <template>
-  <li class="directory-item">
+  <li class="directory-item" @dblclick="openFolder">
     <div class="directory-item__header">
-      <span
-        v-if="!isEditing"
-        class="directory-item__name"
-        @dblclick="openFolder"
-      >
+      <span v-if="!isEditing" class="directory-item__name">
         {{ directory.name }}
       </span>
       <input
@@ -124,6 +100,7 @@ export default {
   flex-direction: column;
   justify-content: space-between;
   padding: 20px 15px 15px;
+  user-select: none;
 
   &__header {
     display: flex;
@@ -133,7 +110,6 @@ export default {
   &__name {
     font-size: $font-medium;
     font-weight: 700;
-    user-select: none;
   }
 
   &__input {

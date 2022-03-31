@@ -1,14 +1,9 @@
 import axios from '../../axios'
 
-import { createMongoId } from '@/helpers/createMongoId'
-import { updatableMutations } from '../mutations/directory'
-
 export default {
   namespaced: true,
   state: {
     directories: [],
-    selectedDirectory: null,
-    parent: null,
     contentLoaded: false,
     selectedDirectoryBackup: null,
   },
@@ -18,13 +13,6 @@ export default {
     },
     setContentLoaded(state, payload) {
       state.contentLoaded = payload
-    },
-    setSelectedDirectory(state, payload) {
-      state.selectedDirectoryBackup = JSON.parse(JSON.stringify(payload))
-      state.selectedDirectory = payload
-    },
-    setParent(state, payload) {
-      state.parent = payload
     },
     pushDirectory(state, payload) {
       state.directories.push(payload)
@@ -40,49 +28,15 @@ export default {
     removeDirectory(state, payload) {
       state.directories = state.directories.filter(d => d._id !== payload)
     },
-    [updatableMutations.UPDATE_SUBDIRECTORY](state, { id, data }) {
-      state.selectedDirectory.dirs = state.selectedDirectory.dirs.map(d => {
-        if (d._id === id) {
-          return data
-        }
-        return d
-      })
-    },
-    [updatableMutations.CREATE_SUBDIRECTORY](state, name) {
-      if (!state.selectedDirectory) {
-        return
-      }
-      const directory = {
-        _id: createMongoId(),
-        name,
-        dirs: [],
-        data: false,
-      }
-
-      state.selectedDirectory.dirs.push(directory)
-    },
-    [updatableMutations.REMOVE_SUBDIRECTORY](_, { parent, subId }) {
-      parent.dirs = parent.dirs.filter(d => d._id !== subId)
-    },
-    [updatableMutations.CREATE_ARCHITECTURE](state) {
-      state.selectedDirectory.data = {
-        keys: [],
-        values: [],
-      }
-    },
-    [updatableMutations.UPDATE_ARCHITECTURE](state, data) {
-      state.selectedDirectory.data = {
-        ...state.selectedDirectory.data,
-        ...data,
-      }
-    },
   },
   actions: {
-    async createDirectory({ commit }, name) {
+    async createDirectory({ commit, state }, payload) {
       try {
-        const response = await axios.post('/directory', {
-          name,
-        })
+        const response = await axios.post('/directory', payload)
+        if (payload.parent) {
+          const parent = state.directories.find(d => d._id === payload.parent)
+          parent.dirs.push(response.data._id)
+        }
         commit('pushDirectory', response.data)
         return response
       } catch (error) {
@@ -127,7 +81,6 @@ export default {
           id: response.data._id,
           data: response.data,
         })
-
         return response
       } catch (error) {
         console.log(error)

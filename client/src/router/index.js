@@ -18,7 +18,7 @@ const router = createRouter({
       component: DirectoriesIndex,
     },
     {
-      path: '/directories/:name',
+      path: '/directories/:id',
       name: 'directory',
       component: DirectoryView,
     },

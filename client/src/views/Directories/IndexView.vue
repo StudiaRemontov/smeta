@@ -1,11 +1,10 @@
 <script>
-import { mapActions, mapGetters, mapMutations } from 'vuex'
+import { mapActions, mapGetters } from 'vuex'
 
 import AppContent from '@/components/Layout/AppContent.vue'
 import SearchInput from '@/components/UI/SearchInput.vue'
 import DirectoryList from '@/components/Directories/DirectoryList.vue'
 import SquaredPlusIcon from '@/components/UI/Icons/SquaredPlusIcon.vue'
-import DataTable from '@/components/Directories/DataTable.vue'
 
 export default {
   components: {
@@ -13,7 +12,6 @@ export default {
     SearchInput,
     DirectoryList,
     SquaredPlusIcon,
-    DataTable,
   },
   data() {
     return {
@@ -21,20 +19,13 @@ export default {
     }
   },
   computed: {
-    ...mapGetters('directory', ['directories', 'selectedDirectory', 'parent']),
-  },
-  async mounted() {
-    await this.fetchAll()
+    ...mapGetters('directory', ['directories']),
+    parentDirectories() {
+      return this.directories.filter(d => d.parent === null)
+    },
   },
   methods: {
-    ...mapMutations('directory', ['createSubdirectory', 'createArchitecture']),
     ...mapActions('directory', ['createDirectory', 'fetchAll']),
-    createFolder() {
-      this.createDirectory('Название папки')
-    },
-    createSubfolder() {
-      this.createSubdirectory('Название папки')
-    },
   },
 }
 </script>
@@ -56,30 +47,8 @@ export default {
       </div>
     </template>
     <template #body-content>
-      <div v-if="!selectedDirectory" class="directories">
-        <DirectoryList :items="directories" @create="createFolder" />
-      </div>
-      <div
-        v-else-if="selectedDirectory.dirs.length > 0 && !selectedDirectory.data"
-        class="directories"
-      >
-        <DirectoryList
-          :parent="selectedDirectory"
-          :items="selectedDirectory.dirs"
-          @create="createSubfolder"
-        />
-      </div>
-      <div v-else-if="!selectedDirectory.data">
-        <AppButton outlined @click="createArchitecture">
-          Создать архитекруту
-        </AppButton>
-        <AppButton outlined @click="createSubfolder"> Создать папку </AppButton>
-      </div>
-      <div v-else>
-        <DataTable
-          :keys="selectedDirectory.data.keys"
-          :values="selectedDirectory.data.values"
-        />
+      <div class="directories">
+        <DirectoryList :items="parentDirectories" @create="createFolder" />
       </div>
     </template>
   </AppContent>

@@ -1,0 +1,82 @@
+<script>
+import { mapActions } from 'vuex'
+export default {
+  data() {
+    return {
+      name: '',
+    }
+  },
+
+  computed: {
+    parent() {
+      return this.$route.params?.id
+    },
+  },
+  mounted() {
+    this.$refs.input.focus()
+  },
+  methods: {
+    ...mapActions('directory', ['createDirectory']),
+    async create() {
+      if (!this.name) {
+        return this.$emit('created')
+      }
+
+      const data = {
+        name: this.name,
+        parent: this.parent,
+      }
+      try {
+        await this.createDirectory(data)
+        this.$emit('created')
+      } catch (error) {
+        console.log(error)
+      }
+    },
+  },
+}
+</script>
+
+<template>
+  <li class="directory-item">
+    <form class="directory-item__header" @submit.prevent="create">
+      <input
+        v-model="name"
+        @blur="$emit('created')"
+        ref="input"
+        class="directory-item__input"
+      />
+    </form>
+  </li>
+</template>
+
+<style lang="scss" scoped>
+.directory-item {
+  cursor: pointer;
+  border: 1px solid #a7a7a7;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 20px 15px 15px;
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  &__input {
+    max-width: 100%;
+    width: 100%;
+    font-size: $font-medium;
+    font-weight: 700;
+
+    &:disabled {
+      pointer-events: all;
+      background-color: transparent;
+      color: #000;
+      cursor: pointer;
+    }
+  }
+}
+</style>

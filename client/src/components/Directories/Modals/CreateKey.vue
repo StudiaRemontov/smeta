@@ -1,6 +1,5 @@
 <script>
 import PopupModal from '../../UI/PopupModal.vue'
-import SelectDirectories from '../Select/SelectDirectories.vue'
 import keyTypes from '@/mixins/keyTypes.mixin'
 import { mapGetters } from 'vuex'
 
@@ -16,7 +15,7 @@ const getInitState = () => ({
 })
 
 export default {
-  components: { PopupModal, SelectDirectories },
+  components: { PopupModal },
   mixins: [keyTypes],
   data() {
     return getInitState()
@@ -87,9 +86,6 @@ export default {
               {{ option }}
             </option>
           </select>
-        </div>
-        <div class="form__group">
-          <SelectDirectories />
         </div>
       </form>
       <div class="modal__actions">

@@ -34,8 +34,36 @@ class DirectoryService {
     return directory
   }
 
+  static async pushDirectories(id, subDirId) {
+    const directory = await Directory.findById(id)
+
+    if (!directory) {
+      throw ApiError.BadRequest('Directory not found')
+    }
+
+    directory.dirs.push(subDirId)
+    directory.save()
+
+    return directory
+  }
+
+  static async removeSubDir(id, subDirId) {
+    const directory = await Directory.findById(id)
+
+    if (!directory) {
+      throw ApiError.BadRequest('Directory not found')
+    }
+
+    directory.dirs = directory.dirs.filter(
+      (dir) => dir._id.toString() !== subDirId
+    )
+    directory.save()
+
+    return directory
+  }
+
   static async delete(id) {
-    return await Directory.deleteOne({ _id: id })
+    return await Directory.findByIdAndDelete(id)
   }
 }
 

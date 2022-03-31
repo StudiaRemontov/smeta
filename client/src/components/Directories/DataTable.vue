@@ -1,5 +1,5 @@
 <script>
-import { mapGetters, mapMutations } from 'vuex'
+import { mapActions, mapGetters } from 'vuex'
 import CreateKey from './Modals/CreateKey.vue'
 import EditKey from './Modals/EditKey.vue'
 import OutlinedPlusIcon from '@/components/UI/Icons/SquaredOutlinedPlusIcon.vue'
@@ -8,20 +8,22 @@ import PlusIcon from '@/components/UI/Icons/SquaredPlusIcon.vue'
 export default {
   components: { CreateKey, OutlinedPlusIcon, PlusIcon, EditKey },
   props: {
-    keys: {
-      type: Array,
-      required: true,
-    },
-    values: {
-      type: Array,
+    directory: {
+      type: Object,
       required: true,
     },
   },
   computed: {
     ...mapGetters('directory', ['selectedDirectory']),
+    keys() {
+      return this.directory.data.keys
+    },
+    values() {
+      return this.directory.data.values
+    },
   },
   methods: {
-    ...mapMutations('directory', ['updateArchitecture']),
+    ...mapActions('directory', ['updateById']),
     updateKey(key, value) {
       const keys = this.keys.map(item => {
         if (item.id === key) {
@@ -35,7 +37,8 @@ export default {
       this.updateArchitecture({ keys })
     },
     updateValue(rowIndex, key, value) {
-      const values = this.values.map((row, index) => {
+      const newValues = JSON.parse(JSON.stringify(this.values))
+      const values = newValues.map((row, index) => {
         if (index === rowIndex) {
           row[key] = value
         }
@@ -90,6 +93,22 @@ export default {
       })
       this.updateArchitecture({ keys, values })
     },
+    async updateArchitecture(data) {
+      try {
+        await this.updateById({
+          id: this.directory._id,
+          data: {
+            data: {
+              ...this.directory.data,
+              ...data,
+            },
+          },
+        })
+      } catch (error) {
+        this.$forceUpdate()
+        console.log(error)
+      }
+    },
   },
 }
 </script>
@@ -105,12 +124,6 @@ export default {
         @click="openEditModal(key)"
       >
         {{ key.name }}
-        <!-- <input
-          :value="key.name"
-          class="table__input"
-          type="text"
-          @change="updateKey(key.name, $event.target.value)"
-        /> -->
       </th>
       <th
         class="table__cell table__cell--head table__cell--clickable"
