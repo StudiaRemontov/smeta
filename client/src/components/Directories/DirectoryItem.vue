@@ -1,7 +1,7 @@
 <script>
 import ThreeDotsIcon from '../UI/Icons/ThreeDotsIcon.vue'
 import AppDropdowm from '@/components/UI/AppDropdown.vue'
-import { mapActions, mapMutations } from 'vuex'
+import { mapActions, mapGetters, mapMutations } from 'vuex'
 
 export default {
   components: {
@@ -29,11 +29,37 @@ export default {
         {
           text: 'Удалить',
           handler: async () => {
+            if (this.subFolders.length > 0) {
+              return this.$emit('remove', {
+                id: this.directory._id,
+                folderName: this.directory.name,
+                subFoldersLength: this.subFolders.length,
+              })
+            }
             await this.removeDirectory(this.directory._id)
           },
         },
       ],
     }
+  },
+  computed: {
+    ...mapGetters('directory', ['directories']),
+    subFolders() {
+      return this.getChilds(this.directory)
+    },
+    counter() {
+      if (this.subFolders.length > 0) {
+        return this.subFolders.length
+      }
+      const { data } = this.directory
+      const valuesLength = data.values ? data.values.length : 0
+
+      if (valuesLength > 0) {
+        return data.values.length
+      }
+
+      return 'Нет элементов'
+    },
   },
   methods: {
     ...mapMutations('directory', [
@@ -56,6 +82,14 @@ export default {
           name,
         },
       })
+    },
+    getChilds(directory) {
+      const children = this.directories.filter(d => d.parent === directory._id)
+      if (children.length === 0) {
+        return []
+      }
+      const subChilds = children.map(d => this.getChilds(d))
+      return [...children, ...subChilds].flat()
     },
   },
 }
@@ -82,11 +116,7 @@ export default {
       </AppDropdowm>
     </div>
     <span v-if="!isEditing" class="directory-item__counter">
-      {{
-        directory.dirs.length > 0
-          ? `Элементов ${directory.dirs.length}`
-          : 'Нет элементов'
-      }}
+      {{ counter }}
     </span>
   </li>
 </template>
@@ -110,6 +140,7 @@ export default {
   &__name {
     font-size: $font-medium;
     font-weight: 700;
+    word-break: break-word;
   }
 
   &__input {

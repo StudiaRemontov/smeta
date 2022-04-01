@@ -1,12 +1,13 @@
 <script>
-import { mapActions, mapGetters } from 'vuex'
+import { mapActions, mapGetters, mapMutations } from 'vuex'
 import CreateKey from './Modals/CreateKey.vue'
 import EditKey from './Modals/EditKey.vue'
 import OutlinedPlusIcon from '@/components/UI/Icons/SquaredOutlinedPlusIcon.vue'
 import PlusIcon from '@/components/UI/Icons/SquaredPlusIcon.vue'
+import TableCell from './Table/TableCell.vue'
 
 export default {
-  components: { CreateKey, OutlinedPlusIcon, PlusIcon, EditKey },
+  components: { CreateKey, OutlinedPlusIcon, PlusIcon, EditKey, TableCell },
   props: {
     directory: {
       type: Object,
@@ -22,8 +23,12 @@ export default {
       return this.directory.data.values
     },
   },
+  unmounted() {
+    this.updateArchitecture()
+  },
   methods: {
-    ...mapActions('directory', ['updateById']),
+    ...mapMutations('directory', ['createTableRow']),
+    ...mapActions('directory', ['updateTableArchitecture']),
     updateKey(key, value) {
       const keys = this.keys.map(item => {
         if (item.id === key) {
@@ -36,14 +41,15 @@ export default {
       })
       this.updateArchitecture({ keys })
     },
-    updateValue(rowIndex, key, value) {
+    updateValue(rowId, key, value) {
       const newValues = JSON.parse(JSON.stringify(this.values))
-      const values = newValues.map((row, index) => {
-        if (index === rowIndex) {
-          row[key] = value
+      const values = newValues.map(row => {
+        if (row.id === rowId) {
+          row.data[key] = value
         }
         return row
       })
+
       this.updateArchitecture({ values })
     },
     async openKeyModal() {
@@ -73,16 +79,12 @@ export default {
       }
       this.updateKey(key.id, response)
     },
-    createRow() {
-      const row = this.keys.reduce((acc, item) => {
-        acc[item.id] = ''
-        return acc
-      }, {})
-      const values = [...this.values, row]
-      this.updateArchitecture({ values })
-    },
     removeKey(keyId) {
       const keys = this.keys.filter(({ id }) => id !== keyId)
+
+      if (keys.length === 0) {
+        return this.updateArchitecture({ keys, values: [] })
+      }
       const values = this.values.map(row => {
         return Object.entries(row).reduce((acc, [key, value]) => {
           if (+key !== keyId) {
@@ -93,19 +95,23 @@ export default {
       })
       this.updateArchitecture({ keys, values })
     },
+    removeRow(rowIndex) {
+      const values = this.values.filter((_, index) => index !== rowIndex)
+      this.updateArchitecture({ values })
+    },
     async updateArchitecture(data) {
       try {
-        await this.updateById({
+        await this.updateTableArchitecture({
           id: this.directory._id,
           data: {
-            data: {
-              ...this.directory.data,
-              ...data,
-            },
+            ...this.directory.data,
+            ...data,
           },
         })
       } catch (error) {
-        this.$forceUpdate()
+        this.$refs.cell.forEach(cell => {
+          cell.$forceUpdate()
+        })
         console.log(error)
       }
     },
@@ -132,19 +138,25 @@ export default {
         <PlusIcon />
       </th>
     </tr>
-    <tr v-for="(row, rowIndex) in values" :key="rowIndex" class="table__row">
-      <td v-for="key in keys" :key="key.name" class="table__cell">
-        <input
-          :value="values[rowIndex][key.id]"
-          class="table__input"
-          type="text"
-          @change="updateValue(rowIndex, key.id, $event.target.value)"
-        />
+    <tr v-for="(row, rowIndex) in values" :key="row.id" class="table__row">
+      <TableCell
+        v-for="key in keys"
+        :key="key.name"
+        :value="values[rowIndex].data[key.id]"
+        :rowIndex="rowIndex"
+        :rowId="row.id"
+        :col="key"
+        @change="updateValue"
+        ref="cell"
+      />
+      <td class="table__cell table__cell--empty">
+        <AppButton variant="danger" outlined @click="removeRow(rowIndex)">
+          Удалить
+        </AppButton>
       </td>
-      <td class="table__cell table__cell--empty"></td>
     </tr>
   </table>
-  <AppButton class="create-button" @click="createRow">
+  <AppButton class="create-button" @click="createTableRow(directory._id)">
     <OutlinedPlusIcon />
     <span class="create-button__text"> Добавить элементы </span>
   </AppButton>

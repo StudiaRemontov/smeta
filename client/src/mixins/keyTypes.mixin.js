@@ -1,7 +1,12 @@
+import { InputType } from '../enum/InputType'
+
 export default {
-  data() {
-    return {
-      types: ['string', 'number', 'select'],
-    }
+  computed: {
+    typeOptions() {
+      return Object.values(InputType)
+    },
+    InputType() {
+      return InputType
+    },
   },
 }

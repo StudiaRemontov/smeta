@@ -37,12 +37,12 @@ export default {
         directory => directory._id === this.directoryId,
       )
     },
-    subDirs() {
+    subFolders() {
       if (!this.directory) {
         return []
       }
 
-      return this.directories.filter(d => this.directory.dirs.includes(d._id))
+      return this.directories.filter(d => d.parent === this.directory._id)
     },
     parentTree() {
       if (!this.directory) {
@@ -88,16 +88,26 @@ export default {
 <template>
   <AppContent v-if="directory">
     <template #header>
-      <span class="page-title"> Справочники</span>
-      <div v-if="parentTree" class="links">
-        <RouterLink
-          v-for="parent in parentTree"
-          :key="parent._id"
-          :to="`/directories/${parent._id}`"
-          class="link"
+      <div class="links">
+        <RouterLink class="link" to="/directories">
+          <span class="link__text"> Справочники </span>
+          <span class="link__delimeter">/</span></RouterLink
         >
-          {{ parent.name }}/
-        </RouterLink>
+        <template v-if="parentTree">
+          <RouterLink
+            v-for="(parent, index) in parentTree"
+            :key="parent._id"
+            :to="`/directories/${parent._id}`"
+            class="link"
+          >
+            <span class="link__text">
+              {{ parent.name }}
+            </span>
+            <span v-if="index < parentTree.length - 1" class="link__delimeter"
+              >/</span
+            >
+          </RouterLink>
+        </template>
       </div>
     </template>
     <template #body-header>
@@ -112,15 +122,12 @@ export default {
           @created="showCreateFolder = false"
         />
       </div>
-      <div v-else-if="!directory.dirs.length && !directory.data" class="choose">
+      <div v-else-if="!subFolders.length && !directory.data" class="choose">
         <CreateButton text="Создать папку" @click="openCreateDirectory" />
         <CreateButton text="Создать архитектуру" @click="createArchitecture" />
       </div>
-      <div
-        v-else-if="directory.dirs.length && !directory.data"
-        class="directories"
-      >
-        <DirectoryList :items="subDirs" />
+      <div v-else-if="subFolders.length && !directory.data" class="directories">
+        <DirectoryList :items="subFolders" />
       </div>
       <div v-else>
         <DataTable :directory="directory" />
@@ -164,12 +171,25 @@ export default {
 
 .links {
   display: flex;
+  gap: 5px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .link {
-  font-weight: 700;
-  color: #000;
-  font-size: $font-medium;
   text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  &__text {
+    font-weight: 700;
+    color: #000;
+    font-size: $font-high;
+  }
+
+  &__delimeter {
+    font-weight: 700;
+  }
 }
 </style>

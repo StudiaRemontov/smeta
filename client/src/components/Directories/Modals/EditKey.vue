@@ -1,6 +1,7 @@
 <script>
 import PopupModal from '../../UI/PopupModal.vue'
 import keyTypes from '@/mixins/keyTypes.mixin'
+import { mapGetters } from 'vuex'
 
 const getInitState = () => ({
   title: undefined,
@@ -10,7 +11,8 @@ const getInitState = () => ({
   rejectPromise: undefined,
   name: '',
   type: '',
-  options: '',
+  selectedDirectory: '',
+  visibleKeys: [],
 })
 
 export default {
@@ -19,6 +21,25 @@ export default {
   data() {
     return getInitState()
   },
+  computed: {
+    ...mapGetters('directory', ['directories']),
+    id() {
+      return this.$route.params.id
+    },
+    options() {
+      if (!this.id) return []
+      return this.directories.filter(d => d._id !== this.id)
+    },
+    avaliableKeys() {
+      if (!this.selectedDirectory) {
+        return []
+      }
+      const directory = this.directories.find(
+        d => d._id === this.selectedDirectory,
+      )
+      return directory.data.keys
+    },
+  },
   methods: {
     async show(options) {
       this.title = options.title
@@ -26,6 +47,8 @@ export default {
       this.cancelButton = options.cancelButton
       this.name = options.key.name
       this.type = options.key.type
+      this.selectedDirectory = options.key.dirId
+      this.visibleKeys = options.key.keys
 
       this.$refs.popup.open()
 
@@ -38,10 +61,13 @@ export default {
     },
     _confirm() {
       this.$refs.popup.close()
-      this.resolvePromise({
+      const data = {
         name: this.name,
         type: this.type,
-      })
+        dirId: this.selectedDirectory,
+        keys: this.visibleKeys,
+      }
+      this.resolvePromise(data)
       this.reset()
     },
 
@@ -59,6 +85,10 @@ export default {
 
     reset() {
       Object.assign(this.$data, getInitState())
+    },
+    resetSelectData() {
+      this.selectedDirectory = ''
+      this.visibleKeys = []
     },
   },
 }
@@ -80,9 +110,9 @@ export default {
         </div>
         <div class="form__group">
           <label class="form__label">Тип</label>
-          <select v-model="type" class="select">
+          <select v-model="type" class="select" @change="resetSelectData">
             <option
-              v-for="option in types"
+              v-for="option in typeOptions"
               class="select__option"
               :key="option"
               :value="option"
@@ -90,6 +120,33 @@ export default {
               {{ option }}
             </option>
           </select>
+        </div>
+        <div v-if="type === InputType.SELECT" class="form__group">
+          <select
+            v-model="selectedDirectory"
+            class="select"
+            @change="visibleKeys = []"
+          >
+            <option
+              v-for="option in options"
+              :key="option._id"
+              :value="option._id"
+            >
+              {{ option.name }}
+            </option>
+          </select>
+          <div v-if="selectedDirectory">
+            <span>Значения отображать</span>
+            <div v-for="key in avaliableKeys" class="key" :key="key.id">
+              <input
+                v-model="visibleKeys"
+                :id="key.id"
+                :value="key.id"
+                type="checkbox"
+              />
+              <label :for="key.id"> {{ key.name }} </label>
+            </div>
+          </div>
         </div>
       </form>
       <AppButton outlined variant="danger" @click="_remove">Удалить</AppButton>

@@ -1,20 +1,22 @@
 <script>
-import { mapGetters } from 'vuex'
 import OptionGroup from './OptionGroup.vue'
 export default {
   name: 'SelectDirectories',
   components: {
     OptionGroup,
   },
-  computed: {
-    ...mapGetters('directory', ['directories']),
+  props: {
+    options: {
+      type: Array,
+      required: true,
+    },
   },
 }
 </script>
 
 <template>
   <div class="list">
-    <OptionGroup v-for="dir in directories" :key="dir._id" :directory="dir" />
+    <OptionGroup v-for="dir in options" :key="dir._id" :directory="dir" />
   </div>
 </template>
 

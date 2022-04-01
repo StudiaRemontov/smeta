@@ -15,9 +15,7 @@ class DirectoryController {
       const data = req.body
 
       const response = await DirectoryService.create(data)
-      if (data.parent) {
-        await DirectoryService.pushDirectories(data.parent, response._id)
-      }
+
       return res.json(response)
     } catch (error) {
       next(error)
@@ -28,7 +26,6 @@ class DirectoryController {
     try {
       const id = req.params.id
       const data = req.body
-
       const response = await DirectoryService.update(id, data)
 
       return res.json(response)
@@ -40,10 +37,9 @@ class DirectoryController {
   static async delete(req, res, next) {
     try {
       const id = req.params.id
+      await DirectoryService.removeSubFolders(id)
       const response = await DirectoryService.delete(id)
-      if (response.parent) {
-        await DirectoryService.removeSubDir(response.parent, id)
-      }
+
       return res.json(response)
     } catch (error) {
       next(error)

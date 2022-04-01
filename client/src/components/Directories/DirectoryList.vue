@@ -2,12 +2,15 @@
 import DirectoryItem from './DirectoryItem.vue'
 import CreateButton from './CreateButton.vue'
 import DirectoryForm from './DirectoryForm.vue'
+import RemoveModal from './Modals/RemoveModal.vue'
+import { mapActions } from 'vuex'
 
 export default {
   components: {
     DirectoryItem,
     CreateButton,
     DirectoryForm,
+    RemoveModal,
   },
   props: {
     items: {
@@ -22,6 +25,25 @@ export default {
       formVisible: false,
     }
   },
+  methods: {
+    ...mapActions('directory', ['removeDirectory']),
+    async openRemove({ id, folderName, subFoldersLength }) {
+      const response = await this.$refs['remove-modal'].show({
+        title: `Подтвердить удаление`,
+        message: `Данная папка создаржит ${subFoldersLength} папок. При удалении этой папки все вложенные папки будут удалены.`,
+        folderName,
+        okButton: 'Удалить',
+        cancelButton: 'Отмена',
+      })
+      if (response) {
+        try {
+          await this.removeDirectory(id)
+        } catch (error) {
+          console.log(error)
+        }
+      }
+    },
+  },
 }
 </script>
 
@@ -32,9 +54,11 @@ export default {
       :key="item.id"
       :parent="parent"
       :directory="item"
+      @remove="openRemove"
     />
     <DirectoryForm v-if="formVisible" @created="formVisible = false" />
-    <CreateButton text="Создать папку" @click="formVisible = true" />
+    <CreateButton v-else text="Создать папку" @click="formVisible = true" />
+    <RemoveModal ref="remove-modal" />
   </ul>
 </template>
 

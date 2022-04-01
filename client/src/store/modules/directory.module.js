@@ -28,15 +28,27 @@ export default {
     removeDirectory(state, payload) {
       state.directories = state.directories.filter(d => d._id !== payload)
     },
+    createTableRow(state, dirId) {
+      const directory = state.directories.find(d => d._id === dirId)
+      if (!directory) return
+
+      const { data } = directory
+
+      const newRow = data.keys.reduce((acc, item) => {
+        acc[item.id] = ''
+        return acc
+      }, {})
+
+      data.values.push({
+        id: Date.now(),
+        data: newRow,
+      })
+    },
   },
   actions: {
-    async createDirectory({ commit, state }, payload) {
+    async createDirectory({ commit }, payload) {
       try {
         const response = await axios.post('/directory', payload)
-        if (payload.parent) {
-          const parent = state.directories.find(d => d._id === payload.parent)
-          parent.dirs.push(response.data._id)
-        }
         commit('pushDirectory', response.data)
         return response
       } catch (error) {
@@ -57,20 +69,25 @@ export default {
         console.log(error)
       }
     },
-    async updateDirectory({ commit, getters, state }) {
-      const parent = getters.parent
-      if (!parent) {
-        return
-      }
+    async updateTableArchitecture({ state, dispatch }, { id, data }) {
       try {
-        const response = await axios.put(`/directory/${parent._id}`, parent)
-        commit('updateDirectory', {
-          id: response.data._id,
-          data: response.data,
+        const directory = state.directories.find(d => d._id === id)
+        if (!directory) return
+
+        data.values = data.values.filter(row => {
+          const isRowEmpty = Object.values(row).every(value => !value)
+          return !isRowEmpty
         })
-        return response
+
+        const newData = {
+          data: {
+            ...directory.data,
+            ...data,
+          },
+        }
+        await dispatch('updateById', { id: directory._id, data: newData })
       } catch (error) {
-        commit('setSelectedDirectory', state.selectedDirectoryBackup)
+        console.log(error)
         return Promise.reject(error)
       }
     },

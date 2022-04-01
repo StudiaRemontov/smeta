@@ -28,6 +28,7 @@ export default {
       }
       try {
         await this.createDirectory(data)
+        this.name = ''
         this.$emit('created')
       } catch (error) {
         console.log(error)
@@ -39,14 +40,13 @@ export default {
 
 <template>
   <li class="directory-item">
-    <form class="directory-item__header" @submit.prevent="create">
-      <input
-        v-model="name"
-        @blur="$emit('created')"
-        ref="input"
-        class="directory-item__input"
-      />
-    </form>
+    <input
+      v-model="name"
+      @keyup.enter="create"
+      @blur="create"
+      ref="input"
+      class="directory-item__input"
+    />
   </li>
 </template>
 

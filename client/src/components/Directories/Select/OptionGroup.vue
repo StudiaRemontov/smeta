@@ -1,9 +1,16 @@
 <script>
+import { mapGetters } from 'vuex'
 export default {
   name: 'OptionGroup',
   props: {
     directory: {
       type: Object,
+    },
+  },
+  computed: {
+    ...mapGetters('directory', ['directories']),
+    children() {
+      return this.directories.filter(d => d.parent === this.directory._id)
     },
   },
 }
@@ -12,12 +19,8 @@ export default {
 <template>
   <ul class="list">
     <li>{{ directory.name }}</li>
-    <template v-if="directory.dirs.length > 0">
-      <OptionGroup
-        v-for="dir in directory.dirs"
-        :key="dir._id"
-        :directory="dir"
-      />
+    <template v-if="children.length > 0">
+      <OptionGroup v-for="dir in children" :key="dir._id" :directory="dir" />
     </template>
   </ul>
 </template>

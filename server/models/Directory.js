@@ -14,12 +14,6 @@ const schema = new mongoose.Schema(
       type: mongoose.SchemaTypes.Mixed,
       default: null,
     },
-    dirs: [
-      {
-        type: mongoose.SchemaTypes.ObjectId,
-        ref: 'Directory',
-      },
-    ],
   },
   { versionKey: false }
 )

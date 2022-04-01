@@ -1,5 +1,5 @@
 <script>
-import { mapActions, mapGetters } from 'vuex'
+import { mapGetters } from 'vuex'
 
 import AppContent from '@/components/Layout/AppContent.vue'
 import SearchInput from '@/components/UI/SearchInput.vue'
@@ -24,9 +24,6 @@ export default {
       return this.directories.filter(d => d.parent === null)
     },
   },
-  methods: {
-    ...mapActions('directory', ['createDirectory', 'fetchAll']),
-  },
 }
 </script>
 
@@ -38,7 +35,7 @@ export default {
     <template #body-header>
       <div class="header">
         <SearchInput v-model="search" class="search-input" />
-        <AppButton v-if="!parent" outlined @click="createFolder">
+        <AppButton v-if="!parent" outlined>
           <div class="button-create">
             <SquaredPlusIcon />
             <span> Создать </span>
@@ -48,7 +45,7 @@ export default {
     </template>
     <template #body-content>
       <div class="directories">
-        <DirectoryList :items="parentDirectories" @create="createFolder" />
+        <DirectoryList :items="parentDirectories" />
       </div>
     </template>
   </AppContent>
