@@ -3,6 +3,7 @@ import DirectoryItem from './DirectoryItem.vue'
 import CreateButton from './CreateButton.vue'
 import DirectoryForm from './DirectoryForm.vue'
 import RemoveModal from './Modals/RemoveModal.vue'
+import AlertModal from './Modals/AlertModal.vue'
 import { mapActions } from 'vuex'
 
 export default {
@@ -11,6 +12,7 @@ export default {
     CreateButton,
     DirectoryForm,
     RemoveModal,
+    AlertModal,
   },
   props: {
     items: {
@@ -27,10 +29,10 @@ export default {
   },
   methods: {
     ...mapActions('directory', ['removeDirectory']),
-    async openRemove({ id, folderName, subFoldersLength }) {
+    async openRemove({ id, folderName, subItemsLength }) {
       const response = await this.$refs['remove-modal'].show({
         title: `Подтвердить удаление`,
-        message: `Данная папка создаржит ${subFoldersLength} папок. При удалении этой папки все вложенные папки будут удалены.`,
+        message: `Данная папка создаржит ${subItemsLength} элемента. При удалении этой папки все вложенные элементы будут удалены.`,
         folderName,
         okButton: 'Удалить',
         cancelButton: 'Отмена',
@@ -42,6 +44,13 @@ export default {
           console.log(error)
         }
       }
+    },
+    openAlert({ paths }) {
+      this.$refs['alert-modal'].show({
+        title: `Данный справочник невозможно удалить`,
+        paths: paths,
+        okButton: 'Ок',
+      })
     },
   },
 }
@@ -55,10 +64,12 @@ export default {
       :parent="parent"
       :directory="item"
       @remove="openRemove"
+      @alert="openAlert"
     />
     <DirectoryForm v-if="formVisible" @created="formVisible = false" />
     <CreateButton v-else text="Создать папку" @click="formVisible = true" />
     <RemoveModal ref="remove-modal" />
+    <AlertModal ref="alert-modal" />
   </ul>
 </template>
 

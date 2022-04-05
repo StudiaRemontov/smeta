@@ -29,14 +29,65 @@ export default {
         {
           text: 'Удалить',
           handler: async () => {
-            if (this.subFolders.length > 0) {
+            //check if empty
+            const { data } = this.directory
+            if (
+              (!data || data?.values?.length === 0) &&
+              !this.subFolders.length
+            ) {
+              return await this.removeDirectory(this.directory._id)
+            }
+            //check if dir is architecture
+            if (data) {
+              //check if architecture in use
+              const inUse = this.checkIfArchitectureInUse(this.directory)
+              const paths = inUse.map(d => {
+                return [...this.getParents(d.parent), d]
+              })
+              //if in use show alert
+              if (paths.length > 0) {
+                return this.$emit('alert', {
+                  paths,
+                })
+              }
+              //else check if architecture has values and show alert
+              if (data.values.length > 0) {
+                return this.$emit('remove', {
+                  id: this.directory._id,
+                  folderName: this.directory.name,
+                  subItemsLength: data.values.length,
+                })
+              }
+            }
+            //get all items inside dir
+            const items = this.getItemsInsideDirectory(this.directory)
+
+            //get only architecture
+            const architectures = items.filter(item => item.data)
+
+            //check if architectures in use
+            const architecturesInUse = architectures
+              .map(arc => this.checkIfArchitectureInUse(arc))
+              .flat()
+
+            const paths = architecturesInUse.map(d => {
+              return [...this.getParents(d.parent), d]
+            })
+            if (paths.length > 0) {
+              return this.$emit('alert', {
+                paths,
+              })
+            }
+
+            //check sub folders length
+            const subItemsLength = this.subFolders.length
+            if (subItemsLength > 0) {
               return this.$emit('remove', {
                 id: this.directory._id,
                 folderName: this.directory.name,
-                subFoldersLength: this.subFolders.length,
+                subItemsLength,
               })
             }
-            await this.removeDirectory(this.directory._id)
           },
         },
       ],
@@ -45,7 +96,7 @@ export default {
   computed: {
     ...mapGetters('directory', ['directories']),
     subFolders() {
-      return this.getChilds(this.directory)
+      return this.directories.filter(d => d.parent === this.directory._id)
     },
     counter() {
       if (this.subFolders.length > 0) {
@@ -83,13 +134,54 @@ export default {
         },
       })
     },
-    getChilds(directory) {
-      const children = this.directories.filter(d => d.parent === directory._id)
-      if (children.length === 0) {
+    getParents(directory) {
+      const parent = this.directories.find(d => d._id === directory)
+      if (!parent) {
         return []
       }
-      const subChilds = children.map(d => this.getChilds(d))
-      return [...children, ...subChilds].flat()
+      if (parent.parent) {
+        return [...this.getParents(parent.parent), parent]
+      }
+
+      return [parent]
+    },
+    getArchitecturesUseData(directory) {
+      return this.directories.filter(d => {
+        const { data } = d
+        if (d._id === directory._id || !data) {
+          return false
+        }
+
+        return data.keys.some(key => key.dirId === directory._id)
+      })
+    },
+    getItemsInsideDirectory(directory) {
+      const { data } = directory
+
+      if (data) {
+        return []
+      }
+
+      const children = this.directories.filter(d => d.parent === directory._id)
+      if (children.length > 0) {
+        const subItems = children
+          .map(c => this.getItemsInsideDirectory(c))
+          .flat()
+        return [...children, ...subItems]
+      }
+
+      return []
+    },
+    checkIfArchitectureInUse(architecture) {
+      return this.directories.filter(d => {
+        const { data } = d
+
+        if (!data) {
+          return false
+        }
+
+        return data.keys.some(k => k.dirId === architecture._id)
+      })
     },
   },
 }

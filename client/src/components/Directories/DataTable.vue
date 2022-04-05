@@ -1,13 +1,14 @@
 <script>
 import { mapActions, mapGetters, mapMutations } from 'vuex'
-import CreateKey from './Modals/CreateKey.vue'
-import EditKey from './Modals/EditKey.vue'
+import KeyModal from './Modals/KeyModal.vue'
 import OutlinedPlusIcon from '@/components/UI/Icons/SquaredOutlinedPlusIcon.vue'
 import PlusIcon from '@/components/UI/Icons/SquaredPlusIcon.vue'
 import TableCell from './Table/TableCell.vue'
+import keyTypes from '@/mixins/keyTypes.mixin'
 
 export default {
-  components: { CreateKey, OutlinedPlusIcon, PlusIcon, EditKey, TableCell },
+  components: { OutlinedPlusIcon, PlusIcon, KeyModal, TableCell },
+  mixins: [keyTypes],
   props: {
     directory: {
       type: Object,
@@ -53,7 +54,7 @@ export default {
       this.updateArchitecture({ values })
     },
     async openKeyModal() {
-      const response = await this.$refs['create-key'].show({
+      const response = await this.$refs['key-modal'].show({
         title: 'Добавить колонку',
         okButton: 'Добавить',
         cancelButton: 'Отмена',
@@ -61,11 +62,11 @@ export default {
       if (!response) {
         return
       }
-      const keys = [...this.keys, response]
+      const keys = [...this.keys, { id: Date.now(), ...response }]
       this.updateArchitecture({ keys })
     },
     async openEditModal(key) {
-      const response = await this.$refs['edit-key'].show({
+      const response = await this.$refs['key-modal'].show({
         title: 'Изменить колонку',
         okButton: 'Сохранить',
         cancelButton: 'Отмена',
@@ -120,7 +121,7 @@ export default {
 </script>
 
 <template>
-  <EditKey ref="edit-key" />
+  <KeyModal ref="key-modal" />
   <table class="table">
     <tr class="table__row">
       <th
@@ -146,6 +147,7 @@ export default {
         :rowIndex="rowIndex"
         :rowId="row.id"
         :col="key"
+        :dirId="directory._id"
         @change="updateValue"
         ref="cell"
       />
@@ -160,7 +162,6 @@ export default {
     <OutlinedPlusIcon />
     <span class="create-button__text"> Добавить элементы </span>
   </AppButton>
-  <CreateKey ref="create-key" />
 </template>
 
 <style lang="scss" scoped>

@@ -28,7 +28,9 @@ export default {
     },
     options() {
       if (!this.id) return []
-      return this.directories.filter(d => d._id !== this.id)
+      return this.directories.filter(
+        d => d._id !== this.id && d.data && d.data?.keys?.length > 0,
+      )
     },
     avaliableKeys() {
       if (!this.selectedDirectory) {
@@ -37,6 +39,11 @@ export default {
       const directory = this.directories.find(
         d => d._id === this.selectedDirectory,
       )
+
+      if (!directory) {
+        return []
+      }
+
       return directory.data.keys
     },
   },
@@ -45,10 +52,12 @@ export default {
       this.title = options.title
       this.okButton = options.okButton
       this.cancelButton = options.cancelButton
-      this.name = options.key.name
-      this.type = options.key.type
-      this.selectedDirectory = options.key.dirId
-      this.visibleKeys = options.key.keys
+      if (options.key) {
+        this.name = options.key.name
+        this.type = options.key.type
+        this.selectedDirectory = options.key.dirId
+        this.visibleKeys = options.key.keys
+      }
 
       this.$refs.popup.open()
 

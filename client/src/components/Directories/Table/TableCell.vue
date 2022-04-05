@@ -20,6 +20,9 @@ export default {
       type: Object,
       required: true,
     },
+    dirId: {
+      required: true,
+    },
   },
   emits: ['change'],
   computed: {
@@ -35,21 +38,50 @@ export default {
       return 'text'
     },
     options() {
-      if (this.type === this.InputType.SELECT) {
-        const directory = this.directories.find(d => d._id === this.col.dirId)
-        return directory.data.values.map(item => {
-          const avaliableKeys = this.col.keys.map(key => {
-            return item.data[key]
-          })
-
-          return {
-            id: item.id,
-            value: avaliableKeys.join(', '),
-          }
-        })
+      if (this.col.type !== this.InputType.SELECT) {
+        return []
       }
+      const subDir = this.directories.find(d => d._id === this.col.dirId)
+      if (!subDir) {
+        return []
+      }
+      const keys = subDir.data.keys.filter(k => this.col.keys.includes(k.id))
 
-      return []
+      if (!keys.length) {
+        return []
+      }
+      return subDir.data.values.map(row => {
+        const text = keys.map(key => {
+          if (key.type === this.InputType.SELECT) {
+            const findingRow = row.data[key.id]
+            return this.getValueOfCell(key.dirId, findingRow, key.keys)
+          }
+
+          return row.data[key.id]
+        })
+
+        return {
+          value: row.id,
+          text: text.join(', '),
+        }
+      })
+    },
+  },
+  methods: {
+    getValueOfCell(dirId, rowId, keys) {
+      const directory = this.directories.find(d => d._id === dirId)
+      if (!directory) return null
+      const visibleKeys = directory.data.keys.filter(k => keys.includes(k.id))
+      const vals = visibleKeys.map(key => {
+        const row = directory.data.values.find(r => r.id === +rowId)
+        if (key.type === this.InputType.SELECT) {
+          const findingRow = row.data[key.id]
+          return this.getValueOfCell(key.dirId, findingRow, key.keys)
+        }
+
+        return row.data[key.id]
+      })
+      return vals
     },
   },
 }
@@ -69,8 +101,12 @@ export default {
       :value="value"
       @change="$emit('change', rowId, col.id, $event.target.value)"
     >
-      <option v-for="option in options" :key="option.id" :value="option.id">
-        {{ option.value }}
+      <option
+        v-for="option in options"
+        :key="option.value"
+        :value="option.value"
+      >
+        {{ option.text }}
       </option>
     </select>
   </td>
