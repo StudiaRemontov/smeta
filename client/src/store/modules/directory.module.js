@@ -75,7 +75,7 @@ export default {
         if (!directory) return
 
         data.values = data.values.filter(row => {
-          const isRowEmpty = Object.values(row).every(value => !value)
+          const isRowEmpty = Object.values(row.data).every(value => !value)
           return !isRowEmpty
         })
 
@@ -98,6 +98,7 @@ export default {
           id: response.data._id,
           data: response.data,
         })
+
         return response
       } catch (error) {
         console.log(error)

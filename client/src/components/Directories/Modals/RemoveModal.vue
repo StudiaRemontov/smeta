@@ -70,7 +70,7 @@ export default {
         <strong> {{ folderName }} </strong>
       </span>
       <input
-        v-model.trim="keyWord"
+        v-model="keyWord"
         class="input"
         ref="input"
         type="text"

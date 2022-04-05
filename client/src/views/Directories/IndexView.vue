@@ -4,14 +4,12 @@ import { mapGetters } from 'vuex'
 import AppContent from '@/components/Layout/AppContent.vue'
 import SearchInput from '@/components/UI/SearchInput.vue'
 import DirectoryList from '@/components/Directories/DirectoryList.vue'
-import SquaredPlusIcon from '@/components/UI/Icons/SquaredPlusIcon.vue'
 
 export default {
   components: {
     AppContent,
     SearchInput,
     DirectoryList,
-    SquaredPlusIcon,
   },
   data() {
     return {
@@ -30,17 +28,11 @@ export default {
 <template>
   <AppContent>
     <template #header>
-      <span class="page-title"> Справочники </span>
+      <span class="page-title title"> Справочники </span>
     </template>
     <template #body-header>
       <div class="header">
-        <SearchInput v-model="search" class="search-input" />
-        <AppButton v-if="!parent" outlined>
-          <div class="button-create">
-            <SquaredPlusIcon />
-            <span> Создать </span>
-          </div>
-        </AppButton>
+        <SearchInput class="search-input" />
       </div>
     </template>
     <template #body-content>
@@ -68,5 +60,11 @@ export default {
   justify-content: space-between;
   align-items: center;
   gap: 9px;
+}
+
+.title {
+  padding: 5px;
+  display: flex;
+  align-items: center;
 }
 </style>

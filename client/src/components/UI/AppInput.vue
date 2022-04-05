@@ -14,13 +14,7 @@ export default {
 </script>
 
 <template>
-  <input
-    ref="input"
-    :value="modelValue"
-    @change="$emit('update:modelValue', $event.target.value)"
-    class="app-input"
-    type="text"
-  />
+  <input ref="input" class="app-input" type="text" />
 </template>
 
 <style lang="scss" scoped>

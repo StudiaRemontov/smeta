@@ -5,8 +5,10 @@ import DirectoryList from '@/components/Directories/DirectoryList.vue'
 import DirectoryForm from '@/components/Directories/DirectoryForm.vue'
 import CreateButton from '@/components/Directories/CreateButton.vue'
 import DataTable from '@/components/Directories/DataTable.vue'
-
-import * as XLSX from 'xlsx/xlsx.mjs'
+import ExcelModal from '@/components/Directories/Modals/ExcelModal.vue'
+import NavigationLinks from '@/components/Directories/NavigationLinks.vue'
+import ExcelUploader from '@/components/Directories/ExcelUploader.vue'
+import RemoveModal from '@/components/Directories/Modals/RemoveModal.vue'
 
 import { mapActions, mapGetters } from 'vuex'
 
@@ -20,6 +22,10 @@ export default {
     CreateButton,
     DirectoryForm,
     DataTable,
+    ExcelModal,
+    NavigationLinks,
+    ExcelUploader,
+    RemoveModal,
   },
   mixins: [keyTypes],
   data() {
@@ -49,15 +55,7 @@ export default {
 
       return this.directories.filter(d => d.parent === this.directory._id)
     },
-    parentTree() {
-      if (!this.directory) {
-        return null
-      }
-
-      return this.getParentTree(this.directory)
-    },
     architectureValues() {
-      console.log('generate')
       //get all architectures that can be architecture of current
       const architectures = this.directories.filter(
         d => d.data && d._id !== this.directoryId && d.data?.values?.length > 0,
@@ -85,31 +83,29 @@ export default {
   },
   methods: {
     ...mapActions('directory', ['updateById']),
-    getParentTree(directory) {
-      if (directory.parent) {
-        const parent = this.directories.find(
-          ({ _id }) => _id === directory.parent,
-        )
-        return [...this.getParentTree(parent), directory]
-      }
-      return [directory]
-    },
     openCreateDirectory() {
       this.showCreateFolder = true
     },
     async createArchitecture() {
-      try {
-        await this.updateById({
-          id: this.directory._id,
-          data: {
-            data: {
-              keys: [],
-              values: [],
-            },
-          },
-        })
-      } catch (error) {
-        console.log(error)
+      await this.updateArchitecture({
+        keys: [],
+        values: [],
+      })
+    },
+    async removeArchitecture() {
+      if (this.directory.data.values.length === 0) {
+        return await this.updateArchitecture(false)
+      }
+      const response = await this.$refs['remove-modal'].show({
+        title: 'Подтвердить удаление',
+        message:
+          'В данной архитектуре есть данные, при удалении данные будут утеряны',
+        cancelButton: ' Отмена',
+        okButton: 'Удалить',
+        folderName: this.directory.name,
+      })
+      if (response) {
+        await this.updateArchitecture(false)
       }
     },
     getTypeOfColumn(column) {
@@ -146,14 +142,46 @@ export default {
         dirId: architecture.dirId,
       }
     },
-    async readFile(e) {
-      //get file and read it
-      const file = e.target.files[0]
-      const rows = await this.readExcel(file)
+    async fileChangeHandler(rows) {
       if (rows.length === 0) {
         return
       }
-      //generate keys
+
+      const { data } = this.directory
+
+      if (data?.values?.length > 0) {
+        const response = await this.$refs['excel-modal'].show({
+          title: 'Добавить данные или заменить существующие?',
+          okButton: 'Добавить',
+          cancelButton: 'Заменить',
+        })
+        if (response) {
+          const mergedData = this.mergedData(rows)
+          mergedData.values = [...data.values, ...mergedData.values]
+
+          return this.updateArchitecture(mergedData)
+        }
+      }
+      const { keys, values } = this.replacedData(rows)
+
+      this.updateArchitecture({
+        keys,
+        values,
+      })
+    },
+    async updateArchitecture(data) {
+      try {
+        await this.updateById({
+          id: this.directory._id,
+          data: {
+            data,
+          },
+        })
+      } catch (error) {
+        console.log(error)
+      }
+    },
+    getExcelKeysAndValues(rows) {
       const keys = rows[0].map((item, index) => {
         const key = {
           name: item,
@@ -165,26 +193,34 @@ export default {
       //get values of excel remove first row (keys)
       const values = [...rows]
       values.shift()
+      return { keys, values }
+    },
+    getTableKeys(keys, values) {
       // get all values of column to find type of column (key)
       const columns = keys.map((key, keyIndex) => {
         return values.map(row => {
           return row[keyIndex]
         })
       })
-      //find type of column and set it to keys
+
       // формирование ключей для сохранения в базу
-      const keysWithType = keys.map((key, index) => {
-        const type = this.getTypeOfColumn(columns[index])
+      return keys.map((key, index) => {
+        if (key.type) {
+          return key
+        }
+        const typeData = this.getTypeOfColumn(columns[index])
+
         return {
           ...key,
-          ...type,
+          ...typeData,
         }
       })
-      //формирование значений таблицы
+    },
+    getTableValues(keys, values) {
       //для каждой строки из excel
-      const tableRows = values.map((value, rowIndex) => {
+      return values.map((value, rowIndex) => {
         //формирование данных строки
-        const data = keysWithType.reduce((acc, key, index) => {
+        const data = keys.reduce((acc, key, index) => {
           if (key.type === this.InputType.SELECT) {
             // получаю архитектуру из которой берутся значения
             const dir = this.directories.find(d => d._id === key.dirId)
@@ -194,8 +230,8 @@ export default {
               const values = key.keys.map(key => r.data[key])
               return values.includes(value[index])
             })
-
-            acc[key.id] = row.id
+            // no data - произвольная строка (truthy значение), т.к. если будет falsy значение строка автоматически удалится при изменении архитектуры
+            acc[key.id] = row?.id || 'no data'
             return acc
           }
 
@@ -208,44 +244,39 @@ export default {
           data,
         }
       })
+    },
+    replacedData(rows) {
+      //generate keys
+      const { keys, values } = this.getExcelKeysAndValues(rows)
+      //формирование ключей таблицы
+      const tableKeys = this.getTableKeys(keys, values)
+      //формирование значений таблицы
+      const tableValues = this.getTableValues(tableKeys, values)
 
-      try {
-        await this.updateById({
-          id: this.directory._id,
-          data: {
-            data: {
-              keys: keysWithType,
-              values: tableRows,
-            },
-          },
-        })
-      } catch (error) {
-        console.log(error)
+      return {
+        keys: tableKeys,
+        values: tableValues,
       }
     },
-    async readExcel(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = function (e) {
-          const data = e.target.result
-          const workbook = XLSX.read(data, {
-            type: 'binary',
-          })
+    mergedData(rows) {
+      //generate keys
+      const { keys, values } = this.getExcelKeysAndValues(rows)
+      //фильтрую ключи. Если название ключа из новой архитектурой совпадает с ключом из существующей,
+      //то оставляю старый ключ, чтобы под его тип указать значение
+      const merged = [...this.directory.data.keys, ...keys].filter(
+        (key, index, arr) => index === arr.findIndex(k => key.name === k.name),
+      )
 
-          const sheetsNames = workbook.SheetNames
-          const firstSheet = workbook.Sheets[sheetsNames[0]]
+      //формирование ключей таблицы
+      const tableKeys = this.getTableKeys(merged, values)
 
-          const xlRows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 })
+      //формирование значений таблицы
+      const tableValues = this.getTableValues(tableKeys, values)
 
-          resolve(xlRows)
-        }
-
-        reader.onerror = function () {
-          reject([])
-        }
-
-        reader.readAsBinaryString(file)
-      })
+      return {
+        keys: tableKeys,
+        values: tableValues,
+      }
     },
   },
 }
@@ -254,38 +285,26 @@ export default {
 <template>
   <AppContent v-if="directory">
     <template #header>
-      <div class="links">
-        <RouterLink class="link" to="/directories">
-          <span class="link__text"> Справочники </span>
-          <span class="link__delimeter">/</span></RouterLink
-        >
-        <template v-if="parentTree">
-          <RouterLink
-            v-for="(parent, index) in parentTree"
-            :key="parent._id"
-            :to="`/directories/${parent._id}`"
-            class="link"
-          >
-            <span class="link__text">
-              {{ parent.name }}
-            </span>
-            <span v-if="index < parentTree.length - 1" class="link__delimeter"
-              >/</span
-            >
-          </RouterLink>
-        </template>
-      </div>
+      <NavigationLinks />
     </template>
     <template #body-header>
+      <ExcelModal ref="excel-modal" />
       <div class="header">
         <SearchInput v-model="search" class="search-input" />
         <div class="header__actions">
-          <label class="file-uploader" for="file">Импорт из Excel файла</label>
-          <input type="file" id="file" hidden @change="readFile" />
+          <template v-if="directory.data">
+            <div class="header__actions-group">
+              <AppButton outlined @click="removeArchitecture">
+                Удлаить архитектуру
+              </AppButton>
+            </div>
+            <ExcelUploader @change="fileChangeHandler" />
+          </template>
         </div>
       </div>
     </template>
     <template #body-content>
+      <RemoveModal ref="remove-modal" />
       <div class="create-form" v-if="showCreateFolder">
         <DirectoryForm
           :parent="this.directory._id"
@@ -299,7 +318,7 @@ export default {
       <div v-else-if="subFolders.length && !directory.data" class="directories">
         <DirectoryList :items="subFolders" />
       </div>
-      <div v-else>
+      <div class="table-wrapper" v-else>
         <DataTable :directory="directory" />
       </div>
     </template>
@@ -311,6 +330,19 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+
+  &__actions,
+  &__actions-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+  }
+
+  &__actions-group {
+    gap: 5px;
+  }
 }
 
 .search-input {
@@ -339,34 +371,7 @@ export default {
   gap: 20px;
 }
 
-.links {
-  display: flex;
-  gap: 5px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.link {
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-
-  &__text {
-    font-weight: 700;
-    color: #000;
-    font-size: $font-high;
-  }
-
-  &__delimeter {
-    font-weight: 700;
-  }
-}
-.file-uploader {
-  cursor: pointer;
-  background: #ffffff;
-  padding: 10px;
-  border: 1px solid #a7a7a7;
-  border-radius: 3px;
+.table-wrapper {
+  max-width: 100%;
 }
 </style>

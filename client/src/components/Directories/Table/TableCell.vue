@@ -100,6 +100,7 @@ export default {
       v-else
       :value="value"
       @change="$emit('change', rowId, col.id, $event.target.value)"
+      class="select"
     >
       <option
         v-for="option in options"
@@ -114,6 +115,7 @@ export default {
 
 <style lang="scss" scoped>
 .table-cell {
+  min-width: 100px;
   padding-top: 12px;
   padding-bottom: 12px;
   text-align: left;
@@ -128,6 +130,10 @@ export default {
   background-color: transparent;
   border: none;
   outline: none;
+  width: 100%;
+}
+
+.select {
   width: 100%;
 }
 </style>

@@ -52,6 +52,7 @@ export default {
       this.title = options.title
       this.okButton = options.okButton
       this.cancelButton = options.cancelButton
+      this.type = this.InputType.STRING
       if (options.key) {
         this.name = options.key.name
         this.type = options.key.type

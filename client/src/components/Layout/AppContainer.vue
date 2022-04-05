@@ -20,6 +20,7 @@ export default {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  overflow-x: auto;
 
   &__content {
     flex: 1;

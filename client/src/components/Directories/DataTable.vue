@@ -25,7 +25,9 @@ export default {
     },
   },
   unmounted() {
-    this.updateArchitecture()
+    // if (this.directory.data.keys.length || this.directory.data.values.length) {
+    //   this.updateArchitecture()
+    // }
   },
   methods: {
     ...mapMutations('directory', ['createTableRow']),
@@ -123,7 +125,7 @@ export default {
 <template>
   <KeyModal ref="key-modal" />
   <table class="table">
-    <tr class="table__row">
+    <tr class="table__row table__row--head">
       <th
         v-for="key in keys"
         :key="key.name"
@@ -166,8 +168,14 @@ export default {
 
 <style lang="scss" scoped>
 .table {
+  max-width: 100%;
   width: 100%;
   border-collapse: collapse;
+
+  &__row--head {
+    position: sticky;
+    top: 0;
+  }
 
   &__cell {
     padding-top: 12px;
