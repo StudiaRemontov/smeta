@@ -12,6 +12,7 @@
     "normalize.css": "^8.0.1",
     "vue": "^3.2.31",
     "vue-router": "^4.0.12",
+    "vue-select": "^4.0.0-beta.3",
     "vuedraggable": "^4.1.0",
     "vuex": "^4.0.2",
     "xlsx": "^0.18.5"

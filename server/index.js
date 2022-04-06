@@ -14,6 +14,8 @@ const category = require('./router/category')
 const roomtype = require('./router/roomType')
 const estimate = require('./router/estimate')
 const directory = require('./router/directory')
+const edition = require('./router/edition')
+const pricelist = require('./router/priceList')
 
 //middleware
 const errorMiddleware = require('./middleware/error-middleware')
@@ -32,6 +34,8 @@ app.use('/api/category', category)
 app.use('/api/roomtype', roomtype)
 app.use('/api/estimate', estimate)
 app.use('/api/directory', directory)
+app.use('/api/edition', edition)
+app.use('/api/pricelist', pricelist)
 
 //middleware
 app.use(errorMiddleware)

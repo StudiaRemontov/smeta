@@ -33,8 +33,21 @@ export default {
         </div>
         <ul v-if="isListVisible" class="menu-item__list">
           <li class="menu-item__list-item">
-            <RouterLink class="menu-item__list-link" to="/directories">
+            <RouterLink
+              class="menu-item__list-link"
+              to="/directories"
+              active-class="menu-item__list-link--active"
+            >
               Справочники
+            </RouterLink>
+          </li>
+          <li class="menu-item__list-item">
+            <RouterLink
+              class="menu-item__list-link"
+              to="/pricelists"
+              active-class="menu-item__list-link--active"
+            >
+              Прайс лист
             </RouterLink>
           </li>
         </ul>
@@ -73,12 +86,19 @@ export default {
   }
 
   &__list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
     list-style-type: none;
     padding-top: 13px;
   }
   &__list-link {
     text-decoration: none;
-    color: $color-light;
+    color: rgba($color-light, 0.6);
+
+    &--active {
+      color: $color-light;
+    }
   }
 }
 
