@@ -8,12 +8,13 @@ export default {}
       <slot name="header" />
     </div>
     <div class="app-content__body">
-      <div class="app-content__body-header">
+      <slot name="body" />
+      <!-- <div class="app-content__body-header">
         <slot name="body-header" />
       </div>
       <div class="app-content__body-content dark-scroll">
         <slot name="body-content" />
-      </div>
+      </div> -->
     </div>
   </div>
 </template>
@@ -41,6 +42,7 @@ export default {}
       flex: 1;
       padding-right: 5px;
       overflow-y: auto;
+      padding-bottom: 10px;
     }
   }
 }

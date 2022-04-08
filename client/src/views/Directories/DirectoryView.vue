@@ -1,14 +1,13 @@
 <script>
-import AppContent from '@/components/Layout/AppContent.vue'
 import SearchInput from '@/components/UI/SearchInput.vue'
 import DirectoryList from '@/components/Directories/DirectoryList.vue'
 import DirectoryForm from '@/components/Directories/DirectoryForm.vue'
 import CreateButton from '@/components/Directories/CreateButton.vue'
 import DataTable from '@/components/Directories/DataTable.vue'
 import ExcelModal from '@/components/Directories/Modals/ExcelModal.vue'
-import NavigationLinks from '@/components/Directories/NavigationLinks.vue'
 import ExcelUploader from '@/components/Directories/ExcelUploader.vue'
 import RemoveModal from '@/components/Directories/Modals/RemoveModal.vue'
+import ContentBody from '@/components/Layout/ContentBody.vue'
 
 import { mapActions, mapGetters } from 'vuex'
 
@@ -16,14 +15,13 @@ import keyTypes from '@/mixins/keyTypes.mixin'
 
 export default {
   components: {
-    AppContent,
+    ContentBody,
     SearchInput,
     DirectoryList,
     CreateButton,
     DirectoryForm,
     DataTable,
     ExcelModal,
-    NavigationLinks,
     ExcelUploader,
     RemoveModal,
   },
@@ -35,7 +33,7 @@ export default {
     }
   },
   computed: {
-    ...mapGetters('directory', ['directories', 'selectedDirectory']),
+    ...mapGetters('directory', ['directories', 'root']),
     directoryId() {
       return this.$route.params.id
     },
@@ -82,19 +80,16 @@ export default {
     },
   },
   methods: {
-    ...mapActions('directory', ['updateById']),
+    ...mapActions('directory', ['updateById', 'updateDirectoryValues']),
     openCreateDirectory() {
       this.showCreateFolder = true
     },
     async createArchitecture() {
-      await this.updateArchitecture({
-        keys: [],
-        values: [],
-      })
+      await this.updateValues([])
     },
     async removeArchitecture() {
-      if (this.directory.data.values.length === 0) {
-        return await this.updateArchitecture(false)
+      if (this.directory.values.length === 0) {
+        return await this.updateValues(false)
       }
       const response = await this.$refs['remove-modal'].show({
         title: 'Подтвердить удаление',
@@ -105,7 +100,7 @@ export default {
         folderName: this.directory.name,
       })
       if (response) {
-        await this.updateArchitecture(false)
+        await this.updateValues(false)
       }
     },
     getTypeOfColumn(column) {
@@ -147,9 +142,7 @@ export default {
         return
       }
 
-      const { data } = this.directory
-
-      if (data?.values?.length > 0) {
+      if (this.directory.values?.length > 0) {
         const response = await this.$refs['excel-modal'].show({
           title: 'Добавить данные или заменить существующие?',
           okButton: 'Добавить',
@@ -157,25 +150,35 @@ export default {
         })
         if (response) {
           const mergedData = this.mergedData(rows)
-          mergedData.values = [...data.values, ...mergedData.values]
-
-          return this.updateArchitecture(mergedData)
+          mergedData.values = [...this.directory.values, ...mergedData.values]
+          const { keys, values } = mergedData
+          await this.updateArchitecture(keys)
+          return await this.updateValues(values)
         }
       }
       const { keys, values } = this.replacedData(rows)
 
-      this.updateArchitecture({
-        keys,
-        values,
-      })
+      await this.updateArchitecture(keys)
+      await this.updateValues(values)
     },
-    async updateArchitecture(data) {
+    async updateArchitecture(keys) {
+      if (!this.root) return
       try {
         await this.updateById({
-          id: this.directory._id,
+          id: this.root._id,
           data: {
-            data,
+            keys,
           },
+        })
+      } catch (error) {
+        console.log(error)
+      }
+    },
+    async updateValues(values) {
+      try {
+        await this.updateDirectoryValues({
+          id: this.directory._id,
+          values,
         })
       } catch (error) {
         console.log(error)
@@ -283,46 +286,40 @@ export default {
 </script>
 
 <template>
-  <AppContent v-if="directory">
+  <ContentBody v-if="directory">
     <template #header>
-      <NavigationLinks />
-    </template>
-    <template #body-header>
       <ExcelModal ref="excel-modal" />
       <div class="header">
         <SearchInput v-model="search" class="search-input" />
-        <div class="header__actions">
-          <template v-if="directory.data">
-            <div class="header__actions-group">
-              <AppButton outlined @click="removeArchitecture">
-                Удлаить архитектуру
-              </AppButton>
-            </div>
-            <ExcelUploader @change="fileChangeHandler" />
-          </template>
+        <div
+          v-if="!subFolders.length && directory.values"
+          class="header__actions"
+        >
+          <div class="header__actions-group">
+            <AppButton outlined @click="removeArchitecture">
+              Удлаить архитектуру
+            </AppButton>
+          </div>
+          <ExcelUploader @change="fileChangeHandler" />
         </div>
       </div>
     </template>
-    <template #body-content>
+    <template #content>
       <RemoveModal ref="remove-modal" />
       <div class="create-form" v-if="showCreateFolder">
-        <DirectoryForm
-          :parent="this.directory._id"
-          @created="showCreateFolder = false"
-        />
+        <DirectoryForm @created="showCreateFolder = false" />
       </div>
-      <div v-else-if="!subFolders.length && !directory.data" class="choose">
+      <div v-else-if="!subFolders.length && !directory.values" class="choose">
         <CreateButton text="Создать папку" @click="openCreateDirectory" />
         <CreateButton text="Создать архитектуру" @click="createArchitecture" />
       </div>
-      <div v-else-if="subFolders.length && !directory.data" class="directories">
-        <DirectoryList :items="subFolders" />
-      </div>
-      <div class="table-wrapper" v-else>
-        <DataTable :directory="directory" />
-      </div>
+      <DirectoryList
+        v-else-if="subFolders.length && !directory.values"
+        :items="subFolders"
+      />
+      <DataTable v-else :values="directory.values" />
     </template>
-  </AppContent>
+  </ContentBody>
 </template>
 
 <style lang="scss" scoped>
@@ -369,9 +366,5 @@ export default {
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   grid-auto-rows: 130px;
   gap: 20px;
-}
-
-.table-wrapper {
-  max-width: 100%;
 }
 </style>

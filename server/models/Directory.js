@@ -6,7 +6,11 @@ const schema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    data: {
+    keys: {
+      type: Array,
+      default: [],
+    },
+    values: {
       type: mongoose.SchemaTypes.Mixed,
       default: false,
     },

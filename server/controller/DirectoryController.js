@@ -37,10 +37,9 @@ class DirectoryController {
   static async delete(req, res, next) {
     try {
       const id = req.params.id
-      await DirectoryService.removeSubFolders(id)
+      const removedList = await DirectoryService.removeSubFolders(id)
       const response = await DirectoryService.delete(id)
-
-      return res.json(response)
+      return res.json([...removedList, response])
     } catch (error) {
       next(error)
     }

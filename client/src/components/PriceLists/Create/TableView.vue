@@ -1,8 +1,12 @@
 <script>
+import { mapMutations } from 'vuex'
 export default {
   props: {
     data: {
       type: Object,
+      required: true,
+    },
+    dirId: {
       required: true,
     },
   },
@@ -13,19 +17,33 @@ export default {
     values() {
       return this.data.values
     },
+    allRowsSelected: {
+      get() {
+        return !this.values.some(r => !r.checked)
+      },
+      set(value) {
+        this.checkAllRows({ id: this.dirId, value })
+      },
+    },
   },
   methods: {
-    toggleRows() {},
-    selectRow(rowId) {},
+    ...mapMutations('edition', ['checkRow', 'checkAllRows', 'updateKey']),
+    changeRowHandler(rowId, value) {
+      this.checkRow({ id: this.dirId, rowId, value })
+    },
+    changeKeyHandler(keyId, value, field) {
+      this.updateKey({ id: this.dirId, keyId, value, field })
+    },
   },
 }
 </script>
 
 <template>
   <table class="table">
+    <col width="25" />
     <tr class="table__row">
       <th class="table__cell table__cell--head">
-        <input type="checkbox" @change="toggleRows" />
+        <input v-model="allRowsSelected" type="checkbox" />
       </th>
       <th
         v-for="key in keys"
@@ -33,16 +51,32 @@ export default {
         class="table__cell table__cell--head"
       >
         <div>
-          <input type="checkbox" :checked="key.checked" />
+          <input
+            type="checkbox"
+            :checked="key.checked"
+            @change="changeKeyHandler(key.id, $event.target.checked)"
+          />
           {{ key.name }}
         </div>
-        <input type="checkbox" :checked="key.readonly" />
-        <span>Только для чтения</span>
+        <template v-if="key.checked">
+          <input
+            type="checkbox"
+            :checked="key.readonly"
+            @change="
+              changeKeyHandler(key.id, $event.target.checked, 'readonly')
+            "
+          />
+          <span>Только для чтения</span>
+        </template>
       </th>
     </tr>
     <tr v-for="row in values" :key="row.id" class="table__row">
       <td class="table__cell">
-        <input type="checkbox" :checked="row.checked" />
+        <input
+          type="checkbox"
+          :checked="row.checked"
+          @change="changeRowHandler(row.id, $event.target.checked)"
+        />
       </td>
       <td v-for="key in keys" :key="key.id" class="table__cell">
         {{ row.data[key.id] }}
@@ -56,6 +90,7 @@ export default {
   max-width: 100%;
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 
   &__cell {
     padding-top: 12px;

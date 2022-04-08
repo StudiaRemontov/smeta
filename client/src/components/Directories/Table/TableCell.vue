@@ -26,7 +26,7 @@ export default {
   },
   emits: ['change'],
   computed: {
-    ...mapGetters('directory', ['directories']),
+    ...mapGetters('directory', ['directories', 'root']),
     type() {
       return this.col.type
     },
@@ -41,16 +41,15 @@ export default {
       if (this.col.type !== this.InputType.SELECT) {
         return []
       }
-      const subDir = this.directories.find(d => d._id === this.col.dirId)
-      if (!subDir) {
+      const root = this.directories.find(d => d._id === this.col.dirId)
+      if (!root) {
         return []
       }
-      const keys = subDir.data.keys.filter(k => this.col.keys.includes(k.id))
-
+      const keys = root.keys.filter(k => this.col.keys.includes(k.id))
       if (!keys.length) {
         return []
       }
-      return subDir.data.values.map(row => {
+      return root.values.map(row => {
         const text = keys.map(key => {
           if (key.type === this.InputType.SELECT) {
             const findingRow = row.data[key.id]
@@ -59,7 +58,6 @@ export default {
 
           return row.data[key.id]
         })
-
         return {
           value: row.id,
           text: text.join(', '),
@@ -71,9 +69,12 @@ export default {
     getValueOfCell(dirId, rowId, keys) {
       const directory = this.directories.find(d => d._id === dirId)
       if (!directory) return null
-      const visibleKeys = directory.data.keys.filter(k => keys.includes(k.id))
+      const root = directory.parent
+        ? this.getParent(directory.parent)
+        : directory
+      const visibleKeys = root.keys.filter(k => keys.includes(k.id))
       const vals = visibleKeys.map(key => {
-        const row = directory.data.values.find(r => r.id === +rowId)
+        const row = directory.values.find(r => r.id === +rowId)
         if (key.type === this.InputType.SELECT) {
           const findingRow = row.data[key.id]
           return this.getValueOfCell(key.dirId, findingRow, key.keys)
@@ -82,6 +83,15 @@ export default {
         return row.data[key.id]
       })
       return vals
+    },
+    getParent(parentId) {
+      const parent = this.directories.find(d => d._id === parentId)
+
+      if (parent?.parent) {
+        return this.getParent(parent.parent)
+      }
+
+      return parent
     },
   },
 }

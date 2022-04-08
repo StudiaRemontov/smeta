@@ -28,9 +28,7 @@ export default {
     },
     options() {
       if (!this.id) return []
-      return this.directories.filter(
-        d => d._id !== this.id && d.data && d.data?.keys?.length > 0,
-      )
+      return this.directories.filter(d => d._id !== this.id && d.values)
     },
     avaliableKeys() {
       if (!this.selectedDirectory) {
@@ -43,8 +41,8 @@ export default {
       if (!directory) {
         return []
       }
-
-      return directory.data.keys
+      const root = directory.parent ? this.getRoot(directory.parent) : directory
+      return root.keys
     },
   },
   methods: {
@@ -71,10 +69,12 @@ export default {
     },
     _confirm() {
       this.$refs.popup.close()
+      const dirId =
+        this.selectedDirectory && this.getRoot(this.selectedDirectory)._id
       const data = {
         name: this.name,
         type: this.type,
-        dirId: this.selectedDirectory,
+        dirId,
         keys: this.visibleKeys,
       }
       this.resolvePromise(data)

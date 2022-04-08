@@ -30,15 +30,12 @@ export default {
           text: 'Удалить',
           handler: async () => {
             //check if empty
-            const { data } = this.directory
-            if (
-              (!data || data?.values?.length === 0) &&
-              !this.subFolders.length
-            ) {
+            const { values } = this.directory
+            if ((!values || values?.length === 0) && !this.subFolders.length) {
               return await this.removeDirectory(this.directory._id)
             }
             //check if dir is architecture
-            if (data) {
+            if (values) {
               //check if architecture in use
               const inUse = this.checkIfArchitectureInUse(this.directory)
               const paths = inUse.map(d => {
@@ -51,11 +48,11 @@ export default {
                 })
               }
               //else check if architecture has values and show alert
-              if (data.values.length > 0) {
+              if (values.length > 0) {
                 return this.$emit('remove', {
                   id: this.directory._id,
                   folderName: this.directory.name,
-                  subItemsLength: data.values.length,
+                  subItemsLength: values.length,
                 })
               }
             }
@@ -94,7 +91,7 @@ export default {
     }
   },
   computed: {
-    ...mapGetters('directory', ['directories']),
+    ...mapGetters('directory', ['directories', 'root', 'roots']),
     subFolders() {
       return this.directories.filter(d => d.parent === this.directory._id)
     },
@@ -102,11 +99,11 @@ export default {
       if (this.subFolders.length > 0) {
         return this.subFolders.length
       }
-      const { data } = this.directory
-      const valuesLength = data.values ? data.values.length : 0
+      const { values } = this.directory
+      const valuesLength = values ? values.length : 0
 
       if (valuesLength > 0) {
-        return data.values.length
+        return values.length
       }
 
       return 'Нет элементов'
@@ -117,10 +114,13 @@ export default {
       'removeSubdirectory',
       'setSelectedDirectory',
       'updateSubDirectory',
-      'setParent',
+      'setRoot',
     ]),
     ...mapActions('directory', ['removeDirectory', 'updateById']),
     openFolder() {
+      if (!this.directory.parent) {
+        this.setRoot(this.directory._id)
+      }
       this.$router.push(`/directories/${this.directory._id}`)
     },
     async update(e) {
@@ -145,16 +145,6 @@ export default {
 
       return [parent]
     },
-    getArchitecturesUseData(directory) {
-      return this.directories.filter(d => {
-        const { data } = d
-        if (d._id === directory._id || !data) {
-          return false
-        }
-
-        return data.keys.some(key => key.dirId === directory._id)
-      })
-    },
     getItemsInsideDirectory(directory) {
       const { data } = directory
 
@@ -173,14 +163,14 @@ export default {
       return []
     },
     checkIfArchitectureInUse(architecture) {
-      return this.directories.filter(d => {
-        const { data } = d
+      return this.roots.filter(d => {
+        const { parent } = d
 
-        if (!data) {
+        if (parent) {
           return false
         }
 
-        return data.keys.some(k => k.dirId === architecture._id)
+        return d.keys.some(k => k.dirId === architecture._id)
       })
     },
   },
@@ -198,7 +188,6 @@ export default {
         ref="input"
         :value="directory.name"
         class="directory-item__input"
-        :disabled="!isEditing"
         @change="update"
         @focus="isEditing = true"
         @blur="isEditing = false"
@@ -242,13 +231,6 @@ export default {
     font-weight: 700;
     border: none;
     outline: none;
-
-    &:disabled {
-      pointer-events: all;
-      background-color: transparent;
-      color: #000;
-      cursor: pointer;
-    }
   }
 
   &__counter {

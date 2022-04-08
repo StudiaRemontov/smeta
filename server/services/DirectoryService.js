@@ -60,9 +60,11 @@ class DirectoryService {
       throw ApiError.BadRequest('Directory not found')
     }
     const subFolders = await DirectoryService.getSubFolders(currentDirectory)
-    for (const folder of subFolders) {
-      await DirectoryService.delete(folder._id)
-    }
+    return await Promise.all(
+      subFolders.map(async (dir) => {
+        return await DirectoryService.delete(dir._id)
+      })
+    )
   }
 }
 

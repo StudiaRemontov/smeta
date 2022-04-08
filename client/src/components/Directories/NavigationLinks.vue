@@ -1,11 +1,11 @@
 <script>
-import { mapGetters } from 'vuex'
+import { mapGetters, mapMutations } from 'vuex'
 import NavigationLink from './NavigationLink.vue'
 
 export default {
   components: { NavigationLink },
   computed: {
-    ...mapGetters('directory', ['directories']),
+    ...mapGetters('directory', ['directories', 'root']),
     directoryId() {
       return this.$route.params.id
     },
@@ -29,18 +29,26 @@ export default {
       const root = {
         text: 'Справочники',
         url: '/directories',
-        delimeter: true,
       }
-      const links = this.parentTree.map((item, index, arr) => ({
+      const links = this.parentTree.map(item => ({
         text: item.name,
         url: `/directories/${item._id}`,
-        delimeter: index !== arr.length - 1,
       }))
 
       return [root, ...links]
     },
   },
+  watch: {
+    parentTree(tree) {
+      if (tree.length === 0) {
+        return this.setRoot(null)
+      }
+      const root = tree[0]
+      this.setRoot(root._id)
+    },
+  },
   methods: {
+    ...mapMutations('directory', ['setRoot']),
     getParentTree(directory) {
       if (directory.parent) {
         const parent = this.directories.find(
@@ -56,10 +64,10 @@ export default {
 <template>
   <div class="links">
     <NavigationLink
-      v-for="link in links"
+      v-for="(link, index) in links"
       :key="link.url"
       :url="link.url"
-      :delimeter="link.delimeter"
+      :delimeter="index !== links.length - 1"
       :text="link.text"
     />
   </div>

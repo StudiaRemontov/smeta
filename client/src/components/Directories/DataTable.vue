@@ -10,28 +10,34 @@ export default {
   components: { OutlinedPlusIcon, PlusIcon, KeyModal, TableCell },
   mixins: [keyTypes],
   props: {
-    directory: {
-      type: Object,
+    values: {
+      type: Array,
       required: true,
     },
   },
   computed: {
-    ...mapGetters('directory', ['selectedDirectory']),
-    keys() {
-      return this.directory.data.keys
+    ...mapGetters('directory', ['root']),
+    directoryId() {
+      return this.$route.params.id
     },
-    values() {
-      return this.directory.data.values
+    keys() {
+      return this.root.keys
     },
   },
-  unmounted() {
-    // if (this.directory.data.keys.length || this.directory.data.values.length) {
-    //   this.updateArchitecture()
-    // }
+  watch: {
+    directoryId(newval, old) {
+      if (!old) return
+      this.removeEmptyRows({ id: old })
+    },
   },
   methods: {
-    ...mapMutations('directory', ['createTableRow']),
-    ...mapActions('directory', ['updateTableArchitecture']),
+    ...mapMutations('directory', ['removeEmptyRows']),
+    ...mapActions('directory', [
+      'updateTableArchitecture',
+      'updateDirectoryKeys',
+      'updateDirectoryValues',
+      'createTableRow',
+    ]),
     updateKey(key, value) {
       const keys = this.keys.map(item => {
         if (item.id === key) {
@@ -42,7 +48,8 @@ export default {
         }
         return item
       })
-      this.updateArchitecture({ keys })
+
+      this.updateArchitecture(keys)
     },
     updateValue(rowId, key, value) {
       const newValues = JSON.parse(JSON.stringify(this.values))
@@ -53,7 +60,7 @@ export default {
         return row
       })
 
-      this.updateArchitecture({ values })
+      this.updateValues(values)
     },
     async openKeyModal() {
       const response = await this.$refs['key-modal'].show({
@@ -65,7 +72,8 @@ export default {
         return
       }
       const keys = [...this.keys, { id: Date.now(), ...response }]
-      this.updateArchitecture({ keys })
+
+      this.updateArchitecture(keys)
     },
     async openEditModal(key) {
       const response = await this.$refs['key-modal'].show({
@@ -80,13 +88,15 @@ export default {
       if (response.remove) {
         return this.removeKey(key.id)
       }
+
       this.updateKey(key.id, response)
     },
-    removeKey(keyId) {
+    async removeKey(keyId) {
       const keys = this.keys.filter(({ id }) => id !== keyId)
 
       if (keys.length === 0) {
-        return this.updateArchitecture({ keys, values: [] })
+        await this.updateValues([])
+        return this.updateArchitecture([])
       }
       const values = this.values.map(row => {
         return Object.entries(row).reduce((acc, [key, value]) => {
@@ -96,25 +106,24 @@ export default {
           return acc
         }, {})
       })
-      this.updateArchitecture({ keys, values })
+      this.updateArchitecture(keys)
+      this.updateValues(values)
     },
     removeRow(rowIndex) {
       const values = this.values.filter((_, index) => index !== rowIndex)
-      this.updateArchitecture({ values })
+      this.updateValues(values)
     },
-    async updateArchitecture(data) {
+    async updateValues(values) {
       try {
-        await this.updateTableArchitecture({
-          id: this.directory._id,
-          data: {
-            ...this.directory.data,
-            ...data,
-          },
-        })
+        await this.updateDirectoryValues({ id: this.directoryId, values })
       } catch (error) {
-        this.$refs.cell.forEach(cell => {
-          cell.$forceUpdate()
-        })
+        console.log(error)
+      }
+    },
+    async updateArchitecture(keys) {
+      try {
+        await this.updateDirectoryKeys(keys)
+      } catch (error) {
         console.log(error)
       }
     },
@@ -149,7 +158,7 @@ export default {
         :rowIndex="rowIndex"
         :rowId="row.id"
         :col="key"
-        :dirId="directory._id"
+        :dirId="directoryId"
         @change="updateValue"
         ref="cell"
       />
@@ -160,7 +169,7 @@ export default {
       </td>
     </tr>
   </table>
-  <AppButton class="create-button" @click="createTableRow(directory._id)">
+  <AppButton class="create-button" @click="createTableRow(directoryId)">
     <OutlinedPlusIcon />
     <span class="create-button__text"> Добавить элементы </span>
   </AppButton>
