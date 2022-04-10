@@ -1,6 +1,7 @@
 <script>
 import ThreeDotsIcon from '../UI/Icons/ThreeDotsIcon.vue'
 import AppDropdowm from '@/components/UI/AppDropdown.vue'
+import rootGetters from '@/mixins/rootGetters.mixin'
 import { mapActions, mapGetters, mapMutations } from 'vuex'
 
 export default {
@@ -8,6 +9,7 @@ export default {
     ThreeDotsIcon,
     AppDropdowm,
   },
+  mixins: [rootGetters],
   props: {
     directory: {
       type: Object,
@@ -39,7 +41,7 @@ export default {
               //check if architecture in use
               const inUse = this.checkIfArchitectureInUse(this.directory)
               const paths = inUse.map(d => {
-                return [...this.getParents(d.parent), d]
+                return [...this.getRoots(d.parent), d]
               })
               //if in use show alert
               if (paths.length > 0) {
@@ -68,7 +70,7 @@ export default {
               .flat()
 
             const paths = architecturesInUse.map(d => {
-              return [...this.getParents(d.parent), d]
+              return [...this.getRoots(d.parent), d]
             })
             if (paths.length > 0) {
               return this.$emit('alert', {
@@ -110,12 +112,7 @@ export default {
     },
   },
   methods: {
-    ...mapMutations('directory', [
-      'removeSubdirectory',
-      'setSelectedDirectory',
-      'updateSubDirectory',
-      'setRoot',
-    ]),
+    ...mapMutations('directory', ['setRoot']),
     ...mapActions('directory', ['removeDirectory', 'updateById']),
     openFolder() {
       if (!this.directory.parent) {
@@ -133,17 +130,6 @@ export default {
           name,
         },
       })
-    },
-    getParents(directory) {
-      const parent = this.directories.find(d => d._id === directory)
-      if (!parent) {
-        return []
-      }
-      if (parent.parent) {
-        return [...this.getParents(parent.parent), parent]
-      }
-
-      return [parent]
     },
     getItemsInsideDirectory(directory) {
       const { data } = directory

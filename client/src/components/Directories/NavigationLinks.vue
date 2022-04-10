@@ -5,7 +5,7 @@ import NavigationLink from './NavigationLink.vue'
 export default {
   components: { NavigationLink },
   computed: {
-    ...mapGetters('directory', ['directories', 'root']),
+    ...mapGetters('directory', ['directories']),
     directoryId() {
       return this.$route.params.id
     },

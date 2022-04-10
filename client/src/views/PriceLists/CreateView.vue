@@ -2,6 +2,7 @@
 import { mapGetters, mapMutations } from 'vuex'
 import ContentBody from '@/components/Layout/ContentBody.vue'
 import keyTypes from '@/mixins/keyTypes.mixin'
+import rootGetters from '@/mixins/rootGetters.mixin'
 
 import RootList from '@/components/PriceLists/Create/RootList.vue'
 
@@ -10,11 +11,10 @@ export default {
     RootList,
     ContentBody,
   },
-  mixins: [keyTypes],
+  mixins: [keyTypes, rootGetters],
   data() {
     return {
       name: '',
-      directoriesClone: [],
     }
   },
   computed: {
@@ -94,24 +94,6 @@ export default {
         return c
       })
     },
-    getParent(parentId) {
-      const parent = this.directories.find(d => d._id === parentId)
-
-      if (parent?.parent) {
-        return this.getParent(parent.parent)
-      }
-
-      return parent
-    },
-    getRoot(parentId) {
-      const parent = this.directories.find(d => d._id === parentId)
-
-      if (parent?.parent) {
-        return this.getParent(parent.parent)
-      }
-
-      return parent
-    },
     create() {
       const root = JSON.parse(JSON.stringify(this.tree.find(t => t.checked)))
       root.keys = root.keys.filter(k => k.checked)
@@ -164,5 +146,3 @@ export default {
     </template>
   </ContentBody>
 </template>
-
-<style lang="scss" scoped></style>

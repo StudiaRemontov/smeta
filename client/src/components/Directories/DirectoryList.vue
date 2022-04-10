@@ -18,9 +18,6 @@ export default {
     items: {
       type: Array,
     },
-    parent: {
-      type: Object,
-    },
   },
   data() {
     return {
@@ -61,7 +58,6 @@ export default {
     <DirectoryItem
       v-for="item in items"
       :key="item.id"
-      :parent="parent"
       :directory="item"
       @remove="openRemove"
       @alert="openAlert"

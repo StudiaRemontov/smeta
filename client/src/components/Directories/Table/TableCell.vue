@@ -1,9 +1,10 @@
 <script>
 import keyTypes from '@/mixins/keyTypes.mixin'
+import rootGetters from '@/mixins/rootGetters.mixin'
 import { mapGetters } from 'vuex'
 
 export default {
-  mixins: [keyTypes],
+  mixins: [keyTypes, rootGetters],
   props: {
     value: {
       required: true,
@@ -70,7 +71,7 @@ export default {
       const directory = this.directories.find(d => d._id === dirId)
       if (!directory) return null
       const root = directory.parent
-        ? this.getParent(directory.parent)
+        ? this.getRoot(directory.parent)
         : directory
       const visibleKeys = root.keys.filter(k => keys.includes(k.id))
       const vals = visibleKeys.map(key => {
@@ -83,15 +84,6 @@ export default {
         return row.data[key.id]
       })
       return vals
-    },
-    getParent(parentId) {
-      const parent = this.directories.find(d => d._id === parentId)
-
-      if (parent?.parent) {
-        return this.getParent(parent.parent)
-      }
-
-      return parent
     },
   },
 }

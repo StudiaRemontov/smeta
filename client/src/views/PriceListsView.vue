@@ -17,7 +17,7 @@ export default {
   },
   computed: {
     ...mapGetters('priceList', ['priceLists']),
-    ...mapGetters('edition', ['editions', 'clonedDirectories']),
+    ...mapGetters('edition', ['editions']),
     priceListOptions() {
       return this.priceLists.map(item => ({
         label: item.name,
@@ -58,36 +58,8 @@ export default {
       }
       console.log(data)
     },
-    createEdition() {
+    goToCreateEdition() {
       this.$router.push('/pricelists/create')
-    },
-    save() {
-      const architecures = this.clonedDirectories.filter(
-        d => d.data && d.checked,
-      )
-      const tree = architecures.map(arc => {
-        const parents = this.getParents(arc.parent)
-
-        return [...parents, arc]
-      })
-
-      console.log(tree)
-
-      // const data = {
-      //   name: this.name,
-      // }
-      // console.log(data)
-    },
-    getParents(directory) {
-      const parent = this.clonedDirectories.find(d => d._id === directory)
-      if (!parent) {
-        return []
-      }
-      if (parent.parent) {
-        return [...this.getParents(parent.parent), parent]
-      }
-
-      return [parent]
     },
   },
 }
@@ -107,7 +79,7 @@ export default {
       </VueSelect>
       <VueSelect v-if="selectedPriceList" :options="editionOptions">
         <template #list-header>
-          <button @click="createEdition">Создать</button>
+          <button @click="goToCreateEdition">Создать</button>
         </template>
       </VueSelect>
       <span class="page-title title"> Прайс лист </span>
@@ -119,24 +91,6 @@ export default {
 </template>
 
 <style lang="scss" scoped>
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.search-input {
-  max-width: 400px;
-  width: 100%;
-}
-
-.button-create {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 9px;
-}
-
 .title {
   padding: 5px;
   display: flex;

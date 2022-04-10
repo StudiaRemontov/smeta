@@ -347,13 +347,6 @@ export default {
   width: 100%;
 }
 
-.button-create {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 9px;
-}
-
 .choose {
   display: flex;
   flex-direction: column;

@@ -1,7 +1,3 @@
-<script>
-export default {}
-</script>
-
 <template>
   <div class="app-content">
     <div class="app-content__header">
@@ -9,12 +5,6 @@ export default {}
     </div>
     <div class="app-content__body">
       <slot name="body" />
-      <!-- <div class="app-content__body-header">
-        <slot name="body-header" />
-      </div>
-      <div class="app-content__body-content dark-scroll">
-        <slot name="body-content" />
-      </div> -->
     </div>
   </div>
 </template>

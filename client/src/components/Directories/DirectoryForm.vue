@@ -6,7 +6,6 @@ export default {
       name: '',
     }
   },
-
   computed: {
     parent() {
       return this.$route.params?.id

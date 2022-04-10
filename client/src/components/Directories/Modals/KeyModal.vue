@@ -1,6 +1,8 @@
 <script>
 import PopupModal from '../../UI/PopupModal.vue'
 import keyTypes from '@/mixins/keyTypes.mixin'
+import rootGetters from '@/mixins/rootGetters.mixin'
+
 import { mapGetters } from 'vuex'
 
 const getInitState = () => ({
@@ -17,7 +19,7 @@ const getInitState = () => ({
 
 export default {
   components: { PopupModal },
-  mixins: [keyTypes],
+  mixins: [keyTypes, rootGetters],
   data() {
     return getInitState()
   },

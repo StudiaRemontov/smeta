@@ -33,7 +33,6 @@ export default {
   methods: {
     ...mapMutations('directory', ['removeEmptyRows']),
     ...mapActions('directory', [
-      'updateTableArchitecture',
       'updateDirectoryKeys',
       'updateDirectoryValues',
       'createTableRow',
