@@ -4,71 +4,42 @@ import ContentBody from '@/components/Layout/ContentBody.vue'
 import keyTypes from '@/mixins/keyTypes.mixin'
 import rootGetters from '@/mixins/rootGetters.mixin'
 
-import RootList from '@/components/PriceLists/Create/RootList.vue'
+import RootItem from '@/components/PriceLists/Create/RootItem.vue'
 
 export default {
   components: {
-    RootList,
+    RootItem,
     ContentBody,
   },
   mixins: [keyTypes, rootGetters],
   data() {
     return {
       name: '',
+      selectedRoot: null,
     }
   },
   computed: {
-    ...mapGetters('edition', ['tree', 'clonedDirectories']),
+    ...mapGetters('edition', ['clonedDirectories']),
     ...mapGetters('directory', ['directories', 'roots']),
     rootDirs() {
       return this.clonedDirectories.filter(d => !d.parent)
     },
   },
   mounted() {
-    const clonedDirs = JSON.parse(JSON.stringify(this.directories))
-    this.setClonedDirectories(clonedDirs)
-    const roots = this.clonedDirectories.filter(d => !d.parent)
-    const tree = roots.map(r => {
-      const children = this.getChildren(r)
-      r.subItems = children
-      return r
-    })
-    this.setTree(tree)
-  },
-  methods: {
-    ...mapMutations('edition', ['setTree', 'setClonedDirectories']),
-    getValueOfCell(dirId, rowId, keys) {
-      const directory = this.roots.find(d => d._id === dirId)
-
-      if (!directory) return null
-      const visibleKeys = directory.keys.filter(k => keys.includes(k.id))
-
-      return visibleKeys.map(key => {
-        const row = directory.values.find(r => r.id === +rowId)
-        if (key.type === this.InputType.SELECT) {
-          const findingRow = row.data[key.id]
-          return this.getValueOfCell(key.dirId, findingRow, key.keys)
-        }
-
-        return row.data[key.id]
-      })
-    },
-    getChildren(directory) {
-      const children = this.clonedDirectories.filter(
-        d => d.parent === directory._id,
-      )
-      if (children.length === 0 && !directory.values) {
-        return []
+    const clone = JSON.parse(JSON.stringify(this.directories))
+    const clonedDirectories = clone.map(dir => {
+      const { values } = dir
+      if (!values) {
+        dir.subItems = []
+        return dir
       }
-
-      const { values } = directory
-      if (values && directory.parent) {
-        const root = this.getRoot(directory.parent)
+      if (values) {
+        const root = this.getRoot(dir._id)
         const { keys } = root
         const keysTypeSelect = keys.filter(
           k => k.type === this.InputType.SELECT,
         )
-        directory.values = values.map(row => {
+        dir.values = values.map(row => {
           row.data = Object.entries(row.data).reduce((acc, [key, value]) => {
             const selectKey = keysTypeSelect.find(k => k.id === +key)
 
@@ -88,10 +59,27 @@ export default {
           return row
         })
       }
-      return children.map(c => {
-        const subChildren = this.getChildren(c)
-        c.subItems = subChildren
-        return c
+
+      return dir
+    })
+    this.setClonedDirectories(clonedDirectories)
+  },
+  methods: {
+    ...mapMutations('edition', ['setClonedDirectories', 'setSubItems']),
+    getValueOfCell(dirId, rowId, keys) {
+      const directory = this.roots.find(d => d._id === dirId)
+
+      if (!directory) return null
+      const visibleKeys = directory.keys.filter(k => keys.includes(k.id))
+
+      return visibleKeys.map(key => {
+        const row = directory.values.find(r => r.id === +rowId)
+        if (key.type === this.InputType.SELECT) {
+          const findingRow = row.data[key.id]
+          return this.getValueOfCell(key.dirId, findingRow, key.keys)
+        }
+
+        return row.data[key.id]
       })
     },
     create() {
@@ -125,6 +113,12 @@ export default {
         }
       })
     },
+    checkHandler(value) {
+      if (this.selectedRoot) {
+        this.setSubItems({ id: this.selectedRoot._id, value: [] })
+      }
+      this.selectedRoot = value
+    },
   },
 }
 </script>
@@ -142,7 +136,14 @@ export default {
       <AppButton outlined @click="create">Создать</AppButton>
     </template>
     <template #content>
-      <RootList :directories="tree" />
+      <RootItem
+        v-for="root in rootDirs"
+        :directory="root"
+        :key="root._id"
+        :root="root._id"
+        :value="selectedRoot"
+        @checked="checkHandler"
+      />
     </template>
   </ContentBody>
 </template>

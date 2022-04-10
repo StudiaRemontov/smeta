@@ -5,7 +5,6 @@ export default {
   state: {
     editions: [],
     contentLoaded: false,
-    tree: [],
     clonedDirectories: [],
   },
   mutations: {
@@ -15,40 +14,14 @@ export default {
     setContentLoaded(state, payload) {
       state.contentLoaded = payload
     },
-    checkDirectory(state, { id, value }) {
-      const directory = state.clonedDirectories.find(d => d._id === id)
-      if (!directory.parent) {
-        state.clonedDirectories.forEach(d => {
-          if (!d.parent && d.values) {
-            d.checked = false
-            d.values.forEach(r => (r.checked = false))
-          }
-        })
-      }
-      directory.checked = value
-      if (directory.values) {
-        directory.values.forEach(r => (r.checked = value))
-      }
-    },
-    checkRow(state, { id, rowId, value }) {
-      const directory = state.clonedDirectories.find(d => d._id === id)
-      directory.data.values.forEach(r => {
-        if (r.id === rowId) {
-          r.checked = value
-        }
-      })
-    },
-    checkAllRows(state, { id, value }) {
-      const directory = state.clonedDirectories.find(d => d._id === id)
-      directory.data.values.forEach(r => (r.checked = value))
+    setSubItems(state, { id, value }) {
+      const dir = state.clonedDirectories.find(d => d._id === id)
+      dir.subItems = value
     },
     updateKey(state, { id, keyId, value, field = 'checked' }) {
       const directory = state.clonedDirectories.find(d => d._id === id)
       const key = directory.keys.find(k => k.id === keyId)
       key[field] = value
-    },
-    setTree(state, payload) {
-      state.tree = payload
     },
     setClonedDirectories(state, payload) {
       state.clonedDirectories = payload.map(d => {
@@ -60,17 +33,17 @@ export default {
             readonly: true,
           }))
         }
+
         if (values) {
-          d.values = values.map(r => ({
-            ...r,
-            checked: true,
-          }))
+          d.selectedValues = values
         }
-        return {
-          ...d,
-          checked: false,
-        }
+
+        return d
       })
+    },
+    setSelectedValues(state, { id, value }) {
+      const directory = state.clonedDirectories.find(d => d._id === id)
+      directory.selectedValues = value
     },
   },
   actions: {
@@ -87,39 +60,9 @@ export default {
         return Promise.reject(error)
       }
     },
-    async checkDirectory({ state, dispatch, commit }, { id, value }) {
-      const directory = state.clonedDirectories.find(d => d._id === id)
-      //если корневая и значение true всем остальные корневым ставим checked false
-      if (!directory.parent && value) {
-        state.clonedDirectories = state.clonedDirectories.map(d => {
-          if (!d.parent) {
-            d.checked = false
-          }
-          return d
-        })
-      }
-      if (directory.parent && value) {
-        const parents = await dispatch('getParents', directory.parent)
-        parents.forEach(d => (d.checked = value))
-      }
-
-      if (directory.data) {
-        commit('checkAllRows', { id: directory._id, value })
-      }
-
-      directory.checked = value
-    },
-    async getParents({ state, dispatch }, id) {
-      const parent = state.clonedDirectories.find(d => d._id === id)
-      if (!parent.parent) {
-        return [parent]
-      }
-      return [parent, ...(await dispatch('getParents', parent.parent))]
-    },
   },
   getters: {
     editions: s => s.editions,
-    tree: s => s.tree,
     clonedDirectories: s => s.clonedDirectories,
   },
 }

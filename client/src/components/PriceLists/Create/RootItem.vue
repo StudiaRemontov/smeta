@@ -10,6 +10,10 @@ export default {
     root: {
       type: String,
     },
+    parent: Object,
+    value: {
+      required: true,
+    },
   },
   data() {
     return {
@@ -18,13 +22,12 @@ export default {
   },
   computed: {
     ...mapGetters('directory', ['roots']),
-    checked: {
-      get() {
-        return this.directory.checked
-      },
-      set(value) {
-        this.checkDirectory({ id: this.directory._id, value })
-      },
+    ...mapGetters('edition', ['clonedDirectories']),
+    children() {
+      return this.clonedDirectories.filter(d => d.parent === this.directory._id)
+    },
+    subItems() {
+      return this.directory?.subItems || []
     },
     keys() {
       if (this.directory.values) {
@@ -33,14 +36,47 @@ export default {
       }
       return null
     },
-  },
-  watch: {
-    checked(value) {
-      this.subItemsVisible = value
+    selectedValues: {
+      get() {
+        return this.directory.selectedValues
+      },
+      set(value) {
+        this.setSelectedValues({ id: this.directory._id, value })
+      },
+    },
+    isChecked() {
+      if (!this.value) {
+        return false
+      }
+      if (!this.parent) {
+        return this.directory._id === this.value._id
+      }
+      return this.parent.subItems.find(i => i._id === this.directory._id)
+    },
+    selectAll: {
+      get() {
+        return this.selectedValues?.length === this.directory.values.length
+      },
+      set(value) {
+        if (value) {
+          return this.setSelectedValues({
+            id: this.directory._id,
+            value: this.directory.values,
+          })
+        }
+        this.setSelectedValues({
+          id: this.directory._id,
+          value: [],
+        })
+      },
     },
   },
   methods: {
-    ...mapMutations('edition', ['checkAllRows', 'updateKey']),
+    ...mapMutations('edition', [
+      'updateKey',
+      'setSubItems',
+      'setSelectedValues',
+    ]),
     ...mapActions('edition', ['checkDirectory']),
     changeKeyHandler(keyId, value, field) {
       this.updateKey({
@@ -50,6 +86,30 @@ export default {
         field,
       })
     },
+    changeHandler(e) {
+      this.subItemsVisible = e.target.checked
+      if (!this.parent) {
+        const value = e.target.checked ? this.directory : null
+        return this.$emit('checked', value)
+      }
+      if (this.parent?._id) {
+        let currValue = [...this.parent.subItems]
+        if (e.target.checked) {
+          currValue.push(this.directory)
+          this.checkParents()
+        } else {
+          currValue = currValue.filter(d => d._id !== this.directory._id)
+        }
+        return this.setSubItems({ id: this.parent._id, value: currValue })
+      }
+    },
+    checkParents() {
+      this.$emit('checked', {
+        target: {
+          checked: true,
+        },
+      })
+    },
   },
 }
 </script>
@@ -57,10 +117,26 @@ export default {
 <template>
   <div class="directory">
     <div class="directory__name" @click="subItemsVisible = !subItemsVisible">
-      <span @click.stop>
-        <input v-model="checked" type="checkbox" :id="directory._id" />
-        <label :for="directory._id">{{ directory.name }}</label>
-      </span>
+      <div @click.stop>
+        <div>
+          <input
+            type="checkbox"
+            :id="directory._id"
+            :value="directory._id"
+            :checked="isChecked"
+            @change="changeHandler"
+          />
+          <label :for="directory._id">{{ directory.name }}</label>
+        </div>
+        <div v-if="directory.values && isChecked">
+          <input
+            v-model="selectAll"
+            type="checkbox"
+            :id="`all-${directory._id}`"
+          />
+          <label :for="`all-${directory._id}`">Выбрать все</label>
+        </div>
+      </div>
     </div>
     <template v-if="subItemsVisible">
       <table v-if="!directory.parent" class="table table--keys">
@@ -89,19 +165,22 @@ export default {
           </th>
         </tr>
       </table>
-      <template v-if="directory.subItems.length">
+      <template v-if="children.length">
         <RootItem
-          v-for="child in directory.subItems"
+          v-for="child in children"
           :key="child._id"
           :directory="child"
           :root="root"
+          :parent="directory"
+          :value="child"
+          @checked="changeHandler"
         />
       </template>
       <table v-else-if="directory.values" class="table">
         <col width="30px" />
         <tr v-for="value in directory.values" :key="value">
           <td class="cell">
-            <input type="checkbox" :checked="value.checked" />
+            <input v-model="selectedValues" :value="value" type="checkbox" />
           </td>
           <td v-for="key in keys" :key="key._id" class="cell">
             <span>
