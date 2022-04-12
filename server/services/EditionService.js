@@ -1,4 +1,5 @@
 const Edition = require('../models/Edition')
+const PriceList = require('../models/PriceList')
 const ApiError = require('../utils/ApiError')
 
 class EditionService {
@@ -36,7 +37,11 @@ class EditionService {
   }
 
   static async delete(id) {
-    return await Edition.deleteOne({ _id: id })
+    const edition = await Edition.findByIdAndDelete(id)
+    if (!edition) {
+      throw ApiError.BadRequest('Edition not found')
+    }
+    return edition
   }
 }
 

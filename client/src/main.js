@@ -5,7 +5,7 @@ import store from './store'
 
 import 'normalize.css'
 import '@/assets/index.scss'
-import 'vue-select/dist/vue-select.css'
+import '@vueform/multiselect/themes/default.css'
 //global components
 import AppButton from '@/components/UI/AppButton.vue'
 import AppInput from '@/components/UI/AppInput.vue'

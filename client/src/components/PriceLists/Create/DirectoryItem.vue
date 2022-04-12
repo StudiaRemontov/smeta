@@ -1,7 +1,7 @@
 <script>
 import { mapActions, mapGetters, mapMutations } from 'vuex'
 export default {
-  name: 'RootItem',
+  name: 'DirectoryItem',
   props: {
     directory: {
       type: Object,
@@ -42,6 +42,23 @@ export default {
       },
       set(value) {
         this.setSelectedValues({ id: this.directory._id, value })
+        if (value.length === 0) {
+          const subItems = this.parent.subItems.filter(
+            i => i._id !== this.directory._id,
+          )
+          return this.setSubItems({ id: this.parent._id, value: subItems })
+        }
+        if (value.length > 0) {
+          const isChecked = !!this.parent.subItems.find(
+            i => i._id === this.directory._id,
+          )
+          if (isChecked) {
+            return
+          }
+          this.$emit('checked', true)
+          const subItems = [...this.parent.subItems, this.directory]
+          return this.setSubItems({ id: this.parent._id, value: subItems })
+        }
       },
     },
     isChecked() {
@@ -68,16 +85,16 @@ export default {
           id: this.directory._id,
           value: [],
         })
+        const subItems = this.parent.subItems.filter(
+          i => i._id !== this.directory._id,
+        )
+        this.setSubItems({ id: this.parent._id, value: subItems })
       },
     },
   },
   methods: {
-    ...mapMutations('edition', [
-      'updateKey',
-      'setSubItems',
-      'setSelectedValues',
-    ]),
-    ...mapActions('edition', ['checkDirectory']),
+    ...mapMutations('edition', ['updateKey', 'setSelectedValues']),
+    ...mapActions('edition', ['setSubItems']),
     changeKeyHandler(keyId, value, field) {
       this.updateKey({
         id: this.root,
@@ -86,15 +103,19 @@ export default {
         field,
       })
     },
-    changeHandler(e) {
-      this.subItemsVisible = e.target.checked
+    changeHandler(checked) {
+      this.subItemsVisible = checked
       if (!this.parent) {
-        const value = e.target.checked ? this.directory : null
+        const value = checked ? this.directory : null
         return this.$emit('checked', value)
       }
       if (this.parent?._id) {
         let currValue = [...this.parent.subItems]
-        if (e.target.checked) {
+        if (checked) {
+          const isExists = currValue.find(d => d._id === this.directory._id)
+          if (isExists) {
+            return
+          }
           currValue.push(this.directory)
           this.checkParents()
         } else {
@@ -104,27 +125,26 @@ export default {
       }
     },
     checkParents() {
-      this.$emit('checked', {
-        target: {
-          checked: true,
-        },
-      })
+      this.$emit('checked', true)
     },
   },
 }
 </script>
 
 <template>
-  <div class="directory">
-    <div class="directory__name" @click="subItemsVisible = !subItemsVisible">
-      <div @click.stop>
+  <div class="directory-item">
+    <div
+      class="directory-item__header"
+      @click="subItemsVisible = !subItemsVisible"
+    >
+      <div class="directory-item__actions" @click.stop>
         <div>
           <input
             type="checkbox"
             :id="directory._id"
             :value="directory._id"
             :checked="isChecked"
-            @change="changeHandler"
+            @change="changeHandler($event.target.checked)"
           />
           <label :for="directory._id">{{ directory.name }}</label>
         </div>
@@ -166,7 +186,7 @@ export default {
         </tr>
       </table>
       <template v-if="children.length">
-        <RootItem
+        <DirectoryItem
           v-for="child in children"
           :key="child._id"
           :directory="child"
@@ -194,16 +214,23 @@ export default {
 </template>
 
 <style lang="scss" scoped>
-.directory {
+.directory-item {
   display: flex;
   flex-direction: column;
 
-  &__name {
-    text-align: center;
+  &__header {
     font-weight: bold;
     padding: 10px 0;
     border: 1px solid #a7a7a7;
     user-select: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  &__actions {
+    min-width: 110px;
   }
 }
 .table {

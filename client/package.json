@@ -8,11 +8,12 @@
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
   },
   "dependencies": {
+    "@vueform/multiselect": "^2.3.3",
     "axios": "^0.26.1",
     "normalize.css": "^8.0.1",
+    "primevue": "^3.12.4",
     "vue": "^3.2.31",
     "vue-router": "^4.0.12",
-    "vue-select": "^4.0.0-beta.3",
     "vuedraggable": "^4.1.0",
     "vuex": "^4.0.2",
     "xlsx": "^0.18.5"

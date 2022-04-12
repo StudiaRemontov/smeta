@@ -1,14 +1,14 @@
 <script>
-import { mapGetters, mapMutations } from 'vuex'
+import { mapActions, mapGetters, mapMutations } from 'vuex'
 import ContentBody from '@/components/Layout/ContentBody.vue'
 import keyTypes from '@/mixins/keyTypes.mixin'
 import rootGetters from '@/mixins/rootGetters.mixin'
 
-import RootItem from '@/components/PriceLists/Create/RootItem.vue'
+import DirectoryItem from '@/components/PriceLists/Create/DirectoryItem.vue'
 
 export default {
   components: {
-    RootItem,
+    DirectoryItem,
     ContentBody,
   },
   mixins: [keyTypes, rootGetters],
@@ -65,7 +65,8 @@ export default {
     this.setClonedDirectories(clonedDirectories)
   },
   methods: {
-    ...mapMutations('edition', ['setClonedDirectories', 'setSubItems']),
+    ...mapMutations('edition', ['setClonedDirectories', 'setSelectedValues']),
+    ...mapActions('edition', ['setSubItems', 'create']),
     getValueOfCell(dirId, rowId, keys) {
       const directory = this.roots.find(d => d._id === dirId)
 
@@ -82,40 +83,79 @@ export default {
         return row.data[key.id]
       })
     },
-    create() {
-      const root = JSON.parse(JSON.stringify(this.tree.find(t => t.checked)))
-      root.keys = root.keys.filter(k => k.checked)
-      root.keys.map(k => ({
-        id: k.id,
-        name: k.name,
-        readonly: k.readonly,
+    async createEdition() {
+      if (!this.selectedRoot || !this.name) return
+      const root = JSON.parse(JSON.stringify(this.selectedRoot))
+      // eslint-disable-next-line no-unused-vars
+      const { _id, ...edition } = root
+      edition.keys = edition.keys.filter(k => k.checked)
+      edition.keys = edition.keys.map(key => ({
+        id: key.id,
+        name: key.name,
+        readonly: key.readonly,
       }))
-      const subItems = this.getSubItems(root)
-      root.data = subItems
-      console.log(root)
+      const subItems = this.getSubItems(edition)
+      edition.data = subItems
+      edition.name = this.name
+      try {
+        await this.create(edition)
+        this.$router.push('/pricelists')
+      } catch (error) {
+        console.log(error)
+      }
     },
     getSubItems(directory) {
-      const subItems = directory.subItems.filter(i => i.checked)
-
-      return subItems.map(c => {
-        const items = this.getSubItems(c)
-        const data = c.values
-          ? c.values.map(r => ({
-              id: r.id,
-              data: r.data,
-            }))
-          : []
+      const { subItems, values } = directory
+      if (values) {
+        const data = directory.selectedValues.map(r => ({
+          id: r.id,
+          data: r.data,
+        }))
         return {
-          dirId: c._id,
-          name: c.name,
-          subItems: items,
+          dirId: directory._id,
+          name: directory.name,
           values: data,
         }
+      }
+      if (!subItems) return []
+
+      const items = subItems.map(c => {
+        return this.getSubItems(c)
       })
+      return {
+        dirId: directory._id,
+        name: directory.name,
+        subItems: items,
+      }
     },
     checkHandler(value) {
+      //Если предыдущий root был, то предыдущий root отчистить
+      //отчистка: если root с values - все values unchecked
+      // если root с subItems - selectedItems = []
       if (this.selectedRoot) {
-        this.setSubItems({ id: this.selectedRoot._id, value: [] })
+        const { values, subItems } = this.selectedRoot
+        if (values) {
+          this.setSelectedValues({
+            id: this.selectedRoot._id,
+            value: [],
+          })
+        }
+        if (subItems?.length > 0) {
+          this.setSubItems({
+            id: this.selectedRoot._id,
+            value: [],
+          })
+        }
+      }
+      //Если value и предыдущий root был null - если текущий с values - все values checked
+      if (value) {
+        const { values } = value
+        if (values) {
+          this.setSelectedValues({
+            id: value._id,
+            value: values,
+          })
+        }
       }
       this.selectedRoot = value
     },
@@ -130,13 +170,13 @@ export default {
         <span class="page-title">Создать редакцию</span>
         <div class="input-field">
           <label>Название</label>
-          <input class="input" type="text" />
+          <input v-model="name" class="input" type="text" />
         </div>
       </div>
-      <AppButton outlined @click="create">Создать</AppButton>
+      <AppButton outlined @click="createEdition">Создать</AppButton>
     </template>
     <template #content>
-      <RootItem
+      <DirectoryItem
         v-for="root in rootDirs"
         :directory="root"
         :key="root._id"
