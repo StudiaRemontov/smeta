@@ -30,22 +30,7 @@ export default {
       key[field] = value
     },
     setClonedDirectories(state, payload) {
-      state.clonedDirectories = payload.map(d => {
-        const { values, keys } = d
-        if (keys) {
-          d.keys = keys.map(k => ({
-            ...k,
-            checked: true,
-            readonly: true,
-          }))
-        }
-
-        if (values) {
-          d.selectedValues = []
-        }
-
-        return d
-      })
+      state.clonedDirectories = payload
     },
     setSelectedValues(state, { id, value }) {
       const directory = state.clonedDirectories.find(d => d._id === id)

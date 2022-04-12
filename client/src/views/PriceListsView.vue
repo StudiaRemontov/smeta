@@ -1,14 +1,15 @@
 <script>
 import AppContent from '@/components/Layout/AppContent.vue'
 import IndexView from './PriceLists/IndexView.vue'
-import Multiselect from '@vueform/multiselect'
 import { mapActions, mapGetters, mapMutations } from 'vuex'
+
+import Dropdown from 'primevue/dropdown'
 
 export default {
   components: {
     AppContent,
-    Multiselect,
     IndexView,
+    Dropdown,
   },
   data() {
     return {
@@ -19,6 +20,23 @@ export default {
   computed: {
     ...mapGetters('priceList', ['priceLists', 'selectedPriceList']),
     ...mapGetters('edition', ['editions', 'selectedEdition']),
+    selectedPriceListId: {
+      get() {
+        return this.$store.state.priceList.selectedPriceList
+      },
+      set(value) {
+        this.setSelectedPriceList(value)
+      },
+    },
+    selectedEditionId: {
+      get() {
+        return this.$store.state.edition.selectedEdition
+      },
+      set(value) {
+        this.setSelectedEdition(value)
+        this.goToIndex()
+      },
+    },
     priceListOptions() {
       return this.priceLists.map(item => ({
         label: item.name,
@@ -59,14 +77,9 @@ export default {
     },
     goToCreateEdition() {
       this.$router.push('/pricelists/create')
-      this.$refs['select-edition'].close()
     },
-    goToIndex(value) {
-      this.setSelectedEdition(value)
+    goToIndex() {
       this.$router.push('/pricelists')
-    },
-    inputPriceListHandler(value) {
-      this.setSelectedPriceList(value)
     },
     async createPriceList() {
       const data = {
@@ -89,35 +102,44 @@ export default {
   <AppContent v-if="!loading">
     <template #header>
       <div class="header">
-        <Multiselect
-          :value="selectedPriceList?._id"
-          ref="select-priceList"
+        <Dropdown
+          v-model="selectedPriceListId"
           :options="priceListOptions"
-          class="multiselect"
-          searchable
-          @input="inputPriceListHandler"
+          :filter="true"
+          :editable="true"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Выберите прайс лист"
         >
-          <template #beforelist>
-            <input
-              v-model="priceListName"
-              type="text"
-              @keydown.enter="createPriceList"
-            />
+          <template #header>
+            <AppButton
+              class="dropdown-button"
+              outlined
+              @click="goToCreateEdition"
+            >
+              Создать
+            </AppButton>
           </template>
-        </Multiselect>
-        <Multiselect
-          :disabled="!selectedPriceList"
-          :value="selectedEdition?._id"
-          ref="select-edition"
+        </Dropdown>
+        <Dropdown
+          v-model="selectedEditionId"
           :options="editionOptions"
-          class="multiselect"
-          searchable
-          @input="goToIndex"
+          :filter="true"
+          :editable="true"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Выберите редакцию"
         >
-          <template #beforelist>
-            <AppButton outlined @click="goToCreateEdition">Создать</AppButton>
+          <template #header>
+            <AppButton
+              class="dropdown-button"
+              outlined
+              @click="goToCreateEdition"
+            >
+              Создать
+            </AppButton>
           </template>
-        </Multiselect>
+        </Dropdown>
       </div>
 
       <span class="page-title title"> Прайс лист </span>
@@ -125,7 +147,7 @@ export default {
     <template #body>
       <RouterView v-slot="{ Component, route }">
         <component
-          v-if="route.name === 'createEdition'"
+          v-if="route.name !== 'pricelistsIndex'"
           :is="Component"
         ></component>
         <IndexView
@@ -133,6 +155,7 @@ export default {
           :priceList="selectedPriceList"
           :edition="selectedEdition"
         />
+        <template v-else> Прайс листы еще не созданы </template>
       </RouterView>
     </template>
   </AppContent>
@@ -160,5 +183,9 @@ export default {
   padding: 5px;
   display: flex;
   align-items: center;
+}
+
+.dropdown-button {
+  width: 100%;
 }
 </style>

@@ -104,7 +104,6 @@ export default {
       })
     },
     changeHandler(checked) {
-      this.subItemsVisible = checked
       if (!this.parent) {
         const value = checked ? this.directory : null
         return this.$emit('checked', value)

@@ -1,4 +1,5 @@
 @import './variables.scss';
+@import './mixins.scss';
 @import './fonts.scss';
 
 * {
@@ -17,19 +18,4 @@ body {
 .page-title {
   font-size: $font-high;
   font-weight: 700;
-}
-
-.dark-scroll::-webkit-scrollbar-track {
-  border: 1px solid transparent;
-  background-color: transparent;
-}
-.dark-scroll::-webkit-scrollbar {
-  background-color: transparent;
-  height: 6px;
-  width: 6px;
-}
-
-.dark-scroll::-webkit-scrollbar-thumb {
-  border-radius: 3px;
-  background-color: #555;
 }

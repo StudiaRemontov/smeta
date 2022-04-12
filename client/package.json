@@ -8,7 +8,6 @@
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
   },
   "dependencies": {
-    "@vueform/multiselect": "^2.3.3",
     "axios": "^0.26.1",
     "normalize.css": "^8.0.1",
     "primevue": "^3.12.4",

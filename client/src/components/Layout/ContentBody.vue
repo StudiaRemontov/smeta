@@ -7,7 +7,7 @@ export default {}
     <div class="content-body__header">
       <slot name="header" />
     </div>
-    <div class="content-body__content dark-scroll">
+    <div class="content-body__content">
       <slot name="content" />
     </div>
   </div>
@@ -26,6 +26,8 @@ export default {}
     padding-right: 5px;
     overflow-y: auto;
     padding-bottom: 10px;
+
+    @include darkScroll;
   }
 }
 </style>
