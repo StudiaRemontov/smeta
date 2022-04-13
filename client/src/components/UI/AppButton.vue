@@ -30,5 +30,10 @@ export default {
     border-color: $color-danger;
     color: $color-danger;
   }
+
+  &.primary {
+    border-color: $color-primary;
+    color: $color-primary;
+  }
 }
 </style>

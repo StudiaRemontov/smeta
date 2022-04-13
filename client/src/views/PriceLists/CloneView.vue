@@ -2,12 +2,9 @@
 import ContentBody from '@/components/Layout/ContentBody.vue'
 import CreatePriceList from '@/components/PriceLists/Create/Modals/CreatePriceList.vue'
 import TreeTable from 'primevue/treetable'
-import SelectButton from 'primevue/selectbutton'
 import MultiSelect from 'primevue/multiselect'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
-import rootGetters from '@/mixins/rootGetters.mixin'
-import keyTypes from '@/mixins/keyTypes.mixin'
 import { mapActions, mapGetters, mapMutations } from 'vuex'
 
 export default {
@@ -16,11 +13,9 @@ export default {
     CreatePriceList,
     TreeTable,
     Column,
-    SelectButton,
     MultiSelect,
     InputText,
   },
-  mixins: [rootGetters, keyTypes],
   data() {
     return {
       selectedValues: null,
@@ -32,7 +27,12 @@ export default {
   },
   computed: {
     ...mapGetters('directory', ['roots', 'directories']),
-    ...mapGetters('edition', ['clonedDirectories', 'editions']),
+    ...mapGetters('edition', [
+      'clonedDirectories',
+      'editions',
+      'clone',
+      'selectedEdition',
+    ]),
     ...mapGetters('priceList', ['selectedPriceList']),
     selectedRoot() {
       if (!this.rootId && !this.selectedPriceList) return null
@@ -44,108 +44,22 @@ export default {
       return this.roots.find(r => r._id === rootId)
     },
     columns() {
-      if (!this.selectedRoot) return []
+      if (!this.selectedEdition) return []
 
-      return this.selectedRoot.keys.map((key, index) => ({
+      return this.selectedEdition.keys.map((key, index) => ({
         ...key,
         id: key.id + '',
         expander: index === 0,
-        editable: index === 2,
       }))
-    },
-    tree() {
-      if (!this.selectedRoot) return []
-      const tree = this.getSubItems(this.selectedRoot)
-      return tree.children
-    },
-    rootOptions() {
-      return this.roots.map(r => ({ name: r.name, value: r._id }))
-    },
-  },
-  watch: {
-    selectedRoot() {
-      this.selectedColumns = this.columns
-      this.readOnlyColumns = this.columns
     },
   },
   mounted() {
-    const clone = JSON.parse(JSON.stringify(this.directories))
-    const clonedDirectories = clone.map(dir => {
-      const { values } = dir
-      if (!values) {
-        return dir
-      }
-      const root = this.getRoot(dir._id)
-      const { keys } = root
-      const keysTypeSelect = keys.filter(k => k.type === this.InputType.SELECT)
-      dir.values = values.map(row => {
-        row.data = Object.entries(row.data).reduce((acc, [key, value]) => {
-          const selectKey = keysTypeSelect.find(k => k.id === +key)
-
-          if (selectKey) {
-            const findingRow = value
-            const text = this.getValueOfCell(
-              selectKey.dirId,
-              findingRow,
-              selectKey.keys,
-            )
-            acc[key] = text.join(', ')
-            return acc
-          }
-          acc[key] = value
-          return acc
-        }, {})
-        return row
-      })
-
-      return dir
-    })
-    this.setClonedDirectories(clonedDirectories)
+    this.getTreeTableValue()
   },
   methods: {
-    ...mapMutations('edition', ['setClonedDirectories']),
+    ...mapMutations('edition', ['setClonedDirectories', 'setClone']),
     ...mapActions('edition', ['create']),
-    changeRoot() {
-      this.selectedValues = null
-      this.selectedColumns = this.columns
-      this.readOnlyColumns = this.columns
-    },
-    getValueOfCell(dirId, rowId, keys) {
-      const directory = this.roots.find(d => d._id === dirId)
-
-      if (!directory) return null
-      const visibleKeys = directory.keys.filter(k => keys.includes(k.id))
-
-      return visibleKeys.map(key => {
-        const row = directory.values.find(r => r.id === +rowId)
-        if (key.type === this.InputType.SELECT) {
-          const findingRow = row.data[key.id]
-          return this.getValueOfCell(key.dirId, findingRow, key.keys)
-        }
-
-        return row.data[key.id]
-      })
-    },
-    getSubItems(directory) {
-      const children = this.clonedDirectories.filter(
-        d => d?.parent === directory._id,
-      )
-      const { values } = directory
-
-      const subChildren = values
-        ? values.map(n => ({
-            key: n.id,
-            data: n.data,
-            children: [],
-          }))
-        : children.map(c => this.getSubItems(c))
-      const data = { [this.columns[0].id]: directory.name }
-      return {
-        key: directory._id,
-        data,
-        children: subChildren,
-      }
-    },
+    getTreeTableValue() {},
     prepareData(directory, folders, valueIds) {
       const data = {
         dirId: directory._id,
@@ -171,8 +85,13 @@ export default {
     isObjectId(id) {
       return /^[0-9a-fA-F]{24}$/.test(id)
     },
+    multiSelectChangeHandler() {
+      this.readOnlyColumns = this.selectedColumns.map(c => {
+        return this.columns.find(col => col.id === c.id)
+      })
+    },
     async createHandler() {
-      if (!this.rootId || !this.selectedValues || !this.name) {
+      if (!this.selectedRoot || !this.selectedValues || !this.name) {
         return
       }
       if (
@@ -187,7 +106,6 @@ export default {
           okButton: 'Создать',
           cancelButton: 'Отмена',
         })
-        console.log(response)
 
         if (!response) {
           return
@@ -204,24 +122,25 @@ export default {
       })
 
       const valueIds = []
+
       const folderIds = Object.keys(this.selectedValues).filter(k => {
+        if (k === this.selectedRoot._id) {
+          return false
+        }
         const isObjectId = this.isObjectId(k)
         if (!isObjectId) {
           valueIds.push(k)
         }
         return isObjectId
       })
+
       const folders = this.clonedDirectories.filter(f => {
         return folderIds.includes(f._id)
       })
-      const parents = folders.filter(f => {
-        const { values } = f
-        if (!values) {
-          return true
-        }
-      })
 
-      const data = parents.map(p => this.prepareData(p, folders, valueIds))
+      const data = this.prepareData(this.selectedRoot, folders, valueIds)
+      console.log(data)
+
       const edition = {
         keys,
         data,
@@ -231,6 +150,8 @@ export default {
 
       try {
         await this.create(edition)
+        this.setClone(null)
+        this.$router.push('/pricelists')
       } catch (error) {
         console.log(error)
       }
@@ -245,18 +166,9 @@ export default {
       <div class="header">
         <div class="header__row">
           <InputText v-model="name" placeholder="Название редакции" />
-          <AppButton outlined @click="createHandler">Создать</AppButton>
-        </div>
-        <div class="select">
-          <div v-if="!selectedPriceList" class="header__row">
-            <span> Корневой справочник </span>
-            <SelectButton
-              v-model="rootId"
-              :options="rootOptions"
-              @change="changeRoot"
-              optionLabel="name"
-              optionValue="value"
-            ></SelectButton>
+          <div class="header__actions">
+            <AppButton outlined @click="setCloned(null)">Отмена</AppButton>
+            <AppButton outlined @click="createHandler">Сохранить</AppButton>
           </div>
         </div>
       </div>
@@ -265,7 +177,7 @@ export default {
       <CreatePriceList ref="create-priceList" />
       <TreeTable
         v-if="selectedRoot"
-        :value="tree"
+        :value="clone"
         selectionMode="checkbox"
         :scrollable="true"
         scrollHeight="flex"
@@ -277,20 +189,19 @@ export default {
               <span> Отображаемые колнки </span>
               <MultiSelect
                 v-model="selectedColumns"
+                @change="multiSelectChangeHandler"
                 :options="columns"
                 optionLabel="name"
                 placeholder="Выберите колонки"
-                style="width: 20em"
               />
             </div>
             <div class="table-header__multiselect">
               <span> Колонки для чтения </span>
               <MultiSelect
                 v-model="readOnlyColumns"
-                :options="columns"
+                :options="selectedColumns"
                 optionLabel="name"
                 placeholder="Выберите колонки"
-                style="width: 20em"
               />
             </div>
           </div>
@@ -303,16 +214,27 @@ export default {
           :expander="col.expander"
           :class="{ first: col.expander }"
         >
-          <!-- <template #body="{ node }" v-if="col.editable">
-            <input :value="node.data[col.id]" />
-          </template> -->
+          <template #body="{ node }">
+            <span v-if="col.readonly && node.children.length > 0" class="bold">
+              {{ node.data[col.id] }}
+            </span>
+            <input
+              v-else-if="!col.readonly && col.id in node.data"
+              v-model="node.data[col.id]"
+              type="text"
+              class="input"
+            />
+            <span v-else>
+              {{ node.data[col.id] }}
+            </span>
+          </template>
         </Column>
       </TreeTable>
     </template>
   </ContentBody>
 </template>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .header {
   display: flex;
   flex-direction: column;
@@ -322,6 +244,11 @@ export default {
     display: flex;
     align-items: center;
     justify-content: space-between;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 10px;
   }
 }
 
@@ -337,9 +264,6 @@ export default {
   }
 }
 
-.first {
-  min-width: 500px;
-}
 .p-treetable table {
   table-layout: auto;
 }
@@ -350,7 +274,12 @@ export default {
   gap: 5px;
 }
 
-.p-treetable-wrapper {
-  @include darkScroll;
+.bold {
+  font-weight: 600;
+}
+
+.input {
+  max-width: 100%;
+  width: 100%;
 }
 </style>

@@ -1,20 +1,138 @@
 <script>
 import ContentBody from '@/components/Layout/ContentBody.vue'
-import EditionTable from '@/components/PriceLists/EditionTable.vue'
-import { mapActions } from 'vuex'
+import TreeTable from 'primevue/treetable'
+import Column from 'primevue/column'
+import ConfirmModal from '@/components/PriceLists/Clone/ConfirmClone.vue'
+
+import { mapActions, mapGetters, mapMutations } from 'vuex'
 
 export default {
-  components: { EditionTable, ContentBody },
-  props: {
-    priceList: Object,
-    edition: Object,
+  components: { TreeTable, Column, ContentBody, ConfirmModal },
+  data() {
+    return {
+      expandedKeys: {},
+    }
+  },
+  computed: {
+    ...mapGetters('directory', ['roots']),
+    ...mapGetters('edition', [
+      'selectedEdition',
+      'editions',
+      'clonedDirectories',
+    ]),
+    ...mapGetters('priceList', ['selectedPriceList']),
+    columns() {
+      return this.selectedEdition.keys.map((key, index) => ({
+        ...key,
+        id: key.id + '',
+        expander: index === 0,
+      }))
+    },
+    root() {
+      if (!this.selectedPriceList) return null
+      const editionId = this.selectedPriceList.editions[0]
+      const root = editionId && this.editions.find(e => e._id === editionId)
+      const rootId = root?.dirId
+      return this.roots.find(r => r._id === rootId)
+    },
+    tree() {
+      if (!this.root || !this.selectedEdition) return []
+      const { data } = this.selectedEdition
+      const tree = data.map(n => this.getSubItems(n))
+      return tree
+    },
+    isSame() {
+      if (!this.selectedEdition) {
+        return false
+      }
+      const isExists = !!this.clonedDirectories.find(
+        d => d._id === this.selectedEdition.dirId,
+      )
+      const isSame = !!this.selectedEdition.data.find(this.isSameNode)
+
+      return isExists && isSame
+    },
+  },
+  watch: {
+    tree: {
+      handler() {
+        this.expandAll()
+      },
+      immediate: true,
+    },
   },
   methods: {
+    ...mapMutations('edition', ['setClone']),
     ...mapActions('edition', ['remove']),
+    getSubItems(directory) {
+      const { values, subItems } = directory
+
+      const subChildren =
+        subItems.length === 0
+          ? values.map(n => ({
+              key: n.id,
+              data: n.data,
+              children: [],
+            }))
+          : subItems.map(c => this.getSubItems(c))
+      const data = { [this.columns[0].id]: directory.name }
+
+      return {
+        key: directory.dirId,
+        data,
+        children: subChildren,
+      }
+    },
+    expandAll() {
+      for (const node of this.tree) {
+        this.expandNode(node)
+      }
+
+      this.expandedKeys = { ...this.expandedKeys }
+    },
+    expandNode(node) {
+      if (node.children && node.children.length) {
+        this.expandedKeys[node.key] = true
+
+        for (const child of node.children) {
+          this.expandNode(child)
+        }
+      }
+    },
+    isSameNode(node) {
+      const directory = this.clonedDirectories.find(d => d._id === node.dirId)
+      if (!directory) {
+        return false
+      }
+      const { values, subItems } = node
+
+      if (values.length > 0) {
+        return values.every(value => {
+          return !!directory.values.find(r => r.id === +value.id)
+        })
+      }
+      return subItems.every(this.isSameNode)
+    },
+    async clone() {
+      if (!this.isSame) {
+        const response = await this.$refs['confirm-modal'].show({
+          title: 'Применить изменения',
+          okButton: 'Применить',
+          cancelButton: 'Отмена',
+        })
+        if (response) {
+          return this.setClone(this.tree)
+        }
+        return
+      }
+      // this.$router.push({
+      //   name: 'cloneEdition',
+      //   params: { id: this.selectedEdition._id },
+      // })
+    },
     async removeHandler() {
       try {
-        await this.remove(this.edition._id)
-        this.$router.push('/pricelists')
+        await this.remove(this.selectedEdition._id)
       } catch (error) {
         console.log(error)
       }
@@ -27,16 +145,38 @@ export default {
   <ContentBody>
     <template #header>
       <div class="header">
-        <span>
-          {{ edition.name }}
-        </span>
+        <AppButton outlined variant="primary" @click="clone"
+          >Клонировать {{ isSame ? '' : '*' }}</AppButton
+        >
         <AppButton outlined variant="danger" @click="removeHandler"
           >Удалить</AppButton
         >
       </div>
     </template>
     <template #content>
-      <EditionTable :edition="edition" />
+      <ConfirmModal ref="confirm-modal" />
+      <TreeTable
+        v-if="tree"
+        :value="tree"
+        :expandedKeys="expandedKeys"
+        :scrollable="true"
+        scrollHeight="flex"
+      >
+        <Column
+          v-for="col in columns"
+          :key="col.id"
+          :field="col.id"
+          :header="col.name"
+          :expander="col.expander"
+          :class="{ first: col.expander }"
+        >
+          <template #body="{ node }">
+            <span :class="{ bold: node.children.length > 0 }">
+              {{ node.data[col.id] }}
+            </span>
+          </template>
+        </Column>
+      </TreeTable>
     </template>
   </ContentBody>
 </template>
@@ -44,7 +184,10 @@ export default {
 <style lang="scss" scoped>
 .header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  gap: 10px;
+  justify-content: flex-end;
+}
+.bold {
+  font-weight: 600;
 }
 </style>

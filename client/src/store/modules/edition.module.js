@@ -7,6 +7,7 @@ export default {
     contentLoaded: false,
     clonedDirectories: [],
     selectedEdition: null,
+    clone: null,
   },
   mutations: {
     setEditions(state, payload) {
@@ -23,6 +24,9 @@ export default {
     },
     setSelectedEdition(state, payload) {
       state.selectedEdition = payload
+    },
+    setClone(state, payload) {
+      state.clone = JSON.parse(JSON.stringify(payload))
     },
     updateKey(state, { id, keyId, value, field = 'checked' }) {
       const directory = state.clonedDirectories.find(d => d._id === id)
@@ -104,25 +108,26 @@ export default {
     async remove({ commit, rootGetters, dispatch }, payload) {
       try {
         const response = await axios.delete(`/edition/${payload}`)
-        // commit('removeEdition', payload)
-        // const selectedPriceList = rootGetters['priceList/selectedPriceList']
-        // const newEditions = selectedPriceList.editions.filter(
-        //   e => e !== payload,
-        // )
-        // if (newEditions.length > 0) {
-        //   await dispatch(
-        //     'priceList/updateEditions',
-        //     {
-        //       id: selectedPriceList._id,
-        //       editions: newEditions,
-        //     },
-        //     { root: true },
-        //   )
-        //   return response
-        // }
-        // await dispatch('priceList/remove', selectedPriceList._id, {
-        //   root: true,
-        // })
+        commit('removeEdition', payload)
+        commit('setSelectedEdition', null)
+        const selectedPriceList = rootGetters['priceList/selectedPriceList']
+        const newEditions = selectedPriceList.editions.filter(
+          e => e !== payload,
+        )
+        if (newEditions.length > 0) {
+          await dispatch(
+            'priceList/updateEditions',
+            {
+              id: selectedPriceList._id,
+              editions: newEditions,
+            },
+            { root: true },
+          )
+          return response
+        }
+        await dispatch('priceList/remove', selectedPriceList._id, {
+          root: true,
+        })
 
         return response
       } catch (error) {
@@ -136,5 +141,6 @@ export default {
     selectedEdition: s => {
       return s.editions.find(e => e._id === s.selectedEdition)
     },
+    clone: s => s.clone,
   },
 }

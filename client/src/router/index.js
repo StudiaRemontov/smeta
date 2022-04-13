@@ -8,9 +8,8 @@ import DirectoryView from '@/views/Directories/DirectoryView.vue'
 
 import PriceListsView from '@/views/PriceListsView.vue'
 import PriceListsIndex from '@/views/PriceLists/IndexView.vue'
-//rename
-// import PriceListsCreate from '@/views/PriceLists/CreateView.vue'
-import PriceListsTest from '@/views/PriceLists/TestView.vue'
+import PriceListsCreate from '@/views/PriceLists/CreateView.vue'
+import PriceListsClone from '@/views/PriceLists/CloneView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -50,7 +49,12 @@ const router = createRouter({
         {
           path: 'create',
           name: 'createEdition',
-          component: PriceListsTest,
+          component: PriceListsCreate,
+        },
+        {
+          path: 'clone/:id',
+          name: 'cloneEdition',
+          component: PriceListsClone,
         },
       ],
     },

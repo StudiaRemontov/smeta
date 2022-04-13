@@ -11,7 +11,7 @@ const keySchema = new mongoose.Schema(
       required: true,
       type: String,
     },
-    readOnly: {
+    readonly: {
       type: Boolean,
       default: true,
     },

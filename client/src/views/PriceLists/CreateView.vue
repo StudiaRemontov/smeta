@@ -1,163 +1,187 @@
 <script>
-import { mapActions, mapGetters, mapMutations } from 'vuex'
 import ContentBody from '@/components/Layout/ContentBody.vue'
-import keyTypes from '@/mixins/keyTypes.mixin'
-import rootGetters from '@/mixins/rootGetters.mixin'
-
-import DirectoryItem from '@/components/PriceLists/Create/DirectoryItem.vue'
+import CreatePriceList from '@/components/PriceLists/Create/Modals/CreatePriceList.vue'
+import TreeTable from 'primevue/treetable'
+import SelectButton from 'primevue/selectbutton'
+import MultiSelect from 'primevue/multiselect'
+import Column from 'primevue/column'
+import InputText from 'primevue/inputtext'
+import { mapActions, mapGetters, mapMutations } from 'vuex'
 
 export default {
   components: {
-    DirectoryItem,
     ContentBody,
+    CreatePriceList,
+    TreeTable,
+    Column,
+    SelectButton,
+    MultiSelect,
+    InputText,
   },
-  mixins: [keyTypes, rootGetters],
   data() {
     return {
+      selectedValues: null,
+      rootId: null,
+      selectedColumns: [],
+      readOnlyColumns: [],
       name: '',
-      selectedRoot: null,
     }
   },
   computed: {
-    ...mapGetters('edition', ['clonedDirectories']),
-    ...mapGetters('directory', ['directories', 'roots']),
-    rootDirs() {
-      return this.clonedDirectories.filter(d => !d.parent)
+    ...mapGetters('directory', ['roots', 'directories']),
+    ...mapGetters('edition', ['clonedDirectories', 'editions']),
+    ...mapGetters('priceList', ['selectedPriceList']),
+    selectedRoot() {
+      if (!this.rootId && !this.selectedPriceList) return null
+      const editionId =
+        this.selectedPriceList && this.selectedPriceList.editions[0]
+
+      const root = editionId && this.editions.find(e => e._id === editionId)
+      const rootId = root ? root.dirId : this.rootId
+      return this.roots.find(r => r._id === rootId)
+    },
+    columns() {
+      if (!this.selectedRoot) return []
+
+      return this.selectedRoot.keys.map((key, index) => ({
+        ...key,
+        id: key.id + '',
+        expander: index === 0,
+        editable: index === 2,
+      }))
+    },
+    tree() {
+      if (!this.selectedRoot) return []
+      const tree = this.getSubItems(this.selectedRoot)
+      return [tree]
+    },
+    rootOptions() {
+      return this.roots.map(r => ({ name: r.name, value: r._id }))
     },
   },
-  mounted() {
-    const clone = JSON.parse(JSON.stringify(this.directories))
-    const clonedDirectories = clone.map(dir => {
-      const { values } = dir
-      if (!values) {
-        dir.subItems = []
-        return dir
-      }
-      if (values) {
-        const root = this.getRoot(dir._id)
-        const { keys } = root
-        const keysTypeSelect = keys.filter(
-          k => k.type === this.InputType.SELECT,
-        )
-        dir.values = values.map(row => {
-          row.data = Object.entries(row.data).reduce((acc, [key, value]) => {
-            const selectKey = keysTypeSelect.find(k => k.id === +key)
-
-            if (selectKey) {
-              const findingRow = value
-              const text = this.getValueOfCell(
-                selectKey.dirId,
-                findingRow,
-                selectKey.keys,
-              )
-              acc[key] = text.join(', ')
-              return acc
-            }
-            acc[key] = value
-            return acc
-          }, {})
-          return row
-        })
-      }
-
-      return dir
-    })
-    this.setClonedDirectories(clonedDirectories)
+  watch: {
+    selectedRoot() {
+      this.selectedColumns = this.columns
+      this.readOnlyColumns = this.columns
+    },
   },
   methods: {
-    ...mapMutations('edition', ['setClonedDirectories', 'setSelectedValues']),
-    ...mapActions('edition', ['setSubItems', 'create']),
-    getValueOfCell(dirId, rowId, keys) {
-      const directory = this.roots.find(d => d._id === dirId)
+    ...mapMutations('edition', ['setClonedDirectories']),
+    ...mapActions('edition', ['create']),
+    changeRoot() {
+      this.selectedValues = null
+      this.selectedColumns = this.columns
+      this.readOnlyColumns = this.columns
+    },
+    getSubItems(directory) {
+      const children = this.clonedDirectories.filter(
+        d => d?.parent === directory._id,
+      )
+      const { values } = directory
 
-      if (!directory) return null
-      const visibleKeys = directory.keys.filter(k => keys.includes(k.id))
+      const subChildren = values
+        ? values.map(n => ({
+            key: n.id,
+            data: n.data,
+            children: [],
+          }))
+        : children.map(c => this.getSubItems(c))
+      const data = { [this.columns[0].id]: directory.name }
+      return {
+        key: directory._id,
+        data,
+        children: subChildren,
+      }
+    },
+    prepareData(directory, folders, valueIds) {
+      const data = {
+        dirId: directory._id,
+        name: directory.name,
+        subItems: [],
+      }
+      const children = folders.filter(d => d?.parent === directory._id)
+      if (children.length > 0) {
+        data.subItems = children.map(c =>
+          this.prepareData(c, folders, valueIds),
+        )
+      }
+      const { values } = directory
+      if (values) {
+        const newValues = values.filter(row => {
+          return valueIds.includes(row.id + '')
+        })
+        data.values = newValues
+      }
 
-      return visibleKeys.map(key => {
-        const row = directory.values.find(r => r.id === +rowId)
-        if (key.type === this.InputType.SELECT) {
-          const findingRow = row.data[key.id]
-          return this.getValueOfCell(key.dirId, findingRow, key.keys)
-        }
-
-        return row.data[key.id]
+      return data
+    },
+    isObjectId(id) {
+      return /^[0-9a-fA-F]{24}$/.test(id)
+    },
+    multiSelectChangeHandler() {
+      this.readOnlyColumns = this.selectedColumns.map(c => {
+        return this.columns.find(col => col.id === c.id)
       })
     },
-    async createEdition() {
-      if (!this.selectedRoot || !this.name) return
-      const root = JSON.parse(JSON.stringify(this.selectedRoot))
-      // eslint-disable-next-line no-unused-vars
-      const { _id, ...edition } = root
-      edition.keys = edition.keys.filter(k => k.checked)
-      edition.keys = edition.keys.map(key => ({
-        id: key.id,
-        name: key.name,
-        readonly: key.readonly,
-      }))
-      const subItems = this.getSubItems(edition)
-      edition.data = subItems
-      edition.name = this.name
+    async createHandler() {
+      if (!this.selectedRoot || !this.selectedValues || !this.name) {
+        return
+      }
+      if (
+        this.selectedColumns.length === 0 ||
+        Object.keys(this.selectedValues).length === 0
+      ) {
+        return
+      }
+      if (!this.selectedPriceList) {
+        const response = await this.$refs['create-priceList'].show({
+          title: 'Создать прайс лист',
+          okButton: 'Создать',
+          cancelButton: 'Отмена',
+        })
+
+        if (!response) {
+          return
+        }
+      }
+      const keys = this.selectedColumns.map(k => {
+        const readonly = !!this.readOnlyColumns.find(c => c.id === k.id)
+
+        return {
+          id: k.id,
+          name: k.name,
+          readonly,
+        }
+      })
+
+      const valueIds = []
+      const folderIds = Object.keys(this.selectedValues).filter(k => {
+        if (k === this.selectedRoot._id) {
+          return false
+        }
+        const isObjectId = this.isObjectId(k)
+        if (!isObjectId) {
+          valueIds.push(k)
+        }
+        return isObjectId
+      })
+      const folders = this.clonedDirectories.filter(f => {
+        return folderIds.includes(f._id)
+      })
+      const data = this.prepareData(this.selectedRoot, folders, valueIds)
+      const edition = {
+        keys,
+        data,
+        dirId: this.selectedRoot._id,
+        name: this.name,
+      }
+
       try {
         await this.create(edition)
         this.$router.push('/pricelists')
       } catch (error) {
         console.log(error)
       }
-    },
-    getSubItems(directory) {
-      const { subItems, values } = directory
-      if (values) {
-        const data = directory.selectedValues.map(r => ({
-          id: r.id,
-          data: r.data,
-        }))
-        return {
-          dirId: directory._id,
-          name: directory.name,
-          values: data,
-        }
-      }
-      if (!subItems) return []
-
-      const items = subItems.map(c => {
-        return this.getSubItems(c)
-      })
-      return {
-        dirId: directory._id,
-        name: directory.name,
-        subItems: items,
-      }
-    },
-    checkHandler(value) {
-      //Если предыдущий root был, то предыдущий root отчистить
-      //отчистка: если root с values - все values unchecked
-      // если root с subItems - selectedItems = []
-      if (this.selectedRoot) {
-        const { values, subItems } = this.selectedRoot
-        if (values) {
-          this.setSelectedValues({
-            id: this.selectedRoot._id,
-            value: [],
-          })
-        }
-        if (subItems?.length > 0) {
-          this.setSubItems({
-            id: this.selectedRoot._id,
-            value: [],
-          })
-        }
-      }
-      //Если value и предыдущий root был null - если текущий с values - все values checked
-      if (value) {
-        const { values } = value
-        if (values) {
-          this.setSelectedValues({
-            id: value._id,
-            value: values,
-          })
-        }
-      }
-      this.selectedRoot = value
     },
   },
 }
@@ -166,24 +190,115 @@ export default {
 <template>
   <ContentBody>
     <template #header>
-      <div>
-        <span class="page-title">Создать редакцию</span>
-        <div class="input-field">
-          <label>Название</label>
-          <input v-model="name" class="input" type="text" />
+      <div class="header">
+        <div class="header__row">
+          <InputText v-model="name" placeholder="Название редакции" />
+          <AppButton outlined @click="createHandler">Создать</AppButton>
+        </div>
+        <div class="select">
+          <div v-if="!selectedPriceList" class="header__row">
+            <span> Корневой справочник </span>
+            <SelectButton
+              v-model="rootId"
+              :options="rootOptions"
+              @change="changeRoot"
+              optionLabel="name"
+              optionValue="value"
+            ></SelectButton>
+          </div>
         </div>
       </div>
-      <AppButton outlined @click="createEdition">Создать</AppButton>
     </template>
     <template #content>
-      <DirectoryItem
-        v-for="root in rootDirs"
-        :directory="root"
-        :key="root._id"
-        :root="root._id"
-        :value="selectedRoot"
-        @checked="checkHandler"
-      />
+      <CreatePriceList ref="create-priceList" />
+      <TreeTable
+        v-if="selectedRoot"
+        :value="tree"
+        selectionMode="checkbox"
+        :scrollable="true"
+        scrollHeight="flex"
+        v-model:selectionKeys="selectedValues"
+      >
+        <template #header>
+          <div class="table-header">
+            <div class="table-header__multiselect">
+              <span> Отображаемые колнки </span>
+              <MultiSelect
+                v-model="selectedColumns"
+                @change="multiSelectChangeHandler"
+                :options="columns"
+                optionLabel="name"
+                placeholder="Выберите колонки"
+                style="width: 20em"
+              />
+            </div>
+            <div class="table-header__multiselect">
+              <span> Колонки для чтения </span>
+              <MultiSelect
+                v-model="readOnlyColumns"
+                :options="selectedColumns"
+                optionLabel="name"
+                placeholder="Выберите колонки"
+                style="width: 20em"
+              />
+            </div>
+          </div>
+        </template>
+        <Column
+          v-for="col in selectedColumns"
+          :key="col.id"
+          :field="col.id"
+          :header="col.name"
+          :expander="col.expander"
+          :class="{ first: col.expander }"
+        >
+          <template #body="{ node }">
+            <span :class="{ bold: node.children.length > 0 }">
+              {{ node.data[col.id] }}
+            </span>
+          </template>
+        </Column>
+      </TreeTable>
     </template>
   </ContentBody>
 </template>
+
+<style lang="scss" scoped>
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  &__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  &__multiselect {
+    display: flex;
+    gap: 5px;
+    flex-direction: column;
+  }
+}
+
+.p-treetable table {
+  table-layout: auto;
+}
+
+.select {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.bold {
+  font-weight: 600;
+}
+</style>
