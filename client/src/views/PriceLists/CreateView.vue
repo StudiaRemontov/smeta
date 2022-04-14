@@ -93,27 +93,13 @@ export default {
         children: subChildren,
       }
     },
-    prepareData(directory, folders, valueIds) {
-      const data = {
-        dirId: directory._id,
-        name: directory.name,
-        subItems: [],
+    convertData(node) {
+      const { children } = node
+      if (children && children.length > 0) {
+        node.children = children.filter(c => this.selectedValues[c.key])
+        node.children = node.children.map(this.convertData)
       }
-      const children = folders.filter(d => d?.parent === directory._id)
-      if (children.length > 0) {
-        data.subItems = children.map(c =>
-          this.prepareData(c, folders, valueIds),
-        )
-      }
-      const { values } = directory
-      if (values) {
-        const newValues = values.filter(row => {
-          return valueIds.includes(row.id + '')
-        })
-        data.values = newValues
-      }
-
-      return data
+      return node
     },
     isObjectId(id) {
       return /^[0-9a-fA-F]{24}$/.test(id)
@@ -154,21 +140,7 @@ export default {
         }
       })
 
-      const valueIds = []
-      const folderIds = Object.keys(this.selectedValues).filter(k => {
-        if (k === this.selectedRoot._id) {
-          return false
-        }
-        const isObjectId = this.isObjectId(k)
-        if (!isObjectId) {
-          valueIds.push(k)
-        }
-        return isObjectId
-      })
-      const folders = this.clonedDirectories.filter(f => {
-        return folderIds.includes(f._id)
-      })
-      const data = this.prepareData(this.selectedRoot, folders, valueIds)
+      const data = this.convertData(JSON.parse(JSON.stringify(this.tree[0])))
       const edition = {
         keys,
         data,

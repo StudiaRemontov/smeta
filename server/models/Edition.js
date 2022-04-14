@@ -24,19 +24,10 @@ const keySchema = new mongoose.Schema(
 const dataItem = new mongoose.Schema({}, { versionKey: false })
 
 dataItem.add({
-  name: String,
-  subItems: [dataItem],
-  values: [
-    {
-      id: String,
-      data: mongoose.SchemaTypes.Mixed,
-      _id: false,
-    },
-  ],
-  dirId: {
-    type: mongoose.SchemaTypes.ObjectId,
-    ref: 'Directory',
-  },
+  _id: false,
+  key: {},
+  children: [dataItem],
+  data: {},
 })
 
 const schema = new mongoose.Schema(
@@ -46,16 +37,18 @@ const schema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-    date: {
-      type: Date,
-      default: () => Date.now(),
-    },
     dirId: {
       type: mongoose.SchemaTypes.ObjectId,
       ref: 'Directory',
     },
+    date: {
+      type: Date,
+      default: () => Date.now(),
+    },
     keys: [keySchema],
-    data: [dataItem],
+    data: {
+      type: dataItem,
+    },
   },
   {
     versionKey: false,

@@ -25,8 +25,16 @@ export default {
     setSelectedEdition(state, payload) {
       state.selectedEdition = payload
     },
+    //mergeTypes: "full" | "rightJoin"
     setClone(state, payload) {
-      state.clone = JSON.parse(JSON.stringify(payload))
+      if (!payload) {
+        return (state.clone = payload)
+      }
+      const { value, mergeType } = payload
+      state.clone = {
+        value: JSON.parse(JSON.stringify(value)),
+        mergeType,
+      }
     },
     updateKey(state, { id, keyId, value, field = 'checked' }) {
       const directory = state.clonedDirectories.find(d => d._id === id)

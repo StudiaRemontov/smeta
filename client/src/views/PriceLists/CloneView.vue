@@ -6,6 +6,7 @@ import MultiSelect from 'primevue/multiselect'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
 import { mapActions, mapGetters, mapMutations } from 'vuex'
+import { merge, mergeWith, isArray } from 'lodash'
 
 export default {
   components: {
@@ -23,6 +24,7 @@ export default {
       selectedColumns: [],
       readOnlyColumns: [],
       name: '',
+      tree: [],
     }
   },
   computed: {
@@ -54,12 +56,96 @@ export default {
     },
   },
   mounted() {
-    this.getTreeTableValue()
+    if (!this.selectedRoot || !this.clone) {
+      this.tree = []
+    }
+    const globalTree = JSON.parse(
+      JSON.stringify(this.getSubItems(this.selectedRoot)),
+    )
+
+    const tree = this.clone.value
+    const treeData = JSON.parse(JSON.stringify(tree))
+
+    const merged =
+      this.clone.mergeType === 'full'
+        ? this.merge1([globalTree], treeData)
+        : this.merge2([globalTree], treeData)
+
+    const keys = JSON.parse(JSON.stringify(this.selectedEdition.keys))
+    this.selectedColumns = keys.map((key, index) => ({
+      ...key,
+      id: key.id + '',
+      expander: index === 0,
+    }))
+    this.readOnlyColumns = this.selectedColumns.filter(key => key.readonly)
+    this.selectedValues = this.getSelectedValues(this.clone.value[0])
+    this.tree = merged
   },
   methods: {
     ...mapMutations('edition', ['setClonedDirectories', 'setClone']),
     ...mapActions('edition', ['create']),
-    getTreeTableValue() {},
+    getSubItems(directory) {
+      const children = this.clonedDirectories.filter(
+        d => d?.parent === directory._id,
+      )
+      const { values } = directory
+
+      const subChildren = values
+        ? values.map(n => ({
+            key: n.id,
+            data: n.data,
+            children: [],
+          }))
+        : children.map(c => this.getSubItems(c))
+      const data = { [this.columns[0].id]: directory.name }
+
+      return {
+        key: directory._id,
+        data,
+        children: subChildren,
+      }
+    },
+    convertData(node) {
+      const { children } = node
+      if (children && children.length > 0) {
+        node.children = children.filter(c => this.selectedValues[c.key])
+        node.children = node.children.map(this.convertData)
+      }
+      return node
+    },
+    getSelectedValues(node) {
+      const value = {
+        [node.key]: {
+          checked: true,
+        },
+      }
+      let children = []
+      if (node.children && node.children.length > 0) {
+        children = node.children.reduce((acc, c) => {
+          const val = this.getSelectedValues(c)
+          acc = {
+            ...acc,
+            ...val,
+          }
+          return acc
+        }, {})
+      }
+      return { ...value, ...children }
+    },
+    merge1(obj1, obj2) {
+      return merge(obj1, obj2)
+    },
+    merge2(obj1, obj2) {
+      return mergeWith(obj1, obj2, (objValue, srcValue) => {
+        if (isArray(objValue)) {
+          srcValue = srcValue.filter(row => {
+            return !!objValue.find(({ key }) => +row.key === key)
+          })
+
+          return merge(objValue, srcValue)
+        }
+      })
+    },
     prepareData(directory, folders, valueIds) {
       const data = {
         dirId: directory._id,
@@ -120,27 +206,7 @@ export default {
           readonly,
         }
       })
-
-      const valueIds = []
-
-      const folderIds = Object.keys(this.selectedValues).filter(k => {
-        if (k === this.selectedRoot._id) {
-          return false
-        }
-        const isObjectId = this.isObjectId(k)
-        if (!isObjectId) {
-          valueIds.push(k)
-        }
-        return isObjectId
-      })
-
-      const folders = this.clonedDirectories.filter(f => {
-        return folderIds.includes(f._id)
-      })
-
-      const data = this.prepareData(this.selectedRoot, folders, valueIds)
-      console.log(data)
-
+      const data = this.convertData(JSON.parse(JSON.stringify(this.tree[0])))
       const edition = {
         keys,
         data,
@@ -167,7 +233,7 @@ export default {
         <div class="header__row">
           <InputText v-model="name" placeholder="Название редакции" />
           <div class="header__actions">
-            <AppButton outlined @click="setCloned(null)">Отмена</AppButton>
+            <AppButton outlined @click="setClone(null)">Отмена</AppButton>
             <AppButton outlined @click="createHandler">Сохранить</AppButton>
           </div>
         </div>
@@ -176,8 +242,8 @@ export default {
     <template #content>
       <CreatePriceList ref="create-priceList" />
       <TreeTable
-        v-if="selectedRoot"
-        :value="clone"
+        v-if="tree"
+        :value="tree"
         selectionMode="checkbox"
         :scrollable="true"
         scrollHeight="flex"

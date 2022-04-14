@@ -36,10 +36,9 @@ export default {
       return this.roots.find(r => r._id === rootId)
     },
     tree() {
-      if (!this.root || !this.selectedEdition) return []
+      if (!this.selectedEdition) return []
       const { data } = this.selectedEdition
-      const tree = data.map(n => this.getSubItems(n))
-      return tree
+      return [data]
     },
     isSame() {
       if (!this.selectedEdition) {
@@ -48,7 +47,7 @@ export default {
       const isExists = !!this.clonedDirectories.find(
         d => d._id === this.selectedEdition.dirId,
       )
-      const isSame = !!this.selectedEdition.data.find(this.isSameNode)
+      const isSame = !![this.selectedEdition.data].find(this.isSameNode)
 
       return isExists && isSame
     },
@@ -99,36 +98,40 @@ export default {
         }
       }
     },
-    isSameNode(node) {
-      const directory = this.clonedDirectories.find(d => d._id === node.dirId)
-      if (!directory) {
-        return false
+    isSameNode(node, directory) {
+      const { children, key } = node
+      const isDirectory = this.isObjectId(key)
+      if (isDirectory) {
+        const directory = this.clonedDirectories.find(d => d._id === node.key)
+        if (!directory) {
+          return false
+        }
+        return children.every(c => this.isSameNode(c, directory))
       }
-      const { values, subItems } = node
-
-      if (values.length > 0) {
-        return values.every(value => {
-          return !!directory.values.find(r => r.id === +value.id)
-        })
-      }
-      return subItems.every(this.isSameNode)
+      const { values } = directory
+      return !!values.find(v => v.id === key)
+    },
+    isObjectId(id) {
+      return /^[0-9a-fA-F]{24}$/.test(id)
     },
     async clone() {
       if (!this.isSame) {
         const response = await this.$refs['confirm-modal'].show({
           title: 'Применить изменения',
-          okButton: 'Применить',
-          cancelButton: 'Отмена',
+          okButton: 'Да',
+          cancelButton: 'Нет',
         })
         if (response) {
-          return this.setClone(this.tree)
+          return this.setClone({
+            value: this.tree,
+            mergeType: 'rightJoin',
+          })
         }
-        return
       }
-      // this.$router.push({
-      //   name: 'cloneEdition',
-      //   params: { id: this.selectedEdition._id },
-      // })
+      this.setClone({
+        value: this.tree,
+        mergeType: 'full',
+      })
     },
     async removeHandler() {
       try {

@@ -127,6 +127,7 @@ export default {
 
       return visibleKeys.map(key => {
         const row = directory.values.find(r => r.id === +rowId)
+        if (!row) return null
         if (key.type === this.InputType.SELECT) {
           const findingRow = row.data[key.id]
           return this.getValueOfCell(key.dirId, findingRow, key.keys)
