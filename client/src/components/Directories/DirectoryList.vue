@@ -42,10 +42,11 @@ export default {
         }
       }
     },
-    openAlert({ paths }) {
+    openAlert({ priceList, directories }) {
       this.$refs['alert-modal'].show({
         title: `Данный справочник невозможно удалить`,
-        paths: paths,
+        directories,
+        priceList,
         okButton: 'Ок',
       })
     },

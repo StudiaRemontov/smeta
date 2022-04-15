@@ -70,9 +70,7 @@ export default {
     getValueOfCell(dirId, rowId, keys) {
       const directory = this.directories.find(d => d._id === dirId)
       if (!directory) return null
-      const root = directory.parent
-        ? this.getRoot(directory.parent)
-        : directory
+      const root = directory.parent ? this.getRoot(directory.parent) : directory
       const visibleKeys = root.keys.filter(k => keys.includes(k.id))
       const vals = visibleKeys.map(key => {
         const row = directory.values.find(r => r.id === +rowId)
@@ -128,14 +126,12 @@ export default {
   color: #000000;
   line-height: 17px;
 }
-.input {
+.input,
+.select {
   background-color: transparent;
   border: none;
   outline: none;
   width: 100%;
-}
-
-.select {
-  width: 100%;
+  border-bottom: 1px solid black;
 }
 </style>

@@ -4,7 +4,8 @@ import PopupModal from '../../UI/PopupModal.vue'
 const getInitState = () => ({
   title: undefined,
   okButton: undefined,
-  paths: [],
+  directories: null,
+  priceList: null,
   resolvePromise: undefined,
   rejectPromise: undefined,
 })
@@ -18,8 +19,8 @@ export default {
     show(options) {
       this.title = options.title
       this.okButton = options.okButton
-      this.paths = options.paths
-
+      this.directories = options.directories
+      this.priceList = options.priceList
       this.$refs.popup.open()
 
       return new Promise(res => {
@@ -43,17 +44,23 @@ export default {
   <PopupModal ref="popup">
     <div class="modal">
       <span class="modal__title">{{ title }}</span>
-      <span>
-        Удаление будет возможно только при удалении справочника из архитектуры
-      </span>
-      <span> Справочник используется в следующих архитектурах: </span>
-      <ul>
-        <li v-for="(path, index) in paths" :key="index">
-          <strong v-for="(dir, pathIndex) in path" :key="dir._id"
-            >{{ dir.name }}<span v-if="pathIndex < path.length - 1">/</span>
-          </strong>
-        </li>
-      </ul>
+      <template v-if="priceList">
+        <span>
+          Данный справочник используется в прайс листе
+          <strong>{{ priceList }}</strong>
+        </span>
+      </template>
+      <template v-else-if="directories">
+        <span> Справочник используется в следующих архитектурах: </span>
+        <ul>
+          <li v-for="directory in directories" :key="directory">
+            <strong>
+              {{ directory }}
+            </strong>
+          </li>
+        </ul>
+      </template>
+
       <div class="modal__actions">
         <AppButton outlined @click="_confirm">
           {{ okButton }}

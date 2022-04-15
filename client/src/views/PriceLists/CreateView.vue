@@ -188,6 +188,7 @@ export default {
         :value="tree"
         selectionMode="checkbox"
         :scrollable="true"
+        class="p-treetable-sm"
         scrollHeight="flex"
         v-model:selectionKeys="selectedValues"
       >
@@ -222,7 +223,7 @@ export default {
           :field="col.id"
           :header="col.name"
           :expander="col.expander"
-          :class="{ first: col.expander }"
+          :class="col.expander ? 'first' : 'secondary'"
         >
           <template #body="{ node }">
             <span :class="{ bold: node.children.length > 0 }">
@@ -272,5 +273,11 @@ export default {
 
 .bold {
   font-weight: 600;
+}
+
+.p-treetable-toggler + .p-checkbox + span {
+  vertical-align: middle;
+  display: block;
+  width: 100%;
 }
 </style>

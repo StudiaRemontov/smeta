@@ -59,13 +59,17 @@ export default {
       })
 
       return editions.map(edition => ({
-        label: `${edition.name} ${new Date(edition.date).toLocaleDateString()}`,
+        label: `${edition.name} от ${new Date(
+          edition.date,
+        ).toLocaleDateString()}`,
         value: edition._id,
       }))
     },
   },
   async mounted() {
-    await Promise.all([this.fetchPriceLists(), this.fetchEditions()])
+    if (this.priceLists.length === 0) {
+      this.$router.push({ name: 'createEdition' })
+    }
     this.createClonedDirectories()
     this.setData()
     this.loading = false
@@ -74,15 +78,8 @@ export default {
     ...mapMutations('edition', ['setSelectedEdition', 'setClonedDirectories']),
     ...mapMutations('priceList', ['setSelectedPriceList']),
     ...mapActions('priceList', {
-      fetchPriceLists: 'fetchAll',
       create: 'create',
     }),
-    ...mapActions('edition', {
-      fetchEditions: 'fetchAll',
-    }),
-    setInput(val) {
-      this.priceListName = val
-    },
     goToCreateEdition() {
       this.setSelectedEdition(null)
       this.$router.push('/pricelists/create')
@@ -100,6 +97,11 @@ export default {
     },
     priceListChangeHandler() {
       this.setData()
+      this.setSelectedEdition(
+        this.selectedPriceList.editions[
+          this.selectedPriceList.editions.length - 1
+        ],
+      )
     },
     setData() {
       if (!this.selectedPriceList) {
@@ -113,11 +115,13 @@ export default {
       if (this.$route.name === 'createEdition') {
         return
       }
-      this.setSelectedEdition(
-        this.selectedPriceList.editions[
-          this.selectedPriceList.editions.length - 1
-        ],
-      )
+      if (!this.selectedEdition) {
+        this.setSelectedEdition(
+          this.selectedPriceList.editions[
+            this.selectedPriceList.editions.length - 1
+          ],
+        )
+      }
     },
     getValueOfCell(dirId, rowId, keys) {
       const directory = this.roots.find(d => d._id === dirId)
@@ -186,10 +190,8 @@ export default {
         name: this.priceListName,
       }
       try {
-        const response = await this.create(data)
+        await this.create(data)
         this.priceListName = ''
-        this.$refs['select-priceList'].select(response.data._id)
-        this.$refs['select-priceList'].close()
       } catch (error) {
         console.log(error)
       }
@@ -209,6 +211,7 @@ export default {
             ref="dropdown-priceList"
             @change="priceListChangeHandler"
             :options="priceListOptions"
+            :disabled="!!clone"
             :filter="true"
             optionLabel="label"
             optionValue="value"
@@ -231,6 +234,7 @@ export default {
             v-model="selectedEditionId"
             ref="dropdown-edition"
             :options="editionOptions"
+            :disabled="!!clone"
             :filter="true"
             optionLabel="label"
             optionValue="value"
@@ -306,9 +310,17 @@ export default {
 </style>
 
 <style lang="scss">
-.first {
-  min-width: 500px;
+.p-treetable-wrapper {
+  .first {
+    flex: 1 !important;
+    min-width: 500px;
+  }
+
+  .secondary {
+    flex: 0 0 100px !important;
+  }
 }
+
 .p-treetable-wrapper {
   @include darkScroll;
 }

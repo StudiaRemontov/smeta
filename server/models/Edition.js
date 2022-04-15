@@ -21,10 +21,9 @@ const keySchema = new mongoose.Schema(
   }
 )
 
-const dataItem = new mongoose.Schema({}, { versionKey: false })
+const dataItem = new mongoose.Schema({ _id: false }, { versionKey: false })
 
 dataItem.add({
-  _id: false,
   key: {},
   children: [dataItem],
   data: {},

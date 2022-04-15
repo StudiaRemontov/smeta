@@ -36,17 +36,28 @@ export default {
             if ((!values || values?.length === 0) && !this.subFolders.length) {
               return await this.removeDirectory(this.directory._id)
             }
+            const edition = this.editions.find(root => {
+              return root.dirId === this.directory._id
+            })
+            if (edition) {
+              const priceList = this.priceLists.find(p =>
+                p.editions.includes(edition._id),
+              )
+              if (priceList) {
+                return this.$emit('alert', {
+                  priceList: priceList.name,
+                })
+              }
+            }
             //check if dir is architecture
             if (values) {
               //check if architecture in use
               const inUse = this.checkIfArchitectureInUse(this.directory)
-              const paths = inUse.map(d => {
-                return [...this.getRoots(d.parent), d]
-              })
+              const inUseList = inUse.map(({ name }) => name)
               //if in use show alert
-              if (paths.length > 0) {
+              if (inUse.length > 0) {
                 return this.$emit('alert', {
-                  paths,
+                  directories: inUseList,
                 })
               }
               //else check if architecture has values and show alert
@@ -94,6 +105,8 @@ export default {
   },
   computed: {
     ...mapGetters('directory', ['directories', 'root', 'roots']),
+    ...mapGetters('edition', ['editions']),
+    ...mapGetters('priceList', ['priceLists']),
     subFolders() {
       return this.directories.filter(d => d.parent === this.directory._id)
     },

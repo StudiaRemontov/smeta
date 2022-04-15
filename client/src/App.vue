@@ -5,17 +5,36 @@ import { mapActions } from 'vuex'
 
 export default {
   components: { AppSidebar, AppContainer },
+  data() {
+    return {
+      loading: false,
+    }
+  },
   async mounted() {
-    await this.fetchAll()
+    this.loading = true
+    await Promise.all([
+      this.fetchDirectories(),
+      this.fetchEditions(),
+      this.fetchPriceLists(),
+    ])
+    this.loading = false
   },
   methods: {
-    ...mapActions('directory', ['fetchAll']),
+    ...mapActions('directory', {
+      fetchDirectories: 'fetchAll',
+    }),
+    ...mapActions('edition', {
+      fetchEditions: 'fetchAll',
+    }),
+    ...mapActions('priceList', {
+      fetchPriceLists: 'fetchAll',
+    }),
   },
 }
 </script>
 
 <template>
-  <main class="main">
+  <main v-if="!loading" class="main">
     <AppSidebar />
     <AppContainer />
   </main>

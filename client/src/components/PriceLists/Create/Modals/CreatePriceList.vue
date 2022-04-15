@@ -19,13 +19,16 @@ export default {
   },
   methods: {
     ...mapActions('priceList', ['create']),
-    show(options) {
+    async show(options) {
       this.title = options.title
       this.okButton = options.okButton
       this.cancelButton = options.cancelButton
       this.paths = options.paths
 
       this.$refs.popup.open()
+
+      await this.$nextTick()
+      this.$refs.input.focus()
 
       return new Promise(res => {
         this.resolvePromise = res
@@ -64,7 +67,7 @@ export default {
       <span class="modal__title">{{ title }}</span>
       <form @submit.prevent="_confirm">
         <label>Название</label>
-        <input v-model="name" type="text" />
+        <input v-model="name" ref="input" type="text" />
       </form>
       <div class="modal__actions">
         <AppButton outlined @click="_cancel">

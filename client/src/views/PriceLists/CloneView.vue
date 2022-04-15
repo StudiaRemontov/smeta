@@ -7,6 +7,7 @@ import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
 import { mapActions, mapGetters, mapMutations } from 'vuex'
 import { merge, mergeWith, isArray } from 'lodash'
+import { diff } from 'deep-object-diff'
 
 export default {
   components: {
@@ -25,6 +26,7 @@ export default {
       readOnlyColumns: [],
       name: '',
       tree: [],
+      differenceKeys: null,
     }
   },
   computed: {
@@ -65,6 +67,8 @@ export default {
 
     const tree = this.clone.value
     const treeData = JSON.parse(JSON.stringify(tree))
+    const differ = diff(globalTree, treeData[0])
+    this.differenceKeys = this.getKeys(differ)
 
     const merged =
       this.clone.mergeType === 'full'
@@ -103,6 +107,15 @@ export default {
         key: directory._id,
         data,
         children: subChildren,
+      }
+    },
+    getKeys(node) {
+      if (node.key) {
+        return [node.key]
+      }
+
+      if (node.children) {
+        return Object.values(node.children).map(this.getKeys).flat()
       }
     },
     convertData(node) {
@@ -247,6 +260,7 @@ export default {
         selectionMode="checkbox"
         :scrollable="true"
         scrollHeight="flex"
+        class="p-treetable-sm"
         v-model:selectionKeys="selectedValues"
       >
         <template #header>
@@ -281,18 +295,26 @@ export default {
           :class="{ first: col.expander }"
         >
           <template #body="{ node }">
-            <span v-if="col.readonly && node.children.length > 0" class="bold">
-              {{ node.data[col.id] }}
-            </span>
-            <input
-              v-else-if="!col.readonly && col.id in node.data"
-              v-model="node.data[col.id]"
-              type="text"
-              class="input"
-            />
-            <span v-else>
-              {{ node.data[col.id] }}
-            </span>
+            <div
+              class="wrapper"
+              :class="{ newest: differenceKeys.includes(node.key) }"
+            >
+              <span
+                v-if="col.readonly && node.children.length > 0"
+                class="bold"
+              >
+                {{ node.data[col.id] }}
+              </span>
+              <input
+                v-else-if="!col.readonly && col.id in node.data"
+                v-model="node.data[col.id]"
+                type="text"
+                class="input"
+              />
+              <span v-else>
+                {{ node.data[col.id] }}
+              </span>
+            </div>
           </template>
         </Column>
       </TreeTable>
@@ -344,8 +366,24 @@ export default {
   font-weight: 600;
 }
 
+.newest {
+  color: #ff1700;
+
+  .input {
+    color: inherit;
+  }
+}
+
 .input {
   max-width: 100%;
+  width: 70%;
+  border: none;
+  outline: none;
+  border-bottom: 1px black solid;
+}
+.wrapper {
+  vertical-align: middle;
+  display: block;
   width: 100%;
 }
 </style>

@@ -3,14 +3,16 @@ import ContentBody from '@/components/Layout/ContentBody.vue'
 import TreeTable from 'primevue/treetable'
 import Column from 'primevue/column'
 import ConfirmModal from '@/components/PriceLists/Clone/ConfirmClone.vue'
+import InputText from 'primevue/inputtext'
 
 import { mapActions, mapGetters, mapMutations } from 'vuex'
 
 export default {
-  components: { TreeTable, Column, ContentBody, ConfirmModal },
+  components: { TreeTable, Column, ContentBody, ConfirmModal, InputText },
   data() {
     return {
       expandedKeys: {},
+      filters: {},
     }
   },
   computed: {
@@ -63,25 +65,6 @@ export default {
   methods: {
     ...mapMutations('edition', ['setClone']),
     ...mapActions('edition', ['remove']),
-    getSubItems(directory) {
-      const { values, subItems } = directory
-
-      const subChildren =
-        subItems.length === 0
-          ? values.map(n => ({
-              key: n.id,
-              data: n.data,
-              children: [],
-            }))
-          : subItems.map(c => this.getSubItems(c))
-      const data = { [this.columns[0].id]: directory.name }
-
-      return {
-        key: directory.dirId,
-        data,
-        children: subChildren,
-      }
-    },
     expandAll() {
       for (const node of this.tree) {
         this.expandNode(node)
@@ -163,15 +146,28 @@ export default {
         :value="tree"
         :expandedKeys="expandedKeys"
         :scrollable="true"
+        class="p-treetable-sm"
+        :filters="filters"
         scrollHeight="flex"
       >
+        <template #header>
+          <div class="text-right">
+            <div class="p-input-icon-left">
+              <i class="pi pi-search"></i>
+              <InputText
+                v-model="filters['global']"
+                placeholder="Глобальный поиск"
+              />
+            </div>
+          </div>
+        </template>
         <Column
           v-for="col in columns"
           :key="col.id"
           :field="col.id"
           :header="col.name"
           :expander="col.expander"
-          :class="{ first: col.expander }"
+          :class="col.expander ? 'first' : 'secondary'"
         >
           <template #body="{ node }">
             <span :class="{ bold: node.children.length > 0 }">
@@ -192,5 +188,13 @@ export default {
 }
 .bold {
   font-weight: 600;
+}
+</style>
+
+<style>
+.p-treetable-tbody span {
+  vertical-align: middle;
+  display: block;
+  width: 100%;
 }
 </style>
