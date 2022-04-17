@@ -18,7 +18,6 @@ export default {
   mixins: [rootGetters, keyTypes],
   data() {
     return {
-      priceListName: '',
       loading: true,
     }
   },
@@ -185,17 +184,6 @@ export default {
       })
       this.setClonedDirectories(clonedDirectories)
     },
-    async createPriceList() {
-      const data = {
-        name: this.priceListName,
-      }
-      try {
-        await this.create(data)
-        this.priceListName = ''
-      } catch (error) {
-        console.log(error)
-      }
-    },
   },
 }
 </script>
@@ -265,7 +253,6 @@ export default {
           :priceList="selectedPriceList"
           :edition="selectedEdition"
         />
-        <template v-else> Выберите прайс лист и редакцию </template>
       </RouterView>
     </template>
   </AppContent>
@@ -283,21 +270,6 @@ export default {
     flex-direction: column;
     gap: 5px;
   }
-}
-
-.multiselect {
-  flex-basis: 50%;
-  margin: 0;
-}
-
-.select {
-  min-width: 100px;
-}
-
-.title {
-  padding: 5px;
-  display: flex;
-  align-items: center;
 }
 
 .dropdown-button {

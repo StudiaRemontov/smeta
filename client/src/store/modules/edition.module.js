@@ -36,17 +36,8 @@ export default {
         mergeType,
       }
     },
-    updateKey(state, { id, keyId, value, field = 'checked' }) {
-      const directory = state.clonedDirectories.find(d => d._id === id)
-      const key = directory.keys.find(k => k.id === keyId)
-      key[field] = value
-    },
     setClonedDirectories(state, payload) {
       state.clonedDirectories = payload
-    },
-    setSelectedValues(state, { id, value }) {
-      const directory = state.clonedDirectories.find(d => d._id === id)
-      directory.selectedValues = value
     },
   },
   actions: {
@@ -62,30 +53,6 @@ export default {
       } catch (error) {
         return Promise.reject(error)
       }
-    },
-    setSubItems({ state, commit }, { id, value }) {
-      const dir = state.clonedDirectories.find(d => d._id === id)
-      if (value.length === 0) {
-        dir.subItems.forEach(item => {
-          const { values } = item
-          if (values) {
-            commit('setSelectedValues', { id: item._id, value: [] })
-          }
-        })
-      }
-      if (value.length > 0) {
-        value.forEach(item => {
-          const { values } = item
-          if (!values) {
-            return
-          }
-          const newValues =
-            item.selectedValues.length > 0 ? item.selectedValues : values
-          commit('setSelectedValues', { id: item._id, value: newValues })
-        })
-      }
-
-      dir.subItems = value
     },
     async create({ commit, rootGetters, dispatch }, data) {
       try {

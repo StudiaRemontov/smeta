@@ -33,7 +33,7 @@ export default {
     }
   },
   computed: {
-    ...mapGetters('directory', ['directories', 'root']),
+    ...mapGetters('directory', ['directories', 'root', 'roots']),
     directoryId() {
       return this.$route.params.id
     },
@@ -137,12 +137,17 @@ export default {
         dirId: architecture.dirId,
       }
     },
+    isSameKeys(excelRows) {
+      if (excelRows.length !== this.root.keys.length) {
+        return false
+      }
+    },
     async fileChangeHandler(rows) {
       if (rows.length === 0) {
         return
       }
 
-      if (this.directory.values?.length > 0) {
+      if (this.directory.values.length > 0) {
         const response = await this.$refs['excel-modal'].show({
           title: 'Добавить данные или заменить существующие?',
           okButton: 'Добавить',
@@ -151,6 +156,7 @@ export default {
         if (response) {
           const mergedData = this.mergedData(rows)
           mergedData.values = [...this.directory.values, ...mergedData.values]
+
           const { keys, values } = mergedData
           await this.updateArchitecture(keys)
           return await this.updateValues(values)
@@ -226,13 +232,14 @@ export default {
         const data = keys.reduce((acc, key, index) => {
           if (key.type === this.InputType.SELECT) {
             // получаю архитектуру из которой берутся значения
-            const dir = this.directories.find(d => d._id === key.dirId)
+            const dir = this.roots.find(d => d._id === key.dirId)
             //нахожу строку в которой находится значение из excel
             //скорее всего это работает только когда из справочника берется значение строки с 1 ключем (длина массива key.keys равна 1)
             const row = dir.data.values.find(r => {
               const values = key.keys.map(key => r.data[key])
               return values.includes(value[index])
             })
+
             // no data - произвольная строка (truthy значение), т.к. если будет falsy значение строка автоматически удалится при изменении архитектуры
             acc[key.id] = row?.id || 'no data'
             return acc
@@ -266,7 +273,7 @@ export default {
       const { keys, values } = this.getExcelKeysAndValues(rows)
       //фильтрую ключи. Если название ключа из новой архитектурой совпадает с ключом из существующей,
       //то оставляю старый ключ, чтобы под его тип указать значение
-      const merged = [...this.directory.data.keys, ...keys].filter(
+      const merged = [...this.root.keys, ...keys].filter(
         (key, index, arr) => index === arr.findIndex(k => key.name === k.name),
       )
 

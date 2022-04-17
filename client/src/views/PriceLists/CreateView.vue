@@ -6,7 +6,7 @@ import SelectButton from 'primevue/selectbutton'
 import MultiSelect from 'primevue/multiselect'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
-import { mapActions, mapGetters, mapMutations } from 'vuex'
+import priceListMixin from '@/mixins/priceList.mixin'
 
 export default {
   components: {
@@ -18,38 +18,8 @@ export default {
     MultiSelect,
     InputText,
   },
-  data() {
-    return {
-      selectedValues: null,
-      rootId: null,
-      selectedColumns: [],
-      readOnlyColumns: [],
-      name: '',
-    }
-  },
+  mixins: [priceListMixin],
   computed: {
-    ...mapGetters('directory', ['roots', 'directories']),
-    ...mapGetters('edition', ['clonedDirectories', 'editions']),
-    ...mapGetters('priceList', ['selectedPriceList']),
-    selectedRoot() {
-      if (!this.rootId && !this.selectedPriceList) return null
-      const editionId =
-        this.selectedPriceList && this.selectedPriceList.editions[0]
-
-      const root = editionId && this.editions.find(e => e._id === editionId)
-      const rootId = root ? root.dirId : this.rootId
-      return this.roots.find(r => r._id === rootId)
-    },
-    columns() {
-      if (!this.selectedRoot) return []
-
-      return this.selectedRoot.keys.map((key, index) => ({
-        ...key,
-        id: key.id + '',
-        expander: index === 0,
-        editable: index === 2,
-      }))
-    },
     tree() {
       if (!this.selectedRoot) return []
       const tree = this.getSubItems(this.selectedRoot)
@@ -66,94 +36,10 @@ export default {
     },
   },
   methods: {
-    ...mapMutations('edition', ['setClonedDirectories']),
-    ...mapActions('edition', ['create']),
     changeRoot() {
       this.selectedValues = null
       this.selectedColumns = this.columns
       this.readOnlyColumns = this.columns
-    },
-    getSubItems(directory) {
-      const children = this.clonedDirectories.filter(
-        d => d?.parent === directory._id,
-      )
-      const { values } = directory
-
-      const subChildren = values
-        ? values.map(n => ({
-            key: n.id,
-            data: n.data,
-            children: [],
-          }))
-        : children.map(c => this.getSubItems(c))
-      const data = { [this.columns[0].id]: directory.name }
-      return {
-        key: directory._id,
-        data,
-        children: subChildren,
-      }
-    },
-    convertData(node) {
-      const { children } = node
-      if (children && children.length > 0) {
-        node.children = children.filter(c => this.selectedValues[c.key])
-        node.children = node.children.map(this.convertData)
-      }
-      return node
-    },
-    isObjectId(id) {
-      return /^[0-9a-fA-F]{24}$/.test(id)
-    },
-    multiSelectChangeHandler() {
-      this.readOnlyColumns = this.selectedColumns.map(c => {
-        return this.columns.find(col => col.id === c.id)
-      })
-    },
-    async createHandler() {
-      if (!this.selectedRoot || !this.selectedValues || !this.name) {
-        return
-      }
-      if (
-        this.selectedColumns.length === 0 ||
-        Object.keys(this.selectedValues).length === 0
-      ) {
-        return
-      }
-      if (!this.selectedPriceList) {
-        const response = await this.$refs['create-priceList'].show({
-          title: 'Создать прайс лист',
-          okButton: 'Создать',
-          cancelButton: 'Отмена',
-        })
-
-        if (!response) {
-          return
-        }
-      }
-      const keys = this.selectedColumns.map(k => {
-        const readonly = !!this.readOnlyColumns.find(c => c.id === k.id)
-
-        return {
-          id: k.id,
-          name: k.name,
-          readonly,
-        }
-      })
-
-      const data = this.convertData(JSON.parse(JSON.stringify(this.tree[0])))
-      const edition = {
-        keys,
-        data,
-        dirId: this.selectedRoot._id,
-        name: this.name,
-      }
-
-      try {
-        await this.create(edition)
-        this.$router.push('/pricelists')
-      } catch (error) {
-        console.log(error)
-      }
     },
   },
 }

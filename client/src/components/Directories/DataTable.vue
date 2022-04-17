@@ -21,7 +21,7 @@ export default {
       return this.$route.params.id
     },
     keys() {
-      return this.root.keys
+      return this.root?.keys
     },
   },
   watch: {

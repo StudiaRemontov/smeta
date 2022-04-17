@@ -16,7 +16,6 @@ export default {
     }
   },
   computed: {
-    ...mapGetters('directory', ['roots']),
     ...mapGetters('edition', [
       'selectedEdition',
       'editions',
@@ -29,13 +28,6 @@ export default {
         id: key.id + '',
         expander: index === 0,
       }))
-    },
-    root() {
-      if (!this.selectedPriceList) return null
-      const editionId = this.selectedPriceList.editions[0]
-      const root = editionId && this.editions.find(e => e._id === editionId)
-      const rootId = root?.dirId
-      return this.roots.find(r => r._id === rootId)
     },
     tree() {
       if (!this.selectedEdition) return []

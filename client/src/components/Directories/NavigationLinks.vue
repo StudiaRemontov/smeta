@@ -39,12 +39,15 @@ export default {
     },
   },
   watch: {
-    parentTree(tree) {
-      if (tree.length === 0) {
-        return this.setRoot(null)
-      }
-      const root = tree[0]
-      this.setRoot(root._id)
+    parentTree: {
+      handler(tree) {
+        if (tree.length === 0) {
+          return this.setRoot(null)
+        }
+        const root = tree[0]
+        this.setRoot(root._id)
+      },
+      immediate: true,
     },
   },
   methods: {

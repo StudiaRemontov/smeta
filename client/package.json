@@ -12,6 +12,7 @@
     "deep-object-diff": "^1.1.7",
     "lodash": "^4.17.21",
     "normalize.css": "^8.0.1",
+    "primeicons": "^5.0.0",
     "primevue": "^3.12.4",
     "vue": "^3.2.31",
     "vue-router": "^4.0.12",
