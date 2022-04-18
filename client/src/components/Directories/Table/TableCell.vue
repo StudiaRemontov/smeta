@@ -42,7 +42,7 @@ export default {
       if (this.col.type !== this.InputType.SELECT) {
         return []
       }
-      const root = this.directories.find(d => d._id === this.col.dirId)
+      const root = this.directories.find(d => d._id === this.col.root)
       if (!root) {
         return []
       }
@@ -50,11 +50,19 @@ export default {
       if (!keys.length) {
         return []
       }
-      return root.values.map(row => {
+      const directoryOfValues = this.directories.find(
+        d => d._id === this.col.dirId,
+      )
+      return directoryOfValues.values.map(row => {
         const text = keys.map(key => {
           if (key.type === this.InputType.SELECT) {
             const findingRow = row.data[key.id]
-            return this.getValueOfCell(key.dirId, findingRow, key.keys)
+            return this.getValueOfCell(
+              key.dirId,
+              key.root,
+              findingRow,
+              key.keys,
+            )
           }
 
           return row.data[key.id]
@@ -67,16 +75,16 @@ export default {
     },
   },
   methods: {
-    getValueOfCell(dirId, rowId, keys) {
+    getValueOfCell(dirId, root, rowId, keys) {
       const directory = this.directories.find(d => d._id === dirId)
       if (!directory) return null
-      const root = directory.parent ? this.getRoot(directory.parent) : directory
-      const visibleKeys = root.keys.filter(k => keys.includes(k.id))
+      const rootDir = this.directories.find(d => d._id === root)
+      const visibleKeys = rootDir.keys.filter(k => keys.includes(k.id))
       const vals = visibleKeys.map(key => {
         const row = directory.values.find(r => r.id === +rowId)
         if (key.type === this.InputType.SELECT) {
           const findingRow = row.data[key.id]
-          return this.getValueOfCell(key.dirId, findingRow, key.keys)
+          return this.getValueOfCell(key.dirId, key.root, findingRow, key.keys)
         }
 
         return row.data[key.id]
@@ -120,8 +128,8 @@ export default {
   padding-bottom: 12px;
   text-align: left;
   color: white;
-  border-top: 1px solid #c8c8c8;
-  border-bottom: 1px solid #c8c8c8;
+  border-top: 1px solid #e9ecef;
+  border-bottom: 1px solid #e9ecef;
   padding: 8px;
   color: #000000;
   line-height: 17px;
@@ -131,7 +139,7 @@ export default {
   background-color: transparent;
   border: none;
   outline: none;
+  border-bottom: 1px solid #9c9c9c;
   width: 100%;
-  border-bottom: 1px solid black;
 }
 </style>

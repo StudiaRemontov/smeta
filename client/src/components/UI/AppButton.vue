@@ -19,6 +19,10 @@ export default {
   border: none;
   cursor: pointer;
 
+  &:disabled {
+    opacity: 0.4;
+  }
+
   &.outlined {
     background: #ffffff;
     padding: 10px;
@@ -34,6 +38,11 @@ export default {
   &.primary {
     border-color: $color-primary;
     color: $color-primary;
+  }
+
+  &.success {
+    border-color: $color-success;
+    color: $color-success;
   }
 }
 </style>

@@ -36,6 +36,20 @@ class EditionService {
     return edition
   }
 
+  static async setActive(id) {
+    const edition = await EditionService.update(id, {
+      active: true,
+    })
+    const priceList = await PriceList.findOne({ editions: id })
+    const editions = priceList.editions.filter((eId) => eId + '' !== id)
+    for (const edition of editions) {
+      await EditionService.update(edition, {
+        active: false,
+      })
+    }
+    return edition
+  }
+
   static async delete(id) {
     const edition = await Edition.findByIdAndDelete(id)
     if (!edition) {

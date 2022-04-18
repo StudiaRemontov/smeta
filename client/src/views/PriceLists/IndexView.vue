@@ -5,7 +5,7 @@ import Column from 'primevue/column'
 import ConfirmModal from '@/components/PriceLists/Clone/ConfirmClone.vue'
 import InputText from 'primevue/inputtext'
 
-import { mapActions, mapGetters, mapMutations } from 'vuex'
+import { mapGetters } from 'vuex'
 
 export default {
   components: { TreeTable, Column, ContentBody, ConfirmModal, InputText },
@@ -16,12 +16,7 @@ export default {
     }
   },
   computed: {
-    ...mapGetters('edition', [
-      'selectedEdition',
-      'editions',
-      'clonedDirectories',
-    ]),
-    ...mapGetters('priceList', ['selectedPriceList']),
+    ...mapGetters('edition', ['selectedEdition']),
     columns() {
       return this.selectedEdition.keys.map((key, index) => ({
         ...key,
@@ -34,17 +29,6 @@ export default {
       const { data } = this.selectedEdition
       return [data]
     },
-    isSame() {
-      if (!this.selectedEdition) {
-        return false
-      }
-      const isExists = !!this.clonedDirectories.find(
-        d => d._id === this.selectedEdition.dirId,
-      )
-      const isSame = !![this.selectedEdition.data].find(this.isSameNode)
-
-      return isExists && isSame
-    },
   },
   watch: {
     tree: {
@@ -55,8 +39,6 @@ export default {
     },
   },
   methods: {
-    ...mapMutations('edition', ['setClone']),
-    ...mapActions('edition', ['remove']),
     expandAll() {
       for (const node of this.tree) {
         this.expandNode(node)
@@ -73,64 +55,12 @@ export default {
         }
       }
     },
-    isSameNode(node, directory) {
-      const { children, key } = node
-      const isDirectory = this.isObjectId(key)
-      if (isDirectory) {
-        const directory = this.clonedDirectories.find(d => d._id === node.key)
-        if (!directory) {
-          return false
-        }
-        return children.every(c => this.isSameNode(c, directory))
-      }
-      const { values } = directory
-      return !!values.find(v => v.id === key)
-    },
-    isObjectId(id) {
-      return /^[0-9a-fA-F]{24}$/.test(id)
-    },
-    async clone() {
-      if (!this.isSame) {
-        const response = await this.$refs['confirm-modal'].show({
-          title: 'Применить изменения',
-          okButton: 'Да',
-          cancelButton: 'Нет',
-        })
-        if (response) {
-          return this.setClone({
-            value: this.tree,
-            mergeType: 'rightJoin',
-          })
-        }
-      }
-      this.setClone({
-        value: this.tree,
-        mergeType: 'full',
-      })
-    },
-    async removeHandler() {
-      try {
-        await this.remove(this.selectedEdition._id)
-      } catch (error) {
-        console.log(error)
-      }
-    },
   },
 }
 </script>
 
 <template>
   <ContentBody>
-    <template #header>
-      <div class="header">
-        <AppButton outlined variant="primary" @click="clone"
-          >Клонировать {{ isSame ? '' : '*' }}</AppButton
-        >
-        <AppButton outlined variant="danger" @click="removeHandler"
-          >Удалить</AppButton
-        >
-      </div>
-    </template>
     <template #content>
       <ConfirmModal ref="confirm-modal" />
       <TreeTable

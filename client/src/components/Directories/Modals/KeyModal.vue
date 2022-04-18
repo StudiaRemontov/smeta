@@ -71,14 +71,21 @@ export default {
     },
     _confirm() {
       this.$refs.popup.close()
-      const dirId =
-        this.selectedDirectory && this.getRoot(this.selectedDirectory)._id
       const data = {
         name: this.name,
         type: this.type,
-        dirId,
-        keys: this.visibleKeys,
       }
+      if (this.type === this.InputType.SELECT) {
+        if (!this.selectedDirectory) {
+          return
+        }
+        const root = this.getRoot(this.selectedDirectory)._id
+        const dirId = this.selectedDirectory
+        data.dirId = dirId
+        data.root = root
+        data.keys = this.visibleKeys
+      }
+
       this.resolvePromise(data)
       this.reset()
     },

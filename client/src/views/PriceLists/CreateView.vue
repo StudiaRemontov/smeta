@@ -19,6 +19,11 @@ export default {
     InputText,
   },
   mixins: [priceListMixin],
+  data() {
+    return {
+      filters: {},
+    }
+  },
   computed: {
     tree() {
       if (!this.selectedRoot) return []
@@ -34,6 +39,10 @@ export default {
       this.selectedColumns = this.columns
       this.readOnlyColumns = this.columns
     },
+  },
+  mounted() {
+    this.selectedColumns = this.columns
+    this.readOnlyColumns = this.columns
   },
   methods: {
     changeRoot() {
@@ -75,31 +84,43 @@ export default {
         selectionMode="checkbox"
         :scrollable="true"
         class="p-treetable-sm"
+        :filters="filters"
         scrollHeight="flex"
         v-model:selectionKeys="selectedValues"
       >
         <template #header>
           <div class="table-header">
-            <div class="table-header__multiselect">
-              <span> Отображаемые колнки </span>
-              <MultiSelect
-                v-model="selectedColumns"
-                @change="multiSelectChangeHandler"
-                :options="columns"
-                optionLabel="name"
-                placeholder="Выберите колонки"
-                style="width: 20em"
-              />
+            <div class="table-header__row">
+              <div class="p-input-icon-left">
+                <i class="pi pi-search"></i>
+                <InputText
+                  v-model="filters['global']"
+                  placeholder="Глобальный поиск"
+                />
+              </div>
             </div>
-            <div class="table-header__multiselect">
-              <span> Колонки для чтения </span>
-              <MultiSelect
-                v-model="readOnlyColumns"
-                :options="selectedColumns"
-                optionLabel="name"
-                placeholder="Выберите колонки"
-                style="width: 20em"
-              />
+            <div class="table-header__row">
+              <div class="table-header__multiselect">
+                <span> Отображаемые колнки </span>
+                <MultiSelect
+                  v-model="selectedColumns"
+                  @change="multiSelectChangeHandler"
+                  :options="columns"
+                  optionLabel="name"
+                  placeholder="Выберите колонки"
+                  style="width: 20em"
+                />
+              </div>
+              <div class="table-header__multiselect">
+                <span> Колонки для чтения </span>
+                <MultiSelect
+                  v-model="readOnlyColumns"
+                  :options="selectedColumns"
+                  optionLabel="name"
+                  placeholder="Выберите колонки"
+                  style="width: 20em"
+                />
+              </div>
             </div>
           </div>
         </template>
@@ -137,8 +158,14 @@ export default {
 
 .table-header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 10px;
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
 
   &__multiselect {
     display: flex;

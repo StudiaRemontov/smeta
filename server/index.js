@@ -9,10 +9,6 @@ const Logger = require('./utils/Logger')
 const config = require('./config/index')
 
 //routes
-const subcategory = require('./router/subcategory')
-const category = require('./router/category')
-const roomtype = require('./router/roomType')
-const estimate = require('./router/estimate')
 const directory = require('./router/directory')
 const edition = require('./router/edition')
 const pricelist = require('./router/priceList')
@@ -29,10 +25,6 @@ app.use(
 app.use(express.json())
 
 //routes
-app.use('/api/subcategory', subcategory)
-app.use('/api/category', category)
-app.use('/api/roomtype', roomtype)
-app.use('/api/estimate', estimate)
 app.use('/api/directory', directory)
 app.use('/api/edition', edition)
 app.use('/api/pricelist', pricelist)

@@ -39,6 +39,17 @@ export default {
     setClonedDirectories(state, payload) {
       state.clonedDirectories = payload
     },
+    update(state, { id, data }) {
+      state.editions = state.editions.map(e => {
+        if (e._id === id) {
+          return {
+            ...e,
+            ...data,
+          }
+        }
+        return e
+      })
+    },
   },
   actions: {
     async fetchAll({ state, commit }) {
@@ -80,6 +91,20 @@ export default {
         return Promise.reject(error)
       }
     },
+    async setActive({ commit, rootGetters }, payload) {
+      try {
+        const response = await axios.patch(`/edition/${payload}/active`)
+        const selectedPriceList = rootGetters['priceList/selectedPriceList']
+        const { editions } = selectedPriceList
+        editions.forEach(id => {
+          commit('update', { id, data: { active: id === payload } })
+        })
+
+        return response
+      } catch (error) {
+        return Promise.reject(error)
+      }
+    },
     async remove({ commit, rootGetters, dispatch }, payload) {
       try {
         const response = await axios.delete(`/edition/${payload}`)
@@ -98,6 +123,7 @@ export default {
             },
             { root: true },
           )
+          commit('setSelectedEdition', newEditions[newEditions.length - 1])
           return response
         }
         await dispatch('priceList/remove', selectedPriceList._id, {
@@ -117,5 +143,12 @@ export default {
       return s.editions.find(e => e._id === s.selectedEdition)
     },
     clone: s => s.clone,
+    active: (s, _, __, rootGetters) => {
+      const priceList = rootGetters['priceList/selectedPriceList']
+      if (!priceList) return null
+      const { editions } = priceList
+      const filtered = s.editions.filter(e => editions.includes(e._id))
+      return filtered.find(e => e.active)
+    },
   },
 }

@@ -218,13 +218,6 @@ export default {
     }
   }
 
-  &__input {
-    background-color: transparent;
-    border: none;
-    outline: none;
-    width: 100%;
-  }
-
   &__create-row {
     text-align: center;
     cursor: pointer;

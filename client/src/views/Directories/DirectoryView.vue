@@ -12,6 +12,7 @@ import ContentBody from '@/components/Layout/ContentBody.vue'
 import { mapActions, mapGetters } from 'vuex'
 
 import keyTypes from '@/mixins/keyTypes.mixin'
+import rootGetters from '@/mixins/rootGetters.mixin'
 
 export default {
   components: {
@@ -25,7 +26,7 @@ export default {
     ExcelUploader,
     RemoveModal,
   },
-  mixins: [keyTypes],
+  mixins: [keyTypes, rootGetters],
   data() {
     return {
       search: '',
@@ -56,17 +57,19 @@ export default {
     architectureValues() {
       //get all architectures that can be architecture of current
       const architectures = this.directories.filter(
-        d => d.data && d._id !== this.directoryId && d.data?.values?.length > 0,
+        d => d._id !== this.directoryId && d.values.length > 0,
       )
+
       // создается массив из архитетур с id архитектуры и массивом колонок с возможными значениями
       // это нужно для сопостовления значений с экселем
       return architectures.map(arc => {
-        const keys = arc.data.keys.filter(k => k.type !== this.InputType.SELECT)
+        const root = this.getRoot(arc._id)
+        const keys = root.keys.filter(k => k.type !== this.InputType.SELECT)
 
         const keyValues = keys.map(key => {
           const obj = {
             keyId: key.id,
-            value: arc.data.values.map(val => val.data[key.id]),
+            value: arc.values.map(val => val.data[key.id]),
           }
 
           return obj
@@ -130,11 +133,14 @@ export default {
           type,
         }
       }
+
+      const root = this.getRoot(architecture.dirId)._id
       //указываю из какой архитектуры берется значение и из каких колонок
       return {
         type: this.InputType.SELECT,
         keys: [keyId],
         dirId: architecture.dirId,
+        root,
       }
     },
     isSameKeys(excelRows) {
@@ -155,8 +161,6 @@ export default {
         })
         if (response) {
           const mergedData = this.mergedData(rows)
-          mergedData.values = [...this.directory.values, ...mergedData.values]
-
           const { keys, values } = mergedData
           await this.updateArchitecture(keys)
           return await this.updateValues(values)
@@ -232,10 +236,10 @@ export default {
         const data = keys.reduce((acc, key, index) => {
           if (key.type === this.InputType.SELECT) {
             // получаю архитектуру из которой берутся значения
-            const dir = this.roots.find(d => d._id === key.dirId)
+            const dirOfValues = this.directories.find(d => d._id === key.dirId)
             //нахожу строку в которой находится значение из excel
             //скорее всего это работает только когда из справочника берется значение строки с 1 ключем (длина массива key.keys равна 1)
-            const row = dir.data.values.find(r => {
+            const row = dirOfValues.values.find(r => {
               const values = key.keys.map(key => r.data[key])
               return values.includes(value[index])
             })
@@ -259,9 +263,22 @@ export default {
       //generate keys
       const { keys, values } = this.getExcelKeysAndValues(rows)
       //формирование ключей таблицы
-      const tableKeys = this.getTableKeys(keys, values)
+      const newKeys = keys.map((key, index) => {
+        const isExists = this.root.keys.find(({ name }) => name === key.name)
+        if (isExists) {
+          return isExists
+        }
+        const column = values.map(row => row[index])
+        const typeData = this.getTypeOfColumn(column)
+
+        return {
+          ...key,
+          ...typeData,
+        }
+      })
+      const tableKeys = this.getTableKeys(newKeys, values)
       //формирование значений таблицы
-      const tableValues = this.getTableValues(tableKeys, values)
+      const tableValues = this.getTableValues(newKeys, values)
 
       return {
         keys: tableKeys,
@@ -273,15 +290,30 @@ export default {
       const { keys, values } = this.getExcelKeysAndValues(rows)
       //фильтрую ключи. Если название ключа из новой архитектурой совпадает с ключом из существующей,
       //то оставляю старый ключ, чтобы под его тип указать значение
-      const merged = [...this.root.keys, ...keys].filter(
-        (key, index, arr) => index === arr.findIndex(k => key.name === k.name),
-      )
 
-      //формирование ключей таблицы
-      const tableKeys = this.getTableKeys(merged, values)
+      const newKeys = keys.map((key, index) => {
+        const isExists = this.root.keys.find(({ name }) => name === key.name)
+        if (isExists) {
+          return isExists
+        }
+        const column = values.map(row => row[index])
+        const typeData = this.getTypeOfColumn(column)
 
-      //формирование значений таблицы
-      const tableValues = this.getTableValues(tableKeys, values)
+        return {
+          ...key,
+          ...typeData,
+        }
+      })
+      const valuesData = this.getTableValues(newKeys, values)
+
+      const tableValues = [...this.directory.values, ...valuesData]
+
+      const allKeys = [...this.root.keys, ...newKeys]
+      const uniqueKeys = [...new Set(allKeys.map(k => k.id))]
+
+      const tableKeys = uniqueKeys.map(k => {
+        return allKeys.find(key => key.id === k)
+      })
 
       return {
         keys: tableKeys,

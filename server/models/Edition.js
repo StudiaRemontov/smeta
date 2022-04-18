@@ -48,6 +48,10 @@ const schema = new mongoose.Schema(
     data: {
       type: dataItem,
     },
+    active: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     versionKey: false,

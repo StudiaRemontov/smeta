@@ -34,6 +34,17 @@ class DirectoryController {
     }
   }
 
+  static async setActive(req, res, next) {
+    try {
+      const id = req.params.id
+      const response = await EditionService.setActive(id)
+
+      return res.json(response)
+    } catch (error) {
+      next(error)
+    }
+  }
+
   static async delete(req, res, next) {
     try {
       const id = req.params.id

@@ -26,7 +26,8 @@ export default {
       readOnlyColumns: [],
       name: '',
       tree: [],
-      differenceKeys: null,
+      differenceKeys: [],
+      filters: {},
     }
   },
   computed: {
@@ -51,6 +52,7 @@ export default {
     const tree = this.clone.value
     const treeData = JSON.parse(JSON.stringify(tree))
     const differ = diff(globalTree, treeData[0])
+
     this.differenceKeys = this.getKeys(differ)
 
     const merged =
@@ -67,8 +69,13 @@ export default {
     this.readOnlyColumns = this.selectedColumns.filter(key => key.readonly)
     this.selectedValues = this.getSelectedValues(this.clone.value[0])
     this.tree = merged
+    const fullDifference = new Set(this.getFullDifference(this.tree[0]))
+    this.differenceKeys = [...fullDifference]
   },
   methods: {
+    isObjectId(id) {
+      return /^[0-9a-fA-F]{24}$/.test(id)
+    },
     getKeys(node) {
       if (node?.key) {
         return [node.key]
@@ -76,6 +83,38 @@ export default {
 
       if (node?.children) {
         return Object.values(node.children).map(this.getKeys).flat()
+      }
+      return []
+    },
+    treeToList(node, list) {
+      const { key, children } = node
+      if (children && children.length > 0) {
+        if (key)
+          return [
+            node,
+            ...node.children.map(c => this.treeToList(c, list)).flat(),
+          ]
+      }
+      return [...list, node.key]
+    },
+    getFullDifference(node) {
+      const { children, key } = node
+      const isDirectory = this.isObjectId(key)
+      let differences = []
+      if (isDirectory && this.differenceKeys.includes(node.key)) {
+        differences = [...this.treeToList(node, [])]
+      } else if (isDirectory && children.length > 0) {
+        const childs = children.map(this.getFullDifference).flat()
+        differences = [...childs]
+      }
+      if (!isDirectory) {
+        if (this.differenceKeys.includes(key)) {
+          differences.push(key)
+        }
+      }
+
+      if (differences.length > 0) {
+        return [key, ...differences]
       }
       return []
     },
@@ -136,30 +175,42 @@ export default {
         :value="tree"
         selectionMode="checkbox"
         :scrollable="true"
+        :filters="filters"
         scrollHeight="flex"
         class="p-treetable-sm"
         v-model:selectionKeys="selectedValues"
       >
         <template #header>
           <div class="table-header">
-            <div class="table-header__multiselect">
-              <span> Отображаемые колнки </span>
-              <MultiSelect
-                v-model="selectedColumns"
-                @change="multiSelectChangeHandler"
-                :options="columns"
-                optionLabel="name"
-                placeholder="Выберите колонки"
-              />
+            <div class="table-header__row">
+              <div class="p-input-icon-left">
+                <i class="pi pi-search"></i>
+                <InputText
+                  v-model="filters['global']"
+                  placeholder="Глобальный поиск"
+                />
+              </div>
             </div>
-            <div class="table-header__multiselect">
-              <span> Колонки для чтения </span>
-              <MultiSelect
-                v-model="readOnlyColumns"
-                :options="selectedColumns"
-                optionLabel="name"
-                placeholder="Выберите колонки"
-              />
+            <div class="table-header__row">
+              <div class="table-header__multiselect">
+                <span> Отображаемые колнки </span>
+                <MultiSelect
+                  v-model="selectedColumns"
+                  @change="multiSelectChangeHandler"
+                  :options="columns"
+                  optionLabel="name"
+                  placeholder="Выберите колонки"
+                />
+              </div>
+              <div class="table-header__multiselect">
+                <span> Колонки для чтения </span>
+                <MultiSelect
+                  v-model="readOnlyColumns"
+                  :options="selectedColumns"
+                  optionLabel="name"
+                  placeholder="Выберите колонки"
+                />
+              </div>
             </div>
           </div>
         </template>
@@ -169,7 +220,7 @@ export default {
           :field="col.id"
           :header="col.name"
           :expander="col.expander"
-          :class="{ first: col.expander }"
+          :class="col.expander ? 'first' : 'secondary'"
         >
           <template #body="{ node }">
             <div
@@ -219,8 +270,14 @@ export default {
 
 .table-header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 10px;
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
 
   &__multiselect {
     display: flex;
@@ -246,7 +303,7 @@ export default {
 }
 
 .input {
-  max-width: 100%;
+  max-width: fit-content;
   width: 70%;
   border: none;
   outline: none;

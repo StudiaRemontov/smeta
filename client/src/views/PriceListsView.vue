@@ -2,6 +2,7 @@
 import AppContent from '@/components/Layout/AppContent.vue'
 import IndexView from './PriceLists/IndexView.vue'
 import CloneView from './PriceLists/CloneView.vue'
+import IndexActions from '@/components/PriceLists/Actions/IndexActions.vue'
 import { mapActions, mapGetters, mapMutations } from 'vuex'
 import keyTypes from '@/mixins/keyTypes.mixin'
 import rootGetters from '@/mixins/rootGetters.mixin'
@@ -14,6 +15,7 @@ export default {
     IndexView,
     CloneView,
     Dropdown,
+    IndexActions,
   },
   mixins: [rootGetters, keyTypes],
   data() {
@@ -24,7 +26,12 @@ export default {
   computed: {
     ...mapGetters('directory', ['roots', 'directories']),
     ...mapGetters('priceList', ['priceLists', 'selectedPriceList']),
-    ...mapGetters('edition', ['editions', 'selectedEdition', 'clone']),
+    ...mapGetters('edition', [
+      'editions',
+      'selectedEdition',
+      'clone',
+      'active',
+    ]),
     selectedPriceListId: {
       get() {
         return this.$store.state.priceList.selectedPriceList
@@ -65,6 +72,21 @@ export default {
       }))
     },
   },
+  watch: {
+    selectedPriceList(value) {
+      if (!value && this.priceLists.length === 0) {
+        return this.$router.push('/pricelists/create')
+      }
+      if (!value && this.$route.name !== 'createEdition') {
+        this.setData()
+      }
+    },
+    selectedEdition(value) {
+      if (!value && this.$route.name !== 'createEdition') {
+        this.setData()
+      }
+    },
+  },
   async mounted() {
     if (this.priceLists.length === 0) {
       this.$router.push({ name: 'createEdition' })
@@ -79,15 +101,15 @@ export default {
     ...mapActions('priceList', {
       create: 'create',
     }),
-    goToCreateEdition() {
+    async goToCreateEdition() {
+      await this.$router.push({ name: 'createEdition' })
       this.setSelectedEdition(null)
-      this.$router.push('/pricelists/create')
       this.$refs['dropdown-edition'].hide()
     },
-    goToCreatePriceList() {
+    async goToCreatePriceList() {
+      await this.$router.push({ name: 'createEdition' })
       this.setSelectedPriceList(null)
       this.setSelectedEdition(null)
-      this.$router.push('/pricelists/create')
       this.$refs['dropdown-priceList'].hide()
     },
     goToIndex() {
@@ -96,11 +118,14 @@ export default {
     },
     priceListChangeHandler() {
       this.setData()
-      this.setSelectedEdition(
+      const selectedId =
+        this.active?._id ||
         this.selectedPriceList.editions[
           this.selectedPriceList.editions.length - 1
-        ],
-      )
+        ]
+
+      this.setSelectedEdition(selectedId)
+      this.$router.push({ name: 'pricelistsIndex' })
     },
     setData() {
       if (!this.selectedPriceList) {
@@ -115,11 +140,13 @@ export default {
         return
       }
       if (!this.selectedEdition) {
-        this.setSelectedEdition(
+        const selectedId =
+          this.active?._id ||
           this.selectedPriceList.editions[
             this.selectedPriceList.editions.length - 1
-          ],
-        )
+          ]
+
+        this.setSelectedEdition(selectedId)
       }
     },
     getValueOfCell(dirId, rowId, keys) {
@@ -192,53 +219,60 @@ export default {
   <AppContent v-if="!loading">
     <template #header>
       <div class="header">
-        <div class="header__action">
-          <label class="bold">Прайс лист</label>
-          <Dropdown
-            v-model="selectedPriceListId"
-            ref="dropdown-priceList"
-            @change="priceListChangeHandler"
-            :options="priceListOptions"
-            :disabled="!!clone"
-            :filter="true"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="Выберите прайс лист"
-          >
-            <template #header>
-              <AppButton
-                class="dropdown-button"
-                outlined
-                @click="goToCreatePriceList"
-              >
-                Создать
-              </AppButton>
-            </template>
-          </Dropdown>
+        <div class="header__action-group">
+          <div class="header__action">
+            <label class="bold">Прайс лист</label>
+            <Dropdown
+              v-model="selectedPriceListId"
+              ref="dropdown-priceList"
+              @change="priceListChangeHandler"
+              :options="priceListOptions"
+              :disabled="!!clone"
+              :filter="true"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Выберите прайс лист"
+            >
+              <template #header>
+                <AppButton
+                  class="dropdown-button"
+                  outlined
+                  @click="goToCreatePriceList"
+                >
+                  Создать
+                </AppButton>
+              </template>
+            </Dropdown>
+          </div>
+          <div class="header__action">
+            <label class="bold">Редакция</label>
+            <Dropdown
+              v-model="selectedEditionId"
+              ref="dropdown-edition"
+              :options="editionOptions"
+              :disabled="!!clone"
+              :filter="true"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Выберите редакцию"
+            >
+              <template #header>
+                <AppButton
+                  class="dropdown-button"
+                  outlined
+                  @click="goToCreateEdition"
+                >
+                  Создать
+                </AppButton>
+              </template>
+            </Dropdown>
+          </div>
         </div>
-        <div class="header__action">
-          <label class="bold">Редакция</label>
-          <Dropdown
-            v-model="selectedEditionId"
-            ref="dropdown-edition"
-            :options="editionOptions"
-            :disabled="!!clone"
-            :filter="true"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="Выберите редакцию"
-          >
-            <template #header>
-              <AppButton
-                class="dropdown-button"
-                outlined
-                @click="goToCreateEdition"
-              >
-                Создать
-              </AppButton>
-            </template>
-          </Dropdown>
-        </div>
+        <IndexActions
+          v-if="$route.name === 'pricelistsIndex' && !clone"
+          class="header__action-group"
+        >
+        </IndexActions>
       </div>
     </template>
     <template #body>
@@ -261,14 +295,20 @@ export default {
 <style lang="scss" scoped>
 .header {
   display: flex;
-  flex-direction: row;
+  justify-content: space-between;
   align-items: center;
-  gap: 10px;
 
   &__action {
     display: flex;
     flex-direction: column;
     gap: 5px;
+
+    &-group {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 10px;
+    }
   }
 }
 

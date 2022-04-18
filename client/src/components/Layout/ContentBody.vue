@@ -1,10 +1,16 @@
 <script>
-export default {}
+export default {
+  computed: {
+    hasHeaderSlot() {
+      return !!this.$slots.header
+    },
+  },
+}
 </script>
 
 <template>
   <div class="content-body">
-    <div class="content-body__header">
+    <div v-if="hasHeaderSlot" class="content-body__header">
       <slot name="header" />
     </div>
     <div class="content-body__content">
