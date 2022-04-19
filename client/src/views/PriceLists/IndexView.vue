@@ -2,13 +2,12 @@
 import ContentBody from '@/components/Layout/ContentBody.vue'
 import TreeTable from 'primevue/treetable'
 import Column from 'primevue/column'
-import ConfirmModal from '@/components/PriceLists/Clone/ConfirmClone.vue'
 import InputText from 'primevue/inputtext'
 
 import { mapGetters } from 'vuex'
 
 export default {
-  components: { TreeTable, Column, ContentBody, ConfirmModal, InputText },
+  components: { TreeTable, Column, ContentBody, InputText },
   data() {
     return {
       expandedKeys: {},
@@ -62,7 +61,6 @@ export default {
 <template>
   <ContentBody>
     <template #content>
-      <ConfirmModal ref="confirm-modal" />
       <TreeTable
         v-if="tree"
         :value="tree"
@@ -113,7 +111,7 @@ export default {
 }
 </style>
 
-<style>
+<style lang="scss">
 .p-treetable-tbody span {
   vertical-align: middle;
   display: block;

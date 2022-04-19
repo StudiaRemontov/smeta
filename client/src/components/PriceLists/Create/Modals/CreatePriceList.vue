@@ -67,7 +67,12 @@ export default {
       <span class="modal__title">{{ title }}</span>
       <form @submit.prevent="_confirm">
         <label>Название</label>
-        <input v-model="name" ref="input" type="text" />
+        <input
+          v-model="name"
+          placeholder="Введите название"
+          ref="input"
+          type="text"
+        />
       </form>
       <div class="modal__actions">
         <AppButton outlined @click="_cancel">

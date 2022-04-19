@@ -189,8 +189,7 @@ export default {
         )
         dir.values = values.map(row => {
           row.data = Object.entries(row.data).reduce((acc, [key, value]) => {
-            const selectKey = keysTypeSelect.find(k => k.id === +key)
-
+            const selectKey = keysTypeSelect.find(k => k.id === key)
             if (selectKey) {
               const findingRow = value
               const text = this.getValueOfCell(
@@ -206,7 +205,6 @@ export default {
           }, {})
           return row
         })
-
         return dir
       })
       this.setClonedDirectories(clonedDirectories)

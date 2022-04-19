@@ -1,7 +1,9 @@
 <script>
 import { mapActions, mapGetters, mapMutations } from 'vuex'
+import ConfirmModal from '@/components/PriceLists/Clone/ConfirmClone.vue'
 
 export default {
+  components: { ConfirmModal },
   computed: {
     ...mapGetters('edition', [
       'active',
@@ -89,13 +91,11 @@ export default {
 
 <template>
   <div>
-    <AppButton
-      outlined
-      variant="success"
-      :disabled="isActive"
-      @click="activeEdition"
-      >Сделать активной</AppButton
-    >
+    <ConfirmModal ref="confirm-modal" />
+
+    <AppButton outlined @click="activeEdition">{{
+      isActive ? 'Активная редакция' : 'Сделать активной'
+    }}</AppButton>
     <AppButton outlined variant="primary" @click="clone"
       >Клонировать {{ isSame ? '' : '*' }}</AppButton
     >

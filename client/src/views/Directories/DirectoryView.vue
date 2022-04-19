@@ -195,7 +195,32 @@ export default {
       }
     },
     getExcelKeysAndValues(rows) {
-      const keys = rows[0].map((item, index) => {
+      const clearedRows = rows.filter(row => {
+        const isEmptyRow = row.some(item => {
+          if (!item) {
+            return true
+          }
+          if (typeof item === 'string') {
+            const trimmed = item.trim()
+            if (trimmed.length === 0) {
+              return true
+            }
+          }
+        })
+        return !isEmptyRow
+      })
+
+      const trimmedRows = clearedRows.map(r => {
+        return r.map(item => {
+          if (typeof item === 'string') {
+            return item.trim()
+          }
+
+          return item
+        })
+      })
+
+      const keys = trimmedRows[0].map((item, index) => {
         const key = {
           name: item,
           id: Date.now() + index,
@@ -204,7 +229,7 @@ export default {
         return key
       })
       //get values of excel remove first row (keys)
-      const values = [...rows]
+      const values = [...trimmedRows]
       values.shift()
       return { keys, values }
     },

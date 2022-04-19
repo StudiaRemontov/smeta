@@ -48,7 +48,6 @@ export default {
     const globalTree = JSON.parse(
       JSON.stringify(this.getSubItems(this.selectedRoot)),
     )
-
     const tree = this.clone.value
     const treeData = JSON.parse(JSON.stringify(tree))
     const differ = diff(globalTree, treeData[0])
@@ -227,15 +226,13 @@ export default {
               class="wrapper"
               :class="{ newest: differenceKeys.includes(node.key) }"
             >
-              <span
-                v-if="col.readonly && node.children.length > 0"
-                class="bold"
-              >
+              <span v-if="node.children.length > 0" class="bold">
                 {{ node.data[col.id] }}
               </span>
               <input
                 v-else-if="!col.readonly && col.id in node.data"
                 v-model="node.data[col.id]"
+                placeholder="Введите значение"
                 type="text"
                 class="input"
               />

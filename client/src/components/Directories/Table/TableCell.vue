@@ -1,57 +1,63 @@
 <script>
 import keyTypes from '@/mixins/keyTypes.mixin'
-import rootGetters from '@/mixins/rootGetters.mixin'
+
+import InputText from 'primevue/inputtext'
+import Dropdown from 'primevue/dropdown'
+import InputNumber from 'primevue/inputnumber'
+
 import { mapGetters } from 'vuex'
 
 export default {
-  mixins: [keyTypes, rootGetters],
+  components: {
+    InputText,
+    Dropdown,
+    InputNumber,
+  },
+  mixins: [keyTypes],
   props: {
-    value: {
+    modelValue: {
       required: true,
+    },
+    field: {
+      required: true,
+      type: String,
     },
     rowIndex: {
       required: true,
       type: Number,
     },
-    rowId: {
-      required: true,
-      type: Number,
-    },
-    col: {
-      type: Object,
-      required: true,
-    },
-    dirId: {
-      required: true,
-    },
   },
-  emits: ['change'],
+  emits: ['update:modelValue'],
   computed: {
-    ...mapGetters('directory', ['directories', 'root']),
-    type() {
-      return this.col.type
+    ...mapGetters('directory', ['root', 'roots', 'directories']),
+    key() {
+      return this.root.keys.find(k => k.id === this.field)
     },
-    inputType() {
-      if (this.type === this.InputType.NUMBER) {
-        return 'number'
-      }
-
-      return 'text'
+    type() {
+      return this.key?.type
+    },
+    newValue: {
+      get() {
+        return this.modelValue
+      },
+      set(value) {
+        this.$emit('update:modelValue', value)
+      },
     },
     options() {
-      if (this.col.type !== this.InputType.SELECT) {
+      if (this.type !== this.InputType.SELECT) {
         return []
       }
-      const root = this.directories.find(d => d._id === this.col.root)
+      const root = this.roots.find(d => d._id === this.key.root)
       if (!root) {
         return []
       }
-      const keys = root.keys.filter(k => this.col.keys.includes(k.id))
+      const keys = root.keys.filter(k => this.key.keys.includes(k.id))
       if (!keys.length) {
         return []
       }
       const directoryOfValues = this.directories.find(
-        d => d._id === this.col.dirId,
+        d => d._id === this.key.dirId,
       )
       return directoryOfValues.values.map(row => {
         const text = keys.map(key => {
@@ -68,6 +74,7 @@ export default {
           return row.data[key.id]
         })
         return {
+          hidden: false,
           value: row.id,
           text: text.join(', '),
         }
@@ -78,7 +85,7 @@ export default {
     getValueOfCell(dirId, root, rowId, keys) {
       const directory = this.directories.find(d => d._id === dirId)
       if (!directory) return null
-      const rootDir = this.directories.find(d => d._id === root)
+      const rootDir = this.roots.find(d => d._id === root)
       const visibleKeys = rootDir.keys.filter(k => keys.includes(k.id))
       const vals = visibleKeys.map(key => {
         const row = directory.values.find(r => r.id === +rowId)
@@ -96,50 +103,23 @@ export default {
 </script>
 
 <template>
-  <td class="table-cell">
-    <input
-      v-if="type === InputType.STRING || type === InputType.NUMBER"
-      :value="value"
-      class="input"
-      :type="inputType"
-      @change="$emit('change', rowId, col.id, $event.target.value)"
-    />
-    <select
-      v-else
-      :value="value"
-      @change="$emit('change', rowId, col.id, $event.target.value)"
-      class="select"
-    >
-      <option
-        v-for="option in options"
-        :key="option.value"
-        :value="option.value"
-      >
-        {{ option.text }}
-      </option>
-    </select>
-  </td>
+  <InputText
+    v-if="type === InputType.STRING"
+    v-model="newValue"
+    placeholder="Введите значение"
+  />
+  <InputNumber
+    v-else-if="type === InputType.NUMBER"
+    v-model="newValue"
+    :format="false"
+    placeholder="Введите значение"
+  />
+  <Dropdown
+    v-else-if="type === InputType.SELECT"
+    v-model="newValue"
+    placeholder="Введите значение"
+    :options="options"
+    optionLabel="text"
+    optionValue="value"
+  />
 </template>
-
-<style lang="scss" scoped>
-.table-cell {
-  min-width: 100px;
-  padding-top: 12px;
-  padding-bottom: 12px;
-  text-align: left;
-  color: white;
-  border-top: 1px solid #e9ecef;
-  border-bottom: 1px solid #e9ecef;
-  padding: 8px;
-  color: #000000;
-  line-height: 17px;
-}
-.input,
-.select {
-  background-color: transparent;
-  border: none;
-  outline: none;
-  border-bottom: 1px solid #9c9c9c;
-  width: 100%;
-}
-</style>

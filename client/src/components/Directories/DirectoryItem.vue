@@ -133,6 +133,12 @@ export default {
       }
       this.$router.push(`/directories/${this.directory._id}`)
     },
+    async focusInput() {
+      this.isEditing = true
+      await this.$nextTick()
+      this.$refs.input.focus()
+      this.$refs.input.select()
+    },
     async update(e) {
       this.$refs.input.blur()
       const name = e.target.value
@@ -179,7 +185,11 @@ export default {
 <template>
   <li class="directory-item" @dblclick="openFolder">
     <div class="directory-item__header">
-      <span v-if="!isEditing" class="directory-item__name">
+      <span
+        v-if="!isEditing"
+        @dblclick.stop="focusInput"
+        class="directory-item__name"
+      >
         {{ directory.name }}
       </span>
       <input
@@ -187,6 +197,7 @@ export default {
         ref="input"
         :value="directory.name"
         class="directory-item__input"
+        placeholder="Введите название паки"
         @change="update"
         @focus="isEditing = true"
         @blur="isEditing = false"
@@ -210,7 +221,6 @@ export default {
   flex-direction: column;
   justify-content: space-between;
   padding: 20px 15px 15px;
-  user-select: none;
 
   &__header {
     display: flex;
@@ -221,6 +231,7 @@ export default {
     font-size: $font-medium;
     font-weight: 700;
     word-break: break-word;
+    user-select: auto;
   }
 
   &__input {
@@ -229,7 +240,6 @@ export default {
     font-size: $font-medium;
     font-weight: 700;
     border: none;
-    outline: none;
   }
 
   &__counter {

@@ -1,13 +1,24 @@
 <script>
 import { mapActions, mapGetters, mapMutations } from 'vuex'
 import KeyModal from './Modals/KeyModal.vue'
-import OutlinedPlusIcon from '@/components/UI/Icons/SquaredOutlinedPlusIcon.vue'
-import PlusIcon from '@/components/UI/Icons/SquaredPlusIcon.vue'
-import TableCell from './Table/TableCell.vue'
 import keyTypes from '@/mixins/keyTypes.mixin'
 
+import DataTable from 'primevue/datatable'
+import Column from 'primevue/column'
+import Button from 'primevue/button'
+
+import TableCell from './Table/TableCell.vue'
+import CellBody from './Table/CellBody.vue'
+
 export default {
-  components: { OutlinedPlusIcon, PlusIcon, KeyModal, TableCell },
+  components: {
+    KeyModal,
+    DataTable,
+    Column,
+    Button,
+    TableCell,
+    CellBody,
+  },
   mixins: [keyTypes],
   props: {
     values: {
@@ -21,7 +32,16 @@ export default {
       return this.$route.params.id
     },
     keys() {
-      return this.root?.keys
+      return this.root?.keys.map(k => ({
+        ...k,
+        id: k.id + '',
+      }))
+    },
+    data() {
+      if (!this.values?.length) {
+        return []
+      }
+      return this.values.map(r => r.data)
     },
   },
   watch: {
@@ -50,15 +70,14 @@ export default {
 
       this.updateArchitecture(keys)
     },
-    updateValue(rowId, key, value) {
+    updateValue(rowIndex, key, value) {
       const newValues = JSON.parse(JSON.stringify(this.values))
-      const values = newValues.map(row => {
-        if (row.id === rowId) {
+      const values = newValues.map((row, index) => {
+        if (index === rowIndex) {
           row.data[key] = value
         }
         return row
       })
-
       this.updateValues(values)
     },
     async openKeyModal() {
@@ -70,25 +89,26 @@ export default {
       if (!response) {
         return
       }
-      const keys = [...this.keys, { id: Date.now(), ...response }]
+      const keys = [...this.keys, { id: Date.now() + '', ...response }]
 
       this.updateArchitecture(keys)
     },
     async openEditModal(key) {
+      const keyToEdit = this.keys.find(k => k.id === key)
       const response = await this.$refs['key-modal'].show({
         title: 'Изменить колонку',
         okButton: 'Сохранить',
         cancelButton: 'Отмена',
-        key,
+        key: keyToEdit,
       })
       if (!response) {
         return
       }
       if (response.remove) {
-        return this.removeKey(key.id)
+        return this.removeKey(key)
       }
 
-      this.updateKey(key.id, response)
+      this.updateKey(key, response)
     },
     async removeKey(keyId) {
       const keys = this.keys.filter(({ id }) => id !== keyId)
@@ -112,6 +132,17 @@ export default {
       const values = this.values.filter((_, index) => index !== rowIndex)
       this.updateValues(values)
     },
+    async createRow() {
+      this.createTableRow(this.directoryId)
+      await this.$nextTick()
+      const rows = document.querySelectorAll('.p-editable-column')
+      const rowsLength = rows.length
+      const keysLength = this.keys.length
+      const firstCellOfLastRow = rows[rowsLength - keysLength]
+      setTimeout(() => {
+        firstCellOfLastRow.click()
+      })
+    },
     async updateValues(values) {
       try {
         await this.updateDirectoryValues({ id: this.directoryId, values })
@@ -126,115 +157,87 @@ export default {
         console.log(error)
       }
     },
+    getTypeOfField(keyId) {
+      const key = this.keys.find(k => k.id === keyId)
+      return key?.type
+    },
+    editComplete(event) {
+      const { newData, field, index, newValue, value } = event
+      if (newValue === value) {
+        return
+      }
+      setTimeout(() => {
+        this.updateValue(index, field, newData[field])
+      })
+    },
   },
 }
 </script>
 
 <template>
   <KeyModal ref="key-modal" />
-  <table class="table">
-    <tr class="table__row table__row--head">
-      <th
-        v-for="key in keys"
-        :key="key.name"
-        class="table__cell table__cell--head"
-        @click="openEditModal(key)"
-      >
-        {{ key.name }}
-      </th>
-      <th
-        class="table__cell table__cell--head table__cell--clickable"
-        @click="openKeyModal"
-      >
-        <PlusIcon />
-      </th>
-    </tr>
-    <tr v-for="(row, rowIndex) in values" :key="row.id" class="table__row">
-      <TableCell
-        v-for="key in keys"
-        :key="key.name"
-        :value="values[rowIndex].data[key.id]"
-        :rowIndex="rowIndex"
-        :rowId="row.id"
-        :col="key"
-        :dirId="directoryId"
-        @change="updateValue"
-        ref="cell"
-      />
-      <td class="table__cell table__cell--empty">
-        <AppButton variant="danger" outlined @click="removeRow(rowIndex)">
-          Удалить
-        </AppButton>
-      </td>
-    </tr>
-  </table>
-  <AppButton class="create-button" @click="createTableRow(directoryId)">
-    <OutlinedPlusIcon />
-    <span class="create-button__text"> Добавить элементы </span>
-  </AppButton>
+  <DataTable
+    ref="table"
+    :value="data"
+    :resizableColumns="true"
+    edit-mode="cell"
+    showGridlines
+    :scrollable="true"
+    scrollHeight="flex"
+    @cell-edit-complete="editComplete"
+  >
+    <template #header>
+      <div class="table-header">
+        <Button @click="openKeyModal">Добавить колонку</Button>
+        <Button @click="createRow">Добавить элемент</Button>
+      </div>
+    </template>
+    <Column
+      v-for="key in keys"
+      :key="key.id"
+      :field="key.id"
+      :header="key.name"
+    >
+      <template #editor="{ data, field, index }">
+        <TableCell v-model="data[field]" :field="field" :rowIndex="index" />
+      </template>
+      <template #header="{ column }">
+        <button @click="openEditModal(column.key)">Edit</button>
+      </template>
+      <template #body="{ data, field }">
+        <CellBody :value="data[field]" :field="field" />
+      </template>
+    </Column>
+    <Column class="delete-cell">
+      <template #body="{ index }">
+        <Button
+          icon="pi pi-trash"
+          class="p-button-rounded p-button-danger"
+          @click="removeRow(index)"
+        />
+      </template>
+    </Column>
+  </DataTable>
 </template>
 
 <style lang="scss" scoped>
 .table {
-  max-width: 100%;
-  width: 100%;
-  border-collapse: collapse;
-
-  &__row--head {
-    position: sticky;
-    top: 0;
-  }
-
-  &__cell {
-    padding-top: 12px;
-    padding-bottom: 12px;
-    text-align: left;
-    color: white;
-    border-top: 1px solid #c8c8c8;
-    border-bottom: 1px solid #c8c8c8;
-    padding: 8px;
-    color: #000000;
-    line-height: 17px;
-
-    &--head {
-      background-color: #f5f5f5;
-      cursor: pointer;
-
-      input {
-        font-weight: 700;
-      }
-    }
-
-    &--empty,
-    &--clickable {
-      border: 1px solid #c8c8c8;
-      border-right: none;
-    }
-
-    &--clickable {
-      text-align: center;
-      width: 75px;
-      cursor: pointer;
-    }
-  }
-
-  &__create-row {
-    text-align: center;
-    cursor: pointer;
+  &-header {
+    display: flex;
+    gap: 10px;
+    align-items: center;
   }
 }
+</style>
 
-.create-button {
-  margin-top: 20px;
+<style lang="scss">
+.delete-cell {
+  max-width: 100px;
+  min-width: 100px;
   display: flex;
-  align-items: center;
-  gap: 15px;
-
-  &__text {
-    font-weight: 700;
-    font-size: 16px;
-    line-height: 20px;
-    color: #00afec;
-  }
+  justify-content: center;
+}
+.p-datatable-wrapper {
+  @include darkScroll;
 }
 </style>

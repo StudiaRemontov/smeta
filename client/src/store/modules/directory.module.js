@@ -1,4 +1,5 @@
 import axios from '../../axios'
+import { InputType } from '../../enum/InputType'
 
 export default {
   namespaced: true,
@@ -51,7 +52,7 @@ export default {
       const keys = !directory.parent ? directory.keys : getters.root.keys
 
       const newRow = keys.reduce((acc, item) => {
-        acc[item.id] = ''
+        acc[item.id] = item.type === InputType.NUMBER ? 0 : ''
         return acc
       }, {})
 

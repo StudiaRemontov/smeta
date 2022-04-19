@@ -42,6 +42,7 @@ export default {
     <input
       v-model="name"
       @keyup.enter="create"
+      placeholder="Введите название паки"
       @blur="create"
       ref="input"
       class="directory-item__input"
