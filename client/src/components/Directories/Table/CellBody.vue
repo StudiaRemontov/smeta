@@ -18,7 +18,7 @@ export default {
   computed: {
     ...mapGetters('directory', ['root', 'roots', 'directories']),
     key() {
-      return this.root.keys.find(k => k.id === +this.field)
+      return this.root.keys.find(k => k.id === this.field)
     },
     type() {
       return this.key?.type
@@ -46,7 +46,7 @@ export default {
       const rootDir = this.roots.find(d => d._id === root)
       const visibleKeys = rootDir.keys.filter(k => keys.includes(k.id))
       const vals = visibleKeys.map(key => {
-        const row = directory.values.find(r => r.id === +rowId)
+        const row = directory.values.find(r => r.id === rowId)
         if (key.type === this.InputType.SELECT) {
           const findingRow = row.data[key.id]
           return this.getValueOfCell(key.dirId, key.root, findingRow, key.keys)

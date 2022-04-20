@@ -46,7 +46,6 @@ export default {
         d => d?.parent === directory._id,
       )
       const { values } = directory
-
       const subChildren = values
         ? values.map(n => ({
             key: n.id,

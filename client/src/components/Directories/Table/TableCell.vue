@@ -31,7 +31,7 @@ export default {
   computed: {
     ...mapGetters('directory', ['root', 'roots', 'directories']),
     key() {
-      return this.root.keys.find(k => k.id === +this.field)
+      return this.root.keys.find(k => k.id === this.field)
     },
     type() {
       return this.key?.type

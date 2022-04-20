@@ -223,7 +223,7 @@ export default {
       const keys = trimmedRows[0].map((item, index) => {
         const key = {
           name: item,
-          id: Date.now() + index,
+          id: Date.now() + index + '',
         }
 
         return key
@@ -279,7 +279,7 @@ export default {
         }, {})
 
         return {
-          id: Date.now() + rowIndex,
+          id: Date.now() + rowIndex + '',
           data,
         }
       })

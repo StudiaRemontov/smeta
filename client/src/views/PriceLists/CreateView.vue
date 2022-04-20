@@ -27,7 +27,9 @@ export default {
   computed: {
     tree() {
       if (!this.selectedRoot) return []
-      const tree = this.getSubItems(this.selectedRoot)
+      const root = this.clonedDirectories.find(c => c._id === this.selectedRoot._id)
+      const tree = this.getSubItems(root)
+      
       return [tree]
     },
     rootOptions() {
