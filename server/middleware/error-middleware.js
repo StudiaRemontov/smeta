@@ -1,5 +1,5 @@
 const ApiError = require('../utils/ApiError')
-const Logger = require('../utils/Logger')
+const Logger = require('../utils/logger')
 
 const error = (error, req, res, next) => {
   Logger.log('ERROR', error.message)

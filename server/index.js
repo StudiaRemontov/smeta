@@ -3,7 +3,7 @@ const cors = require('cors')
 const mongoose = require('mongoose')
 
 //utils
-const Logger = require('./utils/Logger')
+const Logger = require('./utils/logger')
 
 //config
 const config = require('./config/index')
@@ -17,11 +17,26 @@ const pricelist = require('./router/priceList')
 const errorMiddleware = require('./middleware/error-middleware')
 
 const app = express()
-app.use(
-  cors({
-    origin: config.frontend,
-  })
-)
+
+if (config.IS_PRODUCTION) {
+  const serveStatic = require('serve-static');
+  const history = require('connect-history-api-fallback');
+
+  app.use(history());
+  app.use(serveStatic(path.join(__dirname, 'client')))
+}
+
+if (!config.IS_PRODUCTION) {
+  const cors = require('cors');
+
+  const corsOptions = {
+      origin: config.frontend
+  }
+
+  app.use(cors(corsOptions));
+}
+
+
 app.use(express.json())
 
 //routes
