@@ -327,7 +327,8 @@ export default {
   }
 
   .secondary {
-    flex: 0 0 100px !important;
+    min-width: 200px;
+    flex: 0 0 auto !important;
   }
 }
 

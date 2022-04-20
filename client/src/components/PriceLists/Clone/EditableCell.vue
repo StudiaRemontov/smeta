@@ -2,16 +2,15 @@
 import keyTypes from '@/mixins/keyTypes.mixin'
 
 import InputText from 'primevue/inputtext'
-import Dropdown from 'primevue/dropdown'
 import InputNumber from 'primevue/inputnumber'
-
+import Dropdown from 'primevue/dropdown'
 import { mapGetters } from 'vuex'
 
 export default {
   components: {
     InputText,
-    Dropdown,
     InputNumber,
+    Dropdown,
   },
   mixins: [keyTypes],
   props: {
@@ -22,16 +21,17 @@ export default {
       required: true,
       type: String,
     },
-    rowIndex: {
+    root: {
       required: true,
-      type: Number,
+      type: Object,
     },
   },
   emits: ['update:modelValue'],
   computed: {
-    ...mapGetters('directory', ['root', 'roots', 'directories']),
+    ...mapGetters('directory', ['roots', 'directories']),
+    ...mapGetters('editions', ['selectedRoot']),
     key() {
-      return this.root.keys.find(k => k.id === +this.field)
+      return this.root.keys.find(k => k.id === this.field)
     },
     type() {
       return this.key?.type
@@ -75,7 +75,6 @@ export default {
         })
         return {
           hidden: false,
-          value: row.id,
           text: text.join(', '),
         }
       })
@@ -120,6 +119,6 @@ export default {
     placeholder="Введите значение"
     :options="options"
     optionLabel="text"
-    optionValue="value"
+    optionValue="text"
   />
 </template>

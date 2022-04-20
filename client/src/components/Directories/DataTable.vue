@@ -188,7 +188,6 @@ export default {
   >
     <template #header>
       <div class="table-header">
-        <Button @click="openKeyModal">Добавить колонку</Button>
         <Button @click="createRow">Добавить элемент</Button>
       </div>
     </template>
@@ -197,18 +196,28 @@ export default {
       :key="key.id"
       :field="key.id"
       :header="key.name"
+      class="column"
     >
       <template #editor="{ data, field, index }">
         <TableCell v-model="data[field]" :field="field" :rowIndex="index" />
       </template>
       <template #header="{ column }">
-        <button @click="openEditModal(column.key)">Edit</button>
+        <Button
+          icon="pi pi-pencil"
+          class="p-button-rounded p-button-text"
+          @click="openEditModal(column.key)"
+        />
       </template>
       <template #body="{ data, field }">
         <CellBody :value="data[field]" :field="field" />
       </template>
     </Column>
-    <Column class="delete-cell">
+    <Column field="create" class="create-cell">
+      <template #header>
+        <Button @click="openKeyModal">
+          <i class="pi pi-plus"></i>
+        </Button>
+      </template>
       <template #body="{ index }">
         <Button
           icon="pi pi-trash"
@@ -239,5 +248,16 @@ export default {
 }
 .p-datatable-wrapper {
   @include darkScroll;
+}
+
+.p-datatable .p-column-header-content {
+  flex-direction: row-reverse;
+  gap: 10px;
+}
+
+.create-cell {
+  min-width: 100px;
+  display: flex;
+  justify-content: center;
 }
 </style>

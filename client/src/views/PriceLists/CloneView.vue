@@ -1,13 +1,15 @@
 <script>
 import ContentBody from '@/components/Layout/ContentBody.vue'
 import CreatePriceList from '@/components/PriceLists/Create/Modals/CreatePriceList.vue'
+import EditableCell from '@/components/PriceLists/Clone/EditableCell.vue'
 import TreeTable from 'primevue/treetable'
 import MultiSelect from 'primevue/multiselect'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
 import { merge, mergeWith, isArray } from 'lodash'
-import { diff } from 'deep-object-diff'
+import { addedDiff, detailedDiff, diff, updatedDiff } from 'deep-object-diff'
 import priceList from '@/mixins/priceList.mixin'
+import _ from 'lodash'
 
 export default {
   components: {
@@ -17,6 +19,7 @@ export default {
     Column,
     MultiSelect,
     InputText,
+    EditableCell,
   },
   mixins: [priceList],
   data() {
@@ -50,14 +53,17 @@ export default {
     )
     const tree = this.clone.value
     const treeData = JSON.parse(JSON.stringify(tree))
-    const differ = diff(globalTree, treeData[0])
-
-    this.differenceKeys = this.getKeys(differ)
 
     const merged =
       this.clone.mergeType === 'full'
-        ? this.merge1([globalTree], treeData)
-        : this.merge2([globalTree], treeData)
+        ? this.merge1(
+            JSON.parse(JSON.stringify([globalTree])),
+            JSON.parse(JSON.stringify(treeData)),
+          )
+        : this.merge2(
+            JSON.parse(JSON.stringify([globalTree])),
+            JSON.parse(JSON.stringify(treeData)),
+          )
 
     const keys = JSON.parse(JSON.stringify(this.selectedEdition.keys))
     this.selectedColumns = keys.map((key, index) => ({
@@ -68,10 +74,21 @@ export default {
     this.readOnlyColumns = this.selectedColumns.filter(key => key.readonly)
     this.selectedValues = this.getSelectedValues(this.clone.value[0])
     this.tree = merged
-    const fullDifference = new Set(this.getFullDifference(this.tree[0]))
-    this.differenceKeys = [...fullDifference]
   },
   methods: {
+    tempDiff(object, base) {
+      function changes(object, base) {
+        return _.transform(object, function (result, value, key) {
+          if (!_.isEqual(value, base[key])) {
+            result[key] =
+              _.isObject(value) && _.isObject(base[key])
+                ? changes(value, base[key])
+                : value
+          }
+        })
+      }
+      return changes(object, base)
+    },
     isObjectId(id) {
       return /^[0-9a-fA-F]{24}$/.test(id)
     },
@@ -229,13 +246,18 @@ export default {
               <span v-if="node.children.length > 0" class="bold">
                 {{ node.data[col.id] }}
               </span>
-              <input
-                v-else-if="!col.readonly && col.id in node.data"
-                v-model="node.data[col.id]"
-                placeholder="Введите значение"
-                type="text"
-                class="input"
-              />
+              <template v-else-if="!col.readonly && col.id in node.data">
+                <EditableCell
+                  v-model="node.data[col.id]"
+                  :root="selectedRoot"
+                  :field="col.id"
+                />
+                <!-- <InputText
+                  v-model="node.data[col.id]"
+                  placeholder="Введите значение"
+                /> -->
+              </template>
+
               <span v-else>
                 {{ node.data[col.id] }}
               </span>
