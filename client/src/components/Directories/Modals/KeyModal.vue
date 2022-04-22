@@ -24,9 +24,19 @@ export default {
     return getInitState()
   },
   computed: {
-    ...mapGetters('directory', ['directories']),
+    ...mapGetters('directory', ['directories', 'root']),
     id() {
       return this.$route.params.id
+    },
+    filteredTypeOptions() {
+      const hasCounter = this.root.keys.find(
+        k => k.type === this.InputType.COUNTER,
+      )
+      if (hasCounter && this.type !== this.InputType.COUNTER) {
+        return this.typeOptions.filter(t => t !== this.InputType.COUNTER)
+      }
+
+      return this.typeOptions
     },
     options() {
       if (!this.id) return []
@@ -131,7 +141,7 @@ export default {
           <label class="form__label">Тип</label>
           <select v-model="type" class="select" @change="resetSelectData">
             <option
-              v-for="option in typeOptions"
+              v-for="option in filteredTypeOptions"
               class="select__option"
               :key="option"
               :value="option"

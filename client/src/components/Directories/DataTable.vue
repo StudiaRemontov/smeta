@@ -31,11 +31,17 @@ export default {
     directoryId() {
       return this.$route.params.id
     },
-    keys() {
+    allKeys() {
       return this.root?.keys.map(k => ({
         ...k,
         id: k.id + '',
       }))
+    },
+    eidtableKeys() {
+      return this.root?.keys.filter(k => k.type !== this.InputType.COUNTER)
+    },
+    counter() {
+      return this.root?.keys.find(k => k.type === this.InputType.COUNTER)
     },
     data() {
       if (!this.values?.length) {
@@ -58,7 +64,7 @@ export default {
       'createTableRow',
     ]),
     updateKey(key, value) {
-      const keys = this.keys.map(item => {
+      const keys = this.allKeys.map(item => {
         if (item.id === key) {
           return {
             ...item,
@@ -89,12 +95,12 @@ export default {
       if (!response) {
         return
       }
-      const keys = [...this.keys, { id: Date.now() + '', ...response }]
+      const keys = [...this.allKeys, { id: Date.now() + '', ...response }]
 
       this.updateArchitecture(keys)
     },
     async openEditModal(key) {
-      const keyToEdit = this.keys.find(k => k.id === key)
+      const keyToEdit = this.allKeys.find(k => k.id === key)
       const response = await this.$refs['key-modal'].show({
         title: 'Изменить колонку',
         okButton: 'Сохранить',
@@ -111,7 +117,7 @@ export default {
       this.updateKey(key, response)
     },
     async removeKey(keyId) {
-      const keys = this.keys.filter(({ id }) => id !== keyId)
+      const keys = this.allKeys.filter(({ id }) => id !== keyId)
 
       if (keys.length === 0) {
         await this.updateValues([])
@@ -137,7 +143,7 @@ export default {
       await this.$nextTick()
       const rows = document.querySelectorAll('.p-editable-column')
       const rowsLength = rows.length
-      const keysLength = this.keys.length
+      const keysLength = this.editComplete.length
       const firstCellOfLastRow = rows[rowsLength - keysLength]
       setTimeout(() => {
         firstCellOfLastRow.click()
@@ -158,15 +164,15 @@ export default {
       }
     },
     getTypeOfField(keyId) {
-      const key = this.keys.find(k => k.id === keyId)
+      const key = this.eidtableKeys.find(k => k.id === keyId)
       return key?.type
     },
     editComplete(event) {
-      const { newData, field, index, newValue, value } = event
-      if (newValue === value) {
-        return
-      }
+      const { newData, field, index } = event
       setTimeout(() => {
+        if (this.data[index][field] === newData[field]) {
+          return
+        }
         this.updateValue(index, field, newData[field])
       })
     },
@@ -191,8 +197,20 @@ export default {
         <Button @click="createRow">Добавить элемент</Button>
       </div>
     </template>
+    <Column v-if="counter" :field="counter.id" :header="counter.name">
+      <template #header>
+        <Button
+          icon="pi pi-pencil"
+          class="p-button-rounded p-button-text"
+          @click="openEditModal(counter.id)"
+        />
+      </template>
+      <template #body="{ index }">
+        {{ index + 1 }}
+      </template>
+    </Column>
     <Column
-      v-for="key in keys"
+      v-for="key in eidtableKeys"
       :key="key.id"
       :field="key.id"
       :header="key.name"
@@ -214,9 +232,11 @@ export default {
     </Column>
     <Column field="create" class="create-cell">
       <template #header>
-        <Button @click="openKeyModal">
-          <i class="pi pi-plus"></i>
-        </Button>
+        <Button
+          label="Добавить колонку"
+          @click="openKeyModal"
+          icon="pi pi-plus"
+        />
       </template>
       <template #body="{ index }">
         <Button

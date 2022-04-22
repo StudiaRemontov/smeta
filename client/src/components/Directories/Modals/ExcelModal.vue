@@ -3,6 +3,7 @@ import PopupModal from '../../UI/PopupModal.vue'
 
 const getInitState = () => ({
   title: undefined,
+  message: undefined,
   okButton: undefined,
   cancelButton: undefined,
   resolvePromise: undefined,
@@ -17,6 +18,7 @@ export default {
   methods: {
     show(options) {
       this.title = options.title
+      this.message = options.message
       this.okButton = options.okButton
       this.cancelButton = options.cancelButton
 
@@ -47,12 +49,9 @@ export default {
   <PopupModal ref="popup">
     <div class="modal">
       <span class="modal__title">{{ title }}</span>
-      <span> В данном справочнике уже есть данные. </span>
-      <span>
-        Заменить их или добавить импортируемые данные к существующим?
-      </span>
+      <span> {{ message }}</span>
       <div class="modal__actions">
-        <AppButton outlined @click="_cancel">
+        <AppButton v-if="cancelButton" outlined @click="_cancel">
           {{ cancelButton }}
         </AppButton>
         <AppButton outlined @click="_confirm">

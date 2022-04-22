@@ -25,11 +25,15 @@ export default {
       required: true,
       type: Object,
     },
+    updated: {
+      type: Boolean,
+      default: false,
+    },
+    disabled: Boolean,
   },
   emits: ['update:modelValue'],
   computed: {
     ...mapGetters('directory', ['roots', 'directories']),
-    ...mapGetters('editions', ['selectedRoot']),
     key() {
       return this.root.keys.find(k => k.id === this.field)
     },
@@ -80,6 +84,15 @@ export default {
       })
     },
   },
+  mounted() {
+    if (this.type !== this.InputType.SELECT) {
+      return
+    }
+    const isExists = !!this.options.find(o => o.text === this.modelValue)
+    if (!isExists) {
+      this.newValue = this.options[0].text
+    }
+  },
   methods: {
     getValueOfCell(dirId, root, rowId, keys) {
       const directory = this.directories.find(d => d._id === dirId)
@@ -106,12 +119,16 @@ export default {
     v-if="type === InputType.STRING"
     v-model="newValue"
     placeholder="Введите значение"
+    :disabled="disabled"
+    :class="{ updated }"
   />
   <InputNumber
     v-else-if="type === InputType.NUMBER"
     v-model="newValue"
     :format="false"
     placeholder="Введите значение"
+    :disabled="disabled"
+    :class="{ updated }"
   />
   <Dropdown
     v-else-if="type === InputType.SELECT"
@@ -120,5 +137,15 @@ export default {
     :options="options"
     optionLabel="text"
     optionValue="text"
+    :disabled="disabled"
+    :class="{ updated }"
   />
 </template>
+
+<style lang="scss">
+.p-inputnumber.updated {
+  .p-inputnumber-input {
+    border-color: #2196f3 !important;
+  }
+}
+</style>

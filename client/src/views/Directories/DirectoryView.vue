@@ -143,19 +143,39 @@ export default {
         root,
       }
     },
-    isSameKeys(excelRows) {
-      if (excelRows.length !== this.root.keys.length) {
+    isSameKeys(excelKeys) {
+      if (excelKeys.length !== this.root.keys.length) {
         return false
       }
+
+      return excelKeys.every((keyName, index) => {
+        if (keyName !== this.root.keys[index].name) {
+          return false
+        }
+
+        return true
+      })
     },
     async fileChangeHandler(rows) {
       if (rows.length === 0) {
         return
       }
 
+      if (this.root.keys.length > 0) {
+        const isSame = this.isSameKeys(rows[0])
+        if (!isSame) {
+          return await this.$refs['excel-modal'].show({
+            title: 'Ошибка',
+            message: 'Данные из Excel соответствуют архитектуре справочника',
+            okButton: 'Ok',
+          })
+        }
+      }
+
       if (this.directory.values.length > 0) {
         const response = await this.$refs['excel-modal'].show({
-          title: 'Добавить данные или заменить существующие?',
+          title: 'Выберите способ импорта данных',
+          message: 'Добавить данные или заменить существующие?',
           okButton: 'Добавить',
           cancelButton: 'Заменить',
         })

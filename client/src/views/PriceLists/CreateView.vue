@@ -7,6 +7,7 @@ import MultiSelect from 'primevue/multiselect'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
 import priceListMixin from '@/mixins/priceList.mixin'
+import expandAllMixin from '@/mixins/expandAll.mixin'
 
 export default {
   components: {
@@ -18,18 +19,15 @@ export default {
     MultiSelect,
     InputText,
   },
-  mixins: [priceListMixin],
-  data() {
-    return {
-      filters: {},
-    }
-  },
+  mixins: [priceListMixin, expandAllMixin],
   computed: {
     tree() {
       if (!this.selectedRoot) return []
-      const root = this.clonedDirectories.find(c => c._id === this.selectedRoot._id)
+      const root = this.clonedDirectories.find(
+        c => c._id === this.selectedRoot._id,
+      )
       const tree = this.getSubItems(root)
-      
+
       return [tree]
     },
     rootOptions() {
@@ -84,6 +82,7 @@ export default {
         v-if="selectedRoot"
         :value="tree"
         selectionMode="checkbox"
+        :expandedKeys="expandedKeys"
         :scrollable="true"
         class="p-treetable-sm"
         :filters="filters"
@@ -97,6 +96,7 @@ export default {
                 <i class="pi pi-search"></i>
                 <InputText
                   v-model="filters['global']"
+                  @input="filterHandler"
                   placeholder="Глобальный поиск"
                 />
               </div>

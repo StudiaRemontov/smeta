@@ -81,6 +81,9 @@ export default {
       })
     },
   },
+  mounted() {
+    this.$refs?.dropdown?.show()
+  },
   methods: {
     getValueOfCell(dirId, root, rowId, keys) {
       const directory = this.directories.find(d => d._id === dirId)
@@ -117,6 +120,7 @@ export default {
   <Dropdown
     v-else-if="type === InputType.SELECT"
     v-model="newValue"
+    ref="dropdown"
     placeholder="Введите значение"
     :options="options"
     optionLabel="text"

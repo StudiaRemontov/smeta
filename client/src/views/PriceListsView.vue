@@ -266,10 +266,9 @@ export default {
           </div>
         </div>
         <IndexActions
-          v-if="$route.name === 'pricelistsIndex' && !clone"
+          v-if="$route.name === 'pricelistsIndex' && !clone && selectedEdition"
           class="header__action-group"
-        >
-        </IndexActions>
+        />
       </div>
     </template>
     <template #body>
@@ -327,7 +326,7 @@ export default {
 
   .secondary {
     min-width: 200px;
-    flex: 0 0 auto !important;
+    max-width: 200px;
   }
 }
 

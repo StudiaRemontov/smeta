@@ -1,5 +1,6 @@
 export const InputType = {
-  STRING: 'Строка',
+  STRING: 'Текст',
   NUMBER: 'Число',
   SELECT: 'Справочник',
+  COUNTER: 'Счетчик',
 }

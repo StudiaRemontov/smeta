@@ -57,7 +57,7 @@ export default {
       }, {})
 
       values.push({
-        id: Date.now(),
+        id: Date.now() + '',
         data: newRow,
       })
     },

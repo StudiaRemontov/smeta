@@ -3,17 +3,13 @@ import ContentBody from '@/components/Layout/ContentBody.vue'
 import TreeTable from 'primevue/treetable'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
+import expandAllMixin from '@/mixins/expandAll.mixin'
 
 import { mapGetters } from 'vuex'
 
 export default {
   components: { TreeTable, Column, ContentBody, InputText },
-  data() {
-    return {
-      expandedKeys: {},
-      filters: {},
-    }
-  },
+  mixins: [expandAllMixin],
   computed: {
     ...mapGetters('edition', ['selectedEdition']),
     columns() {
@@ -37,24 +33,6 @@ export default {
       immediate: true,
     },
   },
-  methods: {
-    expandAll() {
-      for (const node of this.tree) {
-        this.expandNode(node)
-      }
-
-      this.expandedKeys = { ...this.expandedKeys }
-    },
-    expandNode(node) {
-      if (node.children && node.children.length) {
-        this.expandedKeys[node.key] = true
-
-        for (const child of node.children) {
-          this.expandNode(child)
-        }
-      }
-    },
-  },
 }
 </script>
 
@@ -76,6 +54,7 @@ export default {
               <i class="pi pi-search"></i>
               <InputText
                 v-model="filters['global']"
+                @input="filterHandler"
                 placeholder="Глобальный поиск"
               />
             </div>

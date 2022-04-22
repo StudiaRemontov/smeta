@@ -93,15 +93,15 @@ export default {
   <div>
     <ConfirmModal ref="confirm-modal" />
 
-    <AppButton outlined @click="activeEdition">{{
-      isActive ? 'Активная редакция' : 'Сделать активной'
-    }}</AppButton>
-    <AppButton outlined variant="primary" @click="clone"
-      >Клонировать {{ isSame ? '' : '*' }}</AppButton
-    >
-    <AppButton outlined variant="danger" @click="removeHandler"
-      >Удалить</AppButton
-    >
+    <AppButton outlined @click="activeEdition">
+      {{ isActive ? 'Активная редакция' : 'Сделать активной' }}
+    </AppButton>
+    <AppButton outlined variant="primary" @click="clone">
+      Клонировать {{ isSame ? '' : '*' }}
+    </AppButton>
+    <AppButton outlined variant="danger" @click="removeHandler">
+      Удалить
+    </AppButton>
   </div>
 </template>
 
