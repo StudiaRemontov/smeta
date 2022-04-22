@@ -7,6 +7,20 @@ export default {
   data() {
     return {
       isListVisible: false,
+      links: [
+        {
+          text: 'Справочники',
+          to: '/directories',
+        },
+        {
+          text: 'Прайс листа',
+          to: '/pricelists',
+        },
+        {
+          text: 'Смета',
+          to: '/smeta',
+        },
+      ],
     }
   },
   methods: {
@@ -32,22 +46,13 @@ export default {
           </AppButton>
         </div>
         <ul v-if="isListVisible" class="menu-item__list">
-          <li class="menu-item__list-item">
+          <li v-for="link in links" :key="link.to" class="menu-item__list-item">
             <RouterLink
               class="menu-item__list-link"
-              to="/directories"
+              :to="link.to"
               active-class="menu-item__list-link--active"
             >
-              Справочники
-            </RouterLink>
-          </li>
-          <li class="menu-item__list-item">
-            <RouterLink
-              class="menu-item__list-link"
-              to="/pricelists"
-              active-class="menu-item__list-link--active"
-            >
-              Прайс лист
+              {{ link.text }}
             </RouterLink>
           </li>
         </ul>

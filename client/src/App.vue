@@ -1,14 +1,19 @@
 <script>
-import AppSidebar from '@/components/Layout/AppSidebar.vue'
-import AppContainer from '@/components/Layout/AppContainer.vue'
+import MainLayout from '@/layouts/MainLayout.vue'
+import SmetaLayout from '@/layouts/SmetaLayout.vue'
 import { mapActions } from 'vuex'
 
 export default {
-  components: { AppSidebar, AppContainer },
+  components: { MainLayout, SmetaLayout },
   data() {
     return {
       loading: false,
     }
+  },
+  computed: {
+    layout() {
+      return this.$route?.meta?.layout || 'MainLayout'
+    },
   },
   async mounted() {
     this.loading = true
@@ -34,17 +39,5 @@ export default {
 </script>
 
 <template>
-  <main v-if="!loading" class="main">
-    <AppSidebar />
-    <AppContainer />
-  </main>
+  <component v-if="!loading" :is="layout"></component>
 </template>
-
-<style lang="scss" scoped>
-.main {
-  height: 100vh;
-  width: 100vw;
-  display: grid;
-  grid-template-columns: min-content 1fr;
-}
-</style>
