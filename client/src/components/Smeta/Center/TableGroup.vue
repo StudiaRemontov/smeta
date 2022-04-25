@@ -7,9 +7,9 @@ export default {
       type: Object,
       required: true,
     },
-    index: Number,
+    level: Number,
     root: Boolean,
-    rootIndex: Number,
+    index: Number,
   },
   computed: {
     ...mapGetters('edition', ['active']),
@@ -23,24 +23,26 @@ export default {
       return this.children && this.children.length > 0
     },
     rowClassName() {
-      if (this.isParent && !this.root) {
-        return 'table__row--sticky'
+      if (this.isParent) {
+        return 'table__row--sticky root'
       }
       return ''
     },
     rowStyle() {
       if (this.isParent) {
         return {
-          top: `${this.index * 32}px`,
-          backgroundColor: `var(--blue-${700 - this.index * 100})`,
+          top: `${this.level * 32}px`,
+          backgroundColor: `var(--blue-${700 - this.level * 100})`,
         }
       }
       return {}
     },
     attrs() {
-      if (this.root) {
+      if (this.isParent) {
         return {
-          'data-index': this.rootIndex,
+          'data-id': this.node.key,
+          'data-level': this.level,
+          'data-index': this.index,
         }
       }
       return {}
@@ -50,12 +52,7 @@ export default {
 </script>
 
 <template>
-  <tr
-    class="table__row"
-    :class="[rowClassName, { root }]"
-    v-bind="attrs"
-    :style="rowStyle"
-  >
+  <tr class="table__row" :class="rowClassName" v-bind="attrs" :style="rowStyle">
     <th
       v-for="(val, key) in data"
       :key="key"
@@ -68,10 +65,11 @@ export default {
   </tr>
   <template v-if="isParent">
     <TableGroup
-      v-for="child in children"
+      v-for="(child, indx) in children"
       :key="child.key"
       :node="child"
-      :index="index + 1"
+      :level="level + 1"
+      :index="indx"
     />
   </template>
 </template>
@@ -81,13 +79,6 @@ export default {
   border-collapse: collapse;
   table-layout: fixed;
   width: 100%;
-
-  &__row {
-    &--sticky {
-      position: sticky;
-      top: 0;
-    }
-  }
 
   &__row--sticky &__cell {
     background-color: transparent;

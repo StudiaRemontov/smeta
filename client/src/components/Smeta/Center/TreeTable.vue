@@ -10,6 +10,7 @@ export default {
   data() {
     return {
       currentRootIndex: 0,
+      tree: {},
     }
   },
   computed: {
@@ -33,11 +34,28 @@ export default {
 
       return this.active.data
     },
-    children() {
+    roots() {
       return this.data.children
     },
     currentRoot() {
-      return this.children[this.currentRootIndex]
+      return this.roots[this.currentRootIndex]
+    },
+    nodeList() {
+      return this.treeToList(this.data, 0, [])
+    },
+    groupedList() {
+      return this.nodeList.reduce((acc, cur) => {
+        if (cur.level < 2) {
+          return acc
+        }
+        acc[cur['level']] = [...(acc[cur['level']] || []), cur]
+        return acc
+      }, {})
+    },
+    treeData() {
+      return Object.values(this.tree).map(id =>
+        this.nodeList.find(n => n.key === id),
+      )
     },
   },
   async mounted() {
@@ -52,9 +70,29 @@ export default {
             return
           }
           if (e.intersectionRatio === 0) {
+            const level = +e.target.dataset?.level
             const index = e.target.dataset?.index
+            const id = e.target.dataset?.id
+
+            if (level > 1) {
+              if (this.tree[level + 1]) {
+                delete this.tree[level + 1]
+              }
+              return (this.tree[level] = id)
+            }
             this.currentRootIndex = +index
           } else {
+            const level = +e.target.dataset?.level
+            const id = e.target.dataset?.id
+
+            if (level > 1) {
+              const nextIndex = this.groupedList[level].findIndex(
+                n => n.key === id,
+              )
+              if (nextIndex === 0) return
+              this.tree[level] = this.groupedList[level][nextIndex - 1].key
+              return
+            }
             if (this.currentRootIndex > 0) {
               this.currentRootIndex--
             }
@@ -70,6 +108,22 @@ export default {
   },
   methods: {
     ...mapMutations('priceList', ['setSelectedPriceList']),
+    treeToList(node, level, list) {
+      const { key, children } = node
+      if (children && children.length > 0) {
+        if (key)
+          return [
+            {
+              ...node,
+              level,
+            },
+            ...node.children
+              .map(c => this.treeToList(c, level + 1, list))
+              .flat(),
+          ]
+      }
+      return [...list]
+    },
   },
 }
 </script>
@@ -81,14 +135,25 @@ export default {
           {{ key.name }}
         </th>
       </tr>
-      <template v-if="children && children.length > 0">
+      <template v-if="treeData && treeData.length > 0">
+        <tr
+          v-for="(treeNode, index) in treeData"
+          :key="treeNode.key"
+          :style="`top: ${32 * (index + 1)}px`"
+          class="table__row table__row--sticky"
+        >
+          <th class="table__cell" :colspan="keys.length">
+            {{ treeNode.data[keys[0].id] }}
+          </th>
+        </tr>
+      </template>
+      <template v-if="roots && roots.length > 0">
         <TableGroup
-          v-for="(item, index) in children"
+          v-for="(item, index) in roots"
           :key="item.key"
           :node="item"
-          :index="0"
-          :rootIndex="index"
-          root
+          :level="1"
+          :index="index"
         />
       </template>
     </table>
