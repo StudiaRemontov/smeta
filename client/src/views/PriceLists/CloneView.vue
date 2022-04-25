@@ -265,14 +265,13 @@ export default {
         },
       )
       this.updatedFields = this.updatedFields.map(({ key }) => key)
-      this.tree = merge(this.treeBefore, this.tree)
       this.selectedValues = JSON.parse(
         JSON.stringify(this.selectedValuesBefore),
       )
       this.resetMassiveChangeMode()
     },
     onNodeSelect(node) {
-      if (!this.isMassiveChangeMode) {
+      if (!this.isMassiveChangeMode || !this.selectedKey) {
         return
       }
       const isParent = this.isObjectId(node.key)

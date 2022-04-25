@@ -196,7 +196,8 @@ export default {
                 findingRow,
                 selectKey.keys,
               )
-              acc[key] = text.join(', ')
+
+              acc[key] = text?.join(', ')
               return acc
             }
             acc[key] = value
