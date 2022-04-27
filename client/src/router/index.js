@@ -72,19 +72,26 @@ const router = createRouter({
       ],
     },
     {
-      path: '/smeta',
-      name: 'smeta',
-      component: SmetaIndexView,
+      path: '/outlay',
+      name: 'outlay',
+      component: SmetaView,
       meta: {
         layout: 'MainLayout',
       },
+      children: [
+        {
+          path: '',
+          name: 'smetaIndexView',
+          component: SmetaIndexView,
+        },
+      ],
     },
     {
-      path: '/smeta1',
-      name: 'smeta1',
+      path: '/outlay/:id',
+      name: 'outlayView',
       component: SmetaView,
       meta: {
-        layout: 'SmetaLayout',
+        layout: 'OutlayLayout',
       },
     },
   ],

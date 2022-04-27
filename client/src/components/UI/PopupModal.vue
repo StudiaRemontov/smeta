@@ -38,7 +38,7 @@ export default {
   padding: 5px;
   display: flex;
   align-items: center;
-  z-index: 2;
+  z-index: 3;
 
   &__window {
     background: #fff;

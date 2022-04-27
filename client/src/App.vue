@@ -1,10 +1,10 @@
 <script>
 import MainLayout from '@/layouts/MainLayout.vue'
-import SmetaLayout from '@/layouts/SmetaLayout.vue'
+import OutlayLayout from '@/layouts/OutlayLayout.vue'
 import { mapActions } from 'vuex'
 
 export default {
-  components: { MainLayout, SmetaLayout },
+  components: { MainLayout, OutlayLayout },
   data() {
     return {
       loading: false,

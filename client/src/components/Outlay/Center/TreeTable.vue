@@ -16,6 +16,7 @@ export default {
   computed: {
     ...mapGetters('priceList', ['priceLists']),
     ...mapGetters('edition', ['active']),
+    ...mapGetters('outlay', ['activeData']),
     keys() {
       if (!this.active) return []
 
@@ -35,7 +36,7 @@ export default {
       return this.active.data
     },
     roots() {
-      return this.data.children
+      return this.activeData?.children || []
     },
     currentRoot() {
       return this.roots[this.currentRootIndex]
@@ -59,19 +60,23 @@ export default {
     },
   },
   async mounted() {
-    this.setSelectedPriceList('6266a14ed9cb4f017de9e89b')
+    this.setSelectedPriceList('6260fa68c14eb863c933e40a')
+    const activeData = JSON.parse(JSON.stringify(this.active.data))
+    this.setActiveData(activeData)
     await this.$nextTick()
     const { wrapper } = this.$refs
-    const { top } = wrapper.getBoundingClientRect()
-    const observer = new IntersectionObserver(entries => {
-      entries.forEach(
-        e => {
-          if (top - e.boundingClientRect.top <= 0) {
+
+    const observer = new IntersectionObserver(
+      entries => {
+        const { wrapper } = this.$refs
+        const { top } = wrapper.getBoundingClientRect()
+        entries.forEach(e => {
+          if (e.boundingClientRect.top - top > 100) {
             return
           }
           if (e.intersectionRatio === 0) {
             const level = +e.target.dataset?.level
-            const index = e.target.dataset?.index
+            const index = +e.target.dataset?.index
             const id = e.target.dataset?.id
 
             if (level > 1) {
@@ -89,7 +94,10 @@ export default {
               const nextIndex = this.groupedList[level].findIndex(
                 n => n.key === id,
               )
-              if (nextIndex === 0) return
+              if (nextIndex === 0) {
+                // this.tree = {}
+                return
+              }
               this.tree[level] = this.groupedList[level][nextIndex - 1].key
               return
             }
@@ -97,10 +105,14 @@ export default {
               this.currentRootIndex--
             }
           }
-        },
-        { threshold: [1] },
-      )
-    })
+        })
+      },
+      {
+        root: wrapper,
+        rootMargin: '-100px 0px',
+      },
+    )
+
     const roots = wrapper.querySelectorAll('.root')
     roots.forEach(r => {
       observer.observe(r)
@@ -108,19 +120,17 @@ export default {
   },
   methods: {
     ...mapMutations('priceList', ['setSelectedPriceList']),
+    ...mapMutations('outlay', ['setActiveData', 'setNodeList']),
     treeToList(node, level, list) {
-      const { key, children } = node
+      const { children } = node
       if (children && children.length > 0) {
-        if (key)
-          return [
-            {
-              ...node,
-              level,
-            },
-            ...node.children
-              .map(c => this.treeToList(c, level + 1, list))
-              .flat(),
-          ]
+        return [
+          {
+            ...node,
+            level,
+          },
+          ...node.children.map(c => this.treeToList(c, level + 1, list)).flat(),
+        ]
       }
       return [...list]
     },
@@ -130,21 +140,32 @@ export default {
 <template>
   <div class="table-wrapper" ref="wrapper">
     <table class="table">
-      <tr class="table__row table__row--sticky">
+      <col
+        v-for="(key, index) in keys"
+        :key="key.id"
+        :width="index === 0 ? '50%' : ''"
+      />
+      <col width="50px" />
+
+      <tr class="table__row table__row--key table__row--sticky">
         <th v-for="key in keys" :key="key.id" class="table__cell">
           {{ key.name }}
         </th>
+        <th></th>
       </tr>
       <template v-if="treeData && treeData.length > 0">
         <tr
           v-for="(treeNode, index) in treeData"
           :key="treeNode.key"
-          :style="`top: ${32 * (index + 1)}px`"
+          :style="`top: ${31 * (index + 1)}px; background-color: var(--blue-${
+            700 - treeNode.level * 100
+          })`"
           class="table__row table__row--sticky"
         >
           <th class="table__cell" :colspan="keys.length">
             {{ treeNode.data[keys[0].id] }}
           </th>
+          <th></th>
         </tr>
       </template>
       <template v-if="roots && roots.length > 0">
@@ -164,8 +185,8 @@ export default {
 .table-wrapper {
   flex: 1;
   overflow-y: auto;
-  box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.5);
   @include darkScroll;
+  position: relative;
 }
 
 .table {
@@ -177,13 +198,23 @@ export default {
     &--sticky {
       position: sticky;
       top: 0;
-      background-color: var(--blue-700);
+      background-color: var(--blue-600);
+      z-index: 2;
     }
   }
 
   &__row--sticky &__cell {
     background-color: transparent;
     color: $color-light;
+    text-align: left;
+  }
+
+  &__row--key &__cell {
+    text-align: center;
+
+    &:first-child {
+      text-align: left;
+    }
   }
 
   &__cell {

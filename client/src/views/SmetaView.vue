@@ -1,9 +1,20 @@
 <script>
-export default {}
+import AppContent from '@/components/Layout/AppContent.vue'
+
+export default {
+  components: { AppContent },
+}
 </script>
 
 <template>
-  <span>Smeta</span>
+  <AppContent>
+    <template #header>
+      <span class="page-title">Сметы</span>
+    </template>
+    <template #body>
+      <RouterView />
+    </template>
+  </AppContent>
 </template>
 
 <style></style>

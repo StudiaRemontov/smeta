@@ -31,13 +31,13 @@ export default {
           <div class="right-side__rooms">
             <div class="right-side__room">
               <div class="right-side__room-head">
-                <span class="right-side__room-name"> Комната 2 </span>
+                <span class="right-side__room-name"> Демонтажные </span>
                 <span class="right-side__room-price"> 65 </span>
               </div>
             </div>
             <div class="right-side__room">
               <div class="right-side__room-head">
-                <span class="right-side__room-name"> Комната 2 </span>
+                <span class="right-side__room-name"> Черновые </span>
                 <span class="right-side__room-price"> 65 </span>
               </div>
             </div>
@@ -51,13 +51,13 @@ export default {
           <div class="right-side__rooms">
             <div class="right-side__room">
               <div class="right-side__room-head">
-                <span class="right-side__room-name"> Комната 2 </span>
+                <span class="right-side__room-name"> Демонтажные </span>
                 <span class="right-side__room-price"> 65 </span>
               </div>
             </div>
             <div class="right-side__room">
               <div class="right-side__room-head">
-                <span class="right-side__room-name"> Комната 2 </span>
+                <span class="right-side__room-name"> Черновые </span>
                 <span class="right-side__room-price"> 65 </span>
               </div>
             </div>
@@ -99,11 +99,12 @@ $header-height: 55px;
   &__parameters {
     margin: 0 10px;
     background-color: $color-light;
-    padding: 10px;
+    padding: 20px;
     border-radius: 5px;
     display: flex;
     flex-direction: column;
     gap: 10px;
+    box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.4);
   }
 
   &__rooms {
@@ -118,6 +119,7 @@ $header-height: 55px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      margin-bottom: 5px;
     }
   }
 
