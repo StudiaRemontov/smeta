@@ -1,11 +1,13 @@
 <script>
 import { mapGetters, mapMutations } from 'vuex'
-
-import TableGroup from './TableGroup.vue'
+import TableRow from './TableRow.vue'
 
 export default {
   components: {
-    TableGroup,
+    TableRow,
+  },
+  props: {
+    striped: Boolean,
   },
   data() {
     return {
@@ -15,124 +17,175 @@ export default {
   },
   computed: {
     ...mapGetters('priceList', ['priceLists']),
-    ...mapGetters('edition', ['active']),
-    ...mapGetters('outlay', ['activeData']),
+    ...mapGetters('edition', ['editions']),
+    ...mapGetters('outlay', [
+      'activeData',
+      'showOnlySelected',
+      'nodeList',
+      'room',
+      'outlay',
+      'roots',
+    ]),
     keys() {
-      if (!this.active) return []
+      if (!this.activeData) return []
 
-      return this.active.keys.map((k, index) => {
+      return this.activeData.keys.map((k, index) => {
         if (index === 0 && this.currentRoot) {
           return {
             ...k,
-            name: this.currentRoot.data[this.active.keys[0].id],
+            name: this.currentRoot.data[this.activeData.keys[0].id],
           }
         }
         return k
       })
     },
     data() {
-      if (!this.active) return []
+      if (!this.activeData) return []
 
-      return this.active.data
+      return this.activeData.data
     },
-    roots() {
-      return this.activeData?.children || []
-    },
+    // roots() {
+    //   if (!this.editionData?.children) return []
+
+    //   if (this.showOnlySelected) {
+    //     if (this.editionData.children.length > 0) {
+    //       const hasValues = !this.isObjectId(this.editionData.children[0].key)
+    //       if (hasValues) {
+    //         return this.editionData.children.filter(n => {
+    //           return this.room.jobs.find(j => j.key === n.key)
+    //         })
+    //       }
+    //     }
+    //   }
+    //   return this.editionData.children
+    // },
     currentRoot() {
-      return this.roots[this.currentRootIndex]
+      if (!Object.keys(this.groupedList).length) {
+        return null
+      }
+      return this.groupedList[0][this.currentRootIndex]
     },
-    nodeList() {
-      return this.treeToList(this.data, 0, [])
+    rows() {
+      if (!this.outlay || !this.keys.length || !this.nodeList) return []
+      if (!this.room && this.outlay.rooms.length) {
+        return this.outlay.rooms
+          .map(r => {
+            const roomCategory = {
+              data: {
+                [this.keys[0].id]: r.name,
+              },
+              children: r.jobs,
+              key: r.id,
+              level: 0,
+            }
+            const jobs = this.nodeList.filter(n => r.jobs.includes(n.key))
+            return [roomCategory, ...jobs]
+          })
+          .flat()
+      }
+      if (this.showOnlySelected) {
+        return this.nodeList.filter(n => this.room.jobs.includes(n.key))
+      }
+      return this.nodeList
     },
     groupedList() {
-      return this.nodeList.reduce((acc, cur) => {
-        if (cur.level < 2) {
-          return acc
-        }
+      if (!this.roots) return []
+      // if (!this.room && this.keys.length) {
+      //   const rooms = this.outlay.rooms.map(r => ({
+      //     data: {
+      //       [this.keys[0].id]: r.name,
+      //     },
+      //     children: r.jobs,
+      //     key: r.id,
+      //     level: 0,
+      //   }))
+      //   const roots = this.roots.map(r => ({
+      //     ...r,
+      //     level: r.level + 1,
+      //   }))
+      //   return [...rooms, ...roots].reduce((acc, cur) => {
+      //     acc[cur['level']] = [...(acc[cur['level']] || []), cur]
+      //     return acc
+      //   }, {})
+      // }
+      return this.roots.reduce((acc, cur) => {
         acc[cur['level']] = [...(acc[cur['level']] || []), cur]
         return acc
       }, {})
     },
-    treeData() {
-      return Object.values(this.tree).map(id =>
-        this.nodeList.find(n => n.key === id),
-      )
+    treeView() {
+      return Object.values(this.tree).map(n => n.data[this.keys[0].id])
+    },
+    selectedValues() {
+      if (this.room) {
+        const room = this.outlay.rooms.find(r => r.id === this.room.id)
+        return room.jobs.map(this.treeToList).flat()
+      }
+
+      return []
     },
   },
-  async mounted() {
-    this.setSelectedPriceList('6260fa68c14eb863c933e40a')
-    const activeData = JSON.parse(JSON.stringify(this.active.data))
-    this.setActiveData(activeData)
-    await this.$nextTick()
-    const { wrapper } = this.$refs
-
-    const observer = new IntersectionObserver(
-      entries => {
-        const { wrapper } = this.$refs
-        const { top } = wrapper.getBoundingClientRect()
-        entries.forEach(e => {
-          if (e.boundingClientRect.top - top > 100) {
-            return
-          }
-          if (e.intersectionRatio === 0) {
-            const level = +e.target.dataset?.level
-            const index = +e.target.dataset?.index
-            const id = e.target.dataset?.id
-
-            if (level > 1) {
-              if (this.tree[level + 1]) {
-                delete this.tree[level + 1]
-              }
-              return (this.tree[level] = id)
-            }
-            this.currentRootIndex = +index
-          } else {
-            const level = +e.target.dataset?.level
-            const id = e.target.dataset?.id
-
-            if (level > 1) {
-              const nextIndex = this.groupedList[level].findIndex(
-                n => n.key === id,
-              )
-              if (nextIndex === 0) {
-                // this.tree = {}
-                return
-              }
-              this.tree[level] = this.groupedList[level][nextIndex - 1].key
-              return
-            }
-            if (this.currentRootIndex > 0) {
-              this.currentRootIndex--
-            }
-          }
-        })
-      },
-      {
-        root: wrapper,
-        rootMargin: '-100px 0px',
-      },
-    )
-
-    const roots = wrapper.querySelectorAll('.root')
-    roots.forEach(r => {
-      observer.observe(r)
-    })
+  watch: {
+    async room() {
+      // await this.$nextTick()
+      // const { wrapper } = this.$refs
+      // const parents = wrapper.querySelectorAll('.parent')
+      // const observer = new IntersectionObserver(entries => {
+      //   const { wrapper } = this.$refs
+      //   const { top, height } = wrapper.getBoundingClientRect()
+      //   entries.forEach(e => {
+      //     if (!Object.keys(this.groupedList).length) {
+      //       return
+      //     }
+      //     if (e.boundingClientRect.top - top > height / 2) {
+      //       return
+      //     }
+      //     const id = e.target.dataset?.id
+      //     const level = +e.target.dataset?.level
+      //     const newIndex = this.groupedList[level].findIndex(n => n.key === id)
+      //     if (newIndex === -1) {
+      //       return
+      //     }
+      //     if (e.isIntersecting) {
+      //       if (level === 0) {
+      //         if (newIndex > 0) {
+      //           this.currentRootIndex = newIndex - 1
+      //         }
+      //         return
+      //       }
+      //       if (newIndex > 0) {
+      //         this.tree[level] = this.groupedList[level][newIndex - 1]
+      //       }
+      //     } else {
+      //       if (level === 0) {
+      //         this.currentRootIndex = newIndex
+      //         return
+      //       }
+      //       this.tree[level] = this.groupedList[level][newIndex]
+      //     }
+      //   })
+      // })
+      // parents.forEach(r => {
+      //   observer.observe(r)
+      // })
+      // this.tree = {}
+    },
+  },
+  mounted() {
+    // const selectedData = this.outlay.rooms.map(r => {
+    //   return r.jobs.map(this.treeToList)
+    // })
+    // console.log(selectedData)
   },
   methods: {
     ...mapMutations('priceList', ['setSelectedPriceList']),
-    ...mapMutations('outlay', ['setActiveData', 'setNodeList']),
-    treeToList(node, level, list) {
-      const { children } = node
+    ...mapMutations('outlay', ['setActiveData', 'setNodeList', 'setRoots']),
+    treeToList(node) {
+      const { key, children } = node
       if (children && children.length > 0) {
-        return [
-          {
-            ...node,
-            level,
-          },
-          ...node.children.map(c => this.treeToList(c, level + 1, list)).flat(),
-        ]
+        if (key) return [node.key, ...node.children.map(this.treeToList)].flat()
       }
-      return [...list]
+      return [node.key]
     },
   },
 }
@@ -145,7 +198,7 @@ export default {
         :key="key.id"
         :width="index === 0 ? '50%' : ''"
       />
-      <col width="50px" />
+      <col width="60px" />
 
       <tr class="table__row table__row--key table__row--sticky">
         <th v-for="key in keys" :key="key.id" class="table__cell">
@@ -153,28 +206,25 @@ export default {
         </th>
         <th></th>
       </tr>
-      <template v-if="treeData && treeData.length > 0">
+      <template v-if="treeView.length">
         <tr
-          v-for="(treeNode, index) in treeData"
-          :key="treeNode.key"
-          :style="`top: ${31 * (index + 1)}px; background-color: var(--blue-${
-            700 - treeNode.level * 100
-          })`"
+          v-for="(node, index) in treeView"
+          :key="node"
+          :style="`top: ${32 * (index + 1)}px`"
           class="table__row table__row--sticky"
         >
-          <th class="table__cell" :colspan="keys.length">
-            {{ treeNode.data[keys[0].id] }}
-          </th>
-          <th></th>
+          <td class="table__cell" :colspan="keys.length + 1">
+            {{ node }}
+          </td>
         </tr>
       </template>
-      <template v-if="roots && roots.length > 0">
-        <TableGroup
-          v-for="(item, index) in roots"
-          :key="item.key"
-          :node="item"
-          :level="1"
-          :index="index"
+      <template v-if="rows">
+        <TableRow
+          v-for="(node, index) in rows"
+          :key="room ? node.key + index : node.key"
+          :node="node"
+          :rowIndex="index"
+          :selected="selectedValues.includes(node.key)"
         />
       </template>
     </table>
@@ -201,6 +251,10 @@ export default {
       background-color: var(--blue-600);
       z-index: 2;
     }
+
+    &--key {
+      background-color: $color-dark;
+    }
   }
 
   &__row--sticky &__cell {
@@ -210,8 +264,6 @@ export default {
   }
 
   &__row--key &__cell {
-    text-align: center;
-
     &:first-child {
       text-align: left;
     }

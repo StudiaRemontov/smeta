@@ -1,9 +1,9 @@
-const EditionService = require('../services/EditionService')
+const OutlayService = require('../services/OutlayService')
 
-class EditionController {
+class OutlayController {
   static async getAll(req, res, next) {
     try {
-      const response = await EditionService.get()
+      const response = await OutlayService.get()
       return res.json(response)
     } catch (error) {
       next(error)
@@ -14,7 +14,7 @@ class EditionController {
     try {
       const data = req.body
 
-      const response = await EditionService.create(data)
+      const response = await OutlayService.create(data)
 
       return res.json(response)
     } catch (error) {
@@ -26,18 +26,7 @@ class EditionController {
     try {
       const id = req.params.id
       const data = req.body
-      const response = await EditionService.update(id, data)
-
-      return res.json(response)
-    } catch (error) {
-      next(error)
-    }
-  }
-
-  static async setActive(req, res, next) {
-    try {
-      const id = req.params.id
-      const response = await EditionService.setActive(id)
+      const response = await OutlayService.update(id, data)
 
       return res.json(response)
     } catch (error) {
@@ -48,7 +37,7 @@ class EditionController {
   static async delete(req, res, next) {
     try {
       const id = req.params.id
-      const response = await EditionService.delete(id)
+      const response = await OutlayService.delete(id)
       return res.json(response)
     } catch (error) {
       next(error)
@@ -56,4 +45,4 @@ class EditionController {
   }
 }
 
-module.exports = EditionController
+module.exports = OutlayController

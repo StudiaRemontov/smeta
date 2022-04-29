@@ -1,4 +1,4 @@
-// import axios from '../../axios/index.js'
+import axios from '../../axios/index.js'
 
 /*
   outlay model: {
@@ -31,9 +31,11 @@
 export default {
   namespaced: true,
   state: {
-    outlay: {},
+    outlay: null,
     room: null,
     activeData: null,
+    nodeList: null,
+    roots: null,
   },
   mutations: {
     setOutlay(state, payload) {
@@ -41,6 +43,12 @@ export default {
     },
     setActiveData(state, payload) {
       state.activeData = payload
+    },
+    setRoots(state, payload) {
+      state.roots = payload
+    },
+    setNodeList(state, payload) {
+      state.nodeList = payload
     },
     createRoom(state, { name, options }) {
       if (!state.outlay) return
@@ -53,9 +61,12 @@ export default {
       state.outlay.rooms.push(room)
       state.room = room.id
     },
-    selectRoom(state, roomId) {
+    selectRoom(state, { id, showOnlySelected = false }) {
       if (!state.outlay) return
-      state.room = roomId
+      state.room = {
+        id,
+        showOnlySelected,
+      }
     },
     updateRoom(state, payload) {
       if (!state.outlay || !state.room) return
@@ -79,7 +90,7 @@ export default {
     addJob(state, job) {
       if (!state.outlay || !state.room) return
 
-      const room = state.outlay.rooms.find(r => r.id === state.room)
+      const room = state.outlay.rooms.find(r => r.id === state.room.id)
       const isExists = room.jobs.find(j => j.key === job.key)
       if (isExists) {
         return
@@ -94,14 +105,62 @@ export default {
       room.jobs = room.jobs.filter(r => r.key !== job.key)
     },
     updateInfo(state, data) {},
+    selectJob(state, job) {
+      if (!state.room) return
+
+      const room = state.outlay.rooms.find(r => r.id === state.room.id)
+      if (!room) return
+      const isExists = !!room.jobs.find(key => key === job.key)
+      if (isExists) return
+      room.jobs.push(job.key)
+    },
+    unselectJob(state, job) {
+      if (!state.room) return
+
+      const room = state.outlay.rooms.find(r => r.id === state.room.id)
+      if (!room) return
+      if (job.children && job.children.length > 0) {
+        const isEmpty = job.children.find(n =>
+          room.jobs.find(key => key === n.key),
+        )
+        if (isEmpty) return
+      }
+      room.jobs = room.jobs.filter(key => key !== job.key)
+    },
+    pushNodeAfter(state, { node, index }) {
+      const newArr = [
+        ...state.nodeList.slice(0, index),
+        {
+          ...node,
+          key: Date.now() + '',
+        },
+        ...state.nodeList.slice(index),
+      ]
+      state.nodeList = newArr
+    },
   },
-  actions: {},
+  actions: {
+    async create({ rootGetters }, data) {
+      try {
+        const response = await axios.post('/outlay', {
+          ...data,
+          edition: rootGetters['edition/active']._id,
+        })
+        return response
+      } catch (error) {
+        return Promise.reject(error)
+      }
+    },
+  },
   getters: {
     outlay: s => s.outlay,
     room: s => {
       if (!s.outlay || !s.room) return null
-      return s.outlay.rooms.find(r => r.id === s.room)
+      return s.outlay.rooms.find(r => r.id === s.room.id)
     },
     activeData: s => s.activeData,
+    showOnlySelected: s => s.room?.showOnlySelected,
+    nodeList: s => s.nodeList,
+    roots: s => s.roots,
   },
 }

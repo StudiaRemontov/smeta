@@ -22,7 +22,7 @@ export default {
   data() {
     return {
       screenHeight: null,
-      switchValue: false,
+      striped: false,
       selectedJob: null,
       filteredJobs: [],
       selectedFastJobs: [],
@@ -52,13 +52,18 @@ export default {
   },
   computed: {
     ...mapGetters('edition', ['active']),
-    ...mapGetters('outlay', ['room']),
+    ...mapGetters('outlay', ['room', 'roots']),
     scrollHeight() {
-      return `${this.screenHeight - 200}px`
+      return `${this.screenHeight - 100}px`
     },
     jobs() {
       if (!this.active) return []
       return this.treeToListOnlyValues(this.active.data)
+    },
+  },
+  watch: {
+    room() {
+      this.windowResize()
     },
   },
   mounted() {
@@ -69,9 +74,12 @@ export default {
     window.removeEventListener('resize', this.windowResize)
   },
   methods: {
-    ...mapMutations('outlay', ['addJob']),
-    windowResize() {
-      this.screenHeight = window.innerHeight
+    ...mapMutations('outlay', ['selectJob']),
+    async windowResize() {
+      await this.$nextTick()
+      const { autocomplete } = this.$refs
+      const { top } = autocomplete.$el.getBoundingClientRect()
+      this.screenHeight = window.innerHeight - top
     },
     showInfo() {},
     isObjectId(id) {
@@ -96,10 +104,24 @@ export default {
         return jobs.name.toLowerCase().startsWith(e.query.toLowerCase())
       })
     },
-    selectJob(e) {
+    getParents(node) {
+      const parentNode = this.roots.find(n =>
+        n.children.find(c => c.key === node.key),
+      )
+
+      if (!parentNode) {
+        return [node]
+      }
+      if (parentNode.level > 0) {
+        return [node, ...this.getParents(parentNode)]
+      }
+
+      return [node, parentNode]
+    },
+    findJob(e) {
       const { table } = this.$refs
       const row = table.$el.querySelector(
-        `.table__row[data-id="${e.value.value.key}"]`,
+        `.table-row[data-id="${e.value.value.key}"]`,
       )
       const ROW_HEIGHT = 32
       const offsetTop = Object.keys(table.tree) * ROW_HEIGHT || ROW_HEIGHT
@@ -107,7 +129,8 @@ export default {
         top: row.offsetTop - offsetTop,
         behavior: 'smooth',
       })
-      this.addJob(e.value.value)
+      const parents = this.getParents(e.value.value)
+      parents.forEach(this.selectJob)
     },
   },
 }
@@ -132,13 +155,14 @@ export default {
           <i class="pi pi-search"></i>
           <AutoComplete
             v-model="selectedJob"
+            ref="autocomplete"
             class="search"
             :scrollHeight="scrollHeight"
             :suggestions="filteredJobs"
             field="name"
             placeholder="Поиск"
             @complete="searchJob($event)"
-            @item-select="selectJob"
+            @item-select="findJob"
           />
         </div>
         <MultiSelect
@@ -150,12 +174,12 @@ export default {
         />
         <div class="switch-wrapper">
           <div class="switch">
-            <InputSwitch v-model="switchValue" />
+            <InputSwitch v-model="striped" />
           </div>
           <span>Чередовние цветов</span>
         </div>
       </div>
-      <TreeTable ref="table" />
+      <TreeTable ref="table" :striped="striped" />
     </div>
   </div>
 </template>

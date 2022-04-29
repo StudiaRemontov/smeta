@@ -1,14 +1,16 @@
 <script>
 import Button from 'primevue/button'
+import ToggleButton from 'primevue/togglebutton'
 
 import { mapGetters, mapMutations } from 'vuex'
-import TableCell from './TableCell.vue'
+import TableCell from './TableCell1.vue'
 
 export default {
   name: 'TableGroup',
   components: {
     TableCell,
     Button,
+    ToggleButton,
   },
   props: {
     parent: Object,
@@ -19,10 +21,16 @@ export default {
     level: Number,
     root: Boolean,
     index: Number,
+    striped: Boolean,
+  },
+  data() {
+    return {
+      editClone: false,
+    }
   },
   computed: {
     ...mapGetters('edition', ['active']),
-    ...mapGetters('outlay', ['room', 'activeData']),
+    ...mapGetters('outlay', ['room', 'activeData', 'showOnlySelected']),
     data() {
       return this.node.data
     },
@@ -30,6 +38,17 @@ export default {
       return this.active.keys
     },
     children() {
+      if (this.showOnlySelected) {
+        if (this.node.children && this.node.children.length > 0) {
+          const hasValues = !this.isObjectId(this.node.children[0].key)
+          if (hasValues) {
+            return this.node.children.filter(n => {
+              return this.room.jobs.find(j => j.key === n.key)
+            })
+          }
+        }
+      }
+
       return this.node.children
     },
     isParent() {
@@ -39,7 +58,8 @@ export default {
       if (this.isParent) {
         return 'table__row--sticky root'
       }
-      return ''
+
+      return this.striped ? 'striped' : ''
     },
     rowStyle() {
       if (this.isParent) {
@@ -50,7 +70,7 @@ export default {
       }
       if (this.isSelected) {
         return {
-          backgroundColor: `var(--green-200)`,
+          backgroundColor: `#b7f0ba`,
         }
       }
 
@@ -75,6 +95,9 @@ export default {
   },
   methods: {
     ...mapMutations('outlay', ['addJob', 'removeJob', 'updateNode']),
+    isObjectId(id) {
+      return /^[0-9a-fA-F]{24}$/.test(id)
+    },
     select() {
       if (!this.isSelected) {
         return this.addJob(this.node)
@@ -120,6 +143,7 @@ export default {
 
 <template>
   <tr
+    v-if="(isParent && children.length > 0) || !isParent"
     class="table__row"
     :class="rowClassName"
     v-bind="attrs"
@@ -130,7 +154,7 @@ export default {
     <TableCell
       v-for="(val, key) in data"
       v-model="data[key]"
-      :isClone="node.isClone"
+      :editClone="editClone && node.isClone"
       :editable="!!isSelected"
       :key="key"
       :col="key"
@@ -139,12 +163,21 @@ export default {
     >
     </TableCell>
     <th>
-      <Button
-        v-if="isSelected"
-        icon="pi pi-copy"
-        class="p-button-rounded p-button-secondary p-button-lg p-button-text"
-        @click.stop="cloneClick"
-      />
+      <div v-if="isSelected" class="actions">
+        <ToggleButton
+          v-if="node.isClone"
+          v-model="editClone"
+          onIcon="pi pi-check"
+          offIcon="pi pi-pencil"
+          class="p-button-rounded p-button-secondary p-button-lg p-button-text"
+          @click.stop
+        />
+        <Button
+          icon="pi pi-copy"
+          class="p-button-rounded p-button-secondary p-button-lg p-button-text"
+          @click.stop="cloneClick"
+        />
+      </div>
     </th>
   </tr>
   <template v-if="isParent">
@@ -155,6 +188,7 @@ export default {
       :level="level + 1"
       :index="indx"
       :parent="node"
+      :striped="striped"
     />
   </template>
 </template>
@@ -167,6 +201,10 @@ export default {
 
   &__row {
     cursor: pointer;
+
+    &.striped:nth-child(even) {
+      background-color: rgb(232, 232, 232);
+    }
   }
 
   &__row--sticky &__cell {
@@ -186,6 +224,25 @@ export default {
       text-align: left;
     }
   }
+}
+
+::v-deep(.p-togglebutton.p-button:not(.p-disabled):not(.p-highlight):hover) {
+  background-color: transparent !important;
+}
+::v-deep(.p-togglebutton) {
+  &.p-button.p-highlight:hover {
+    background-color: transparent !important;
+  }
+
+  .p-button-icon-left {
+    color: #607d8b !important;
+  }
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .root {

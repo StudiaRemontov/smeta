@@ -44,7 +44,7 @@ export default {
       'removeRoom',
     ]),
     openContextMenu(e, id) {
-      this.selectRoom(id)
+      this.selectRoom({ id })
       this.$refs.menu.show(e)
     },
     async openEditModal() {
@@ -90,7 +90,7 @@ export default {
       :key="room.id"
       :room="room"
       :active="activeRoomId === room.id"
-      @click="selectRoom(room.id)"
+      @click="selectRoom({ id: room.id })"
       @edit="openEditModal"
       @remove="removeRoom"
     />
@@ -104,6 +104,7 @@ export default {
   gap: 10px;
   flex: 1;
   overflow: auto;
+  min-height: 40px;
   @include darkScroll;
 
   button {
@@ -120,6 +121,7 @@ export default {
     display: none;
   }
   width: 40%;
+  height: 30px;
   align-self: center;
 }
 </style>

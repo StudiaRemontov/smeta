@@ -18,7 +18,7 @@ const getInitState = () => ({
     width: null,
     height: null,
     length: null,
-    spaces: '',
+    spaces: null,
   },
 })
 

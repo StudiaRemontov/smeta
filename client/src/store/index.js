@@ -5,6 +5,7 @@ import directory from './modules/directory.module'
 import priceList from './modules/priceList.module'
 import edition from './modules/edition.module'
 import outlay from './modules/outlay.module'
+import outlays from './modules/outlays.module'
 
 const store = createStore({
   state: {},
@@ -13,6 +14,7 @@ const store = createStore({
     priceList,
     edition,
     outlay,
+    outlays,
   },
 })
 

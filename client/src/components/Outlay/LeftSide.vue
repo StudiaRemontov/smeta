@@ -3,21 +3,69 @@ import AppLogo from '@/components/UI/AppLogo.vue'
 import Button from 'primevue/button'
 import RoomList from './LeftSide/RoomList.vue'
 
-import { mapGetters, mapMutations } from 'vuex'
+import { mapActions, mapGetters, mapMutations } from 'vuex'
 
 export default {
   components: { AppLogo, Button, RoomList },
   computed: {
-    ...mapGetters('outlay', ['room']),
+    ...mapGetters('outlay', [
+      'room',
+      'outlay',
+      'activeData',
+      'nodeList',
+      'roots',
+    ]),
   },
   methods: {
     ...mapMutations('outlay', ['createRoom', 'selectRoom']),
+    ...mapActions('outlay', ['create']),
     back() {},
-    save() {},
+    isObjectId(id) {
+      return /^[0-9a-fA-F]{24}$/.test(id)
+    },
+    async save() {
+      try {
+        const roomList = JSON.parse(JSON.stringify(this.outlay.rooms))
+        const roomsData = roomList.map(room => {
+          const nodes = this.nodeList.filter(n => room.jobs.includes(n.key))
+          const parents = nodes.filter(n => !n.parent)
+
+          const jobs = parents.map(p => this.convertData(p, nodes))
+          return {
+            ...room,
+            jobs,
+          }
+        })
+        const data = {
+          ...this.outlay,
+          rooms: roomsData,
+        }
+        await this.create(data)
+      } catch (error) {
+        console.log(error)
+      }
+    },
     send() {},
     print() {},
     showAllRooms() {
-      this.selectRoom(null)
+      this.selectRoom({})
+    },
+    convertData(node, selected) {
+      const { key, data } = node
+      const children = selected.filter(n => n?.parent === node.key)
+      if (children.length > 0) {
+        const subChildren = children.map(c => this.convertData(c, selected))
+        return {
+          key,
+          data,
+          children: subChildren,
+        }
+      }
+      return {
+        key,
+        data,
+        children,
+      }
     },
     showSummary() {},
   },

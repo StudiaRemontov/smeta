@@ -10,7 +10,6 @@ export default {
   props: {
     outlay: {
       type: Object,
-      required: true,
     },
   },
   data() {

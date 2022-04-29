@@ -26,7 +26,11 @@ export default {
   },
   methods: {
     mathEval(value) {
-      return mathExp.eval(value)
+      try {
+        return mathExp.eval(value)
+      } catch (error) {
+        return 0
+      }
     },
   },
 }

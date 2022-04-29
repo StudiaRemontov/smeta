@@ -2,7 +2,7 @@
 import Button from 'primevue/button'
 import Checkbox from 'primevue/checkbox'
 import Menu from 'primevue/menu'
-import { mapMutations } from 'vuex'
+import { mapGetters, mapMutations } from 'vuex'
 
 export default {
   components: {
@@ -23,7 +23,10 @@ export default {
         {
           label: 'Редактировать',
           command: () => {
-            this.selectRoom(this.room.id)
+            this.selectRoom({
+              id: this.room.id,
+              showOnlySelected: false,
+            })
             this.$emit('edit')
           },
         },
@@ -37,8 +40,17 @@ export default {
     }
   },
   computed: {
+    ...mapGetters('outlay', ['showOnlySelected']),
     textColor() {
       return '#fff'
+    },
+    viewMode: {
+      get() {
+        return this.showOnlySelected
+      },
+      set(value) {
+        this.selectRoom({ id: this.room.id, showOnlySelected: value })
+      },
     },
   },
   methods: {
@@ -55,7 +67,7 @@ export default {
     <Menu ref="menu" :model="items" :popup="true" />
     <span class="room-item__title"> {{ room.name }} </span>
     <div class="room-item__actions" @click.stop>
-      <Checkbox />
+      <Checkbox v-model="viewMode" :binary="true" />
       <Button class="p-button-text" icon="pi pi-ellipsis-h" @click="openMenu" />
     </div>
   </div>
@@ -71,6 +83,7 @@ export default {
   background-color: #607d8b;
   cursor: pointer;
   height: 40px;
+  min-height: 40px;
   overflow: hidden;
 
   &__title {
