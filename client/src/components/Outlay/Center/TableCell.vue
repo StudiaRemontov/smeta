@@ -29,7 +29,7 @@ export default {
   },
   computed: {
     ...mapGetters('directory', ['directories', 'root', 'roots']),
-    ...mapGetters('outlay', ['activeData']),
+    ...mapGetters('outlay', ['activeData', 'edition', 'keys']),
     newValue: {
       get() {
         return this.modelValue
@@ -39,11 +39,9 @@ export default {
       },
     },
     key() {
-      const directory = this.directories.find(
-        d => d._id === this.activeData.dirId,
-      )
+      const directory = this.directories.find(d => d._id === this.edition.dirId)
       const dirKey = directory.keys.find(k => k.id === this.col)
-      const key = this.activeData.keys.find(k => k.id === this.col)
+      const key = this.keys.find(k => k.id === this.col)
       return {
         ...key,
         type: dirKey.type,
@@ -56,7 +54,7 @@ export default {
       if (this.type !== this.InputType.SELECT) {
         return []
       }
-      const root = this.roots.find(d => d._id === this.activeData.dirId)
+      const root = this.roots.find(d => d._id === this.edition.dirId)
       const key = root.keys.find(k => k.id === this.key.id)
       const keyRoot = this.roots.find(r => r._id === key.root)
 
@@ -181,6 +179,7 @@ export default {
 <style lang="scss" scoped>
 .table-cell {
   padding: 8px;
+  text-align: left;
   // &:not(&--children) {
   //   font-weight: 600;
   //   text-align: center !important;
@@ -197,7 +196,6 @@ export default {
       gap: 15px;
       justify-content: space-between;
       align-items: center;
-      flex-wrap: wrap;
     }
   }
 

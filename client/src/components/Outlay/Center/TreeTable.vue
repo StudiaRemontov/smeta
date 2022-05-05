@@ -19,21 +19,24 @@ export default {
     ...mapGetters('priceList', ['priceLists']),
     ...mapGetters('edition', ['editions']),
     ...mapGetters('outlay', [
+      'keys',
       'activeData',
-      'showOnlySelected',
+      'showOnlyChecked',
       'nodeList',
-      'room',
+      'selectedRoom',
       'outlay',
       'roots',
+      'currentRoomData',
+      'selectedValues',
     ]),
-    keys() {
-      if (!this.activeData) return []
+    tableKeys() {
+      if (!this.keys) return []
 
-      return this.activeData.keys.map((k, index) => {
+      return this.keys.map((k, index) => {
         if (index === 0 && this.currentRoot) {
           return {
             ...k,
-            name: this.currentRoot.data[this.activeData.keys[0].id],
+            name: this.currentRoot.data[this.keys[0].id],
           }
         }
         return k
@@ -44,21 +47,6 @@ export default {
 
       return this.activeData.data
     },
-    // roots() {
-    //   if (!this.editionData?.children) return []
-
-    //   if (this.showOnlySelected) {
-    //     if (this.editionData.children.length > 0) {
-    //       const hasValues = !this.isObjectId(this.editionData.children[0].key)
-    //       if (hasValues) {
-    //         return this.editionData.children.filter(n => {
-    //           return this.room.jobs.find(j => j.key === n.key)
-    //         })
-    //       }
-    //     }
-    //   }
-    //   return this.editionData.children
-    // },
     currentRoot() {
       if (!Object.keys(this.groupedList).length) {
         return null
@@ -66,48 +54,27 @@ export default {
       return this.groupedList[0][this.currentRootIndex]
     },
     rows() {
-      if (!this.outlay || !this.keys.length || !this.nodeList) return []
-      if (!this.room && this.outlay.rooms.length) {
-        return this.outlay.rooms
-          .map(r => {
-            const roomCategory = {
-              data: {
-                [this.keys[0].id]: r.name,
-              },
-              children: r.jobs,
-              key: r.id,
-              level: 0,
-            }
-            const jobs = this.nodeList.filter(n => r.jobs.includes(n.key))
-            return [roomCategory, ...jobs]
-          })
-          .flat()
+      if (!this.outlay || !this.keys.length) return []
+
+      if (this.showOnlyChecked) {
+        return this.currentRoomData.filter(n =>
+          this.selectedValues.includes(n.key),
+        )
       }
-      if (this.showOnlySelected) {
-        return this.nodeList.filter(n => this.room.jobs.includes(n.key))
-      }
-      return this.nodeList
+      return this.currentRoomData
     },
     groupedList() {
       if (!this.roots) return []
-      // if (!this.room && this.keys.length) {
-      //   const rooms = this.outlay.rooms.map(r => ({
-      //     data: {
-      //       [this.keys[0].id]: r.name,
-      //     },
-      //     children: r.jobs,
-      //     key: r.id,
-      //     level: 0,
-      //   }))
-      //   const roots = this.roots.map(r => ({
-      //     ...r,
-      //     level: r.level + 1,
-      //   }))
-      //   return [...rooms, ...roots].reduce((acc, cur) => {
-      //     acc[cur['level']] = [...(acc[cur['level']] || []), cur]
-      //     return acc
-      //   }, {})
-      // }
+
+      if (this.showOnlyChecked) {
+        const roots = this.roots.filter(r =>
+          this.selectedValues.includes(r.key),
+        )
+        return roots.reduce((acc, cur) => {
+          acc[cur['level']] = [...(acc[cur['level']] || []), cur]
+          return acc
+        }, {})
+      }
       return this.roots.reduce((acc, cur) => {
         acc[cur['level']] = [...(acc[cur['level']] || []), cur]
         return acc
@@ -116,66 +83,17 @@ export default {
     treeView() {
       return Object.values(this.tree).map(n => n.data[this.keys[0].id])
     },
-    selectedValues() {
-      if (this.room) {
-        const room = this.outlay.rooms.find(r => r.id === this.room.id)
-        return room.jobs.map(this.treeToList).flat()
-      }
-
-      return []
-    },
   },
   watch: {
-    async room() {
-      // await this.$nextTick()
-      // const { wrapper } = this.$refs
-      // const parents = wrapper.querySelectorAll('.parent')
-      // const observer = new IntersectionObserver(entries => {
-      //   const { wrapper } = this.$refs
-      //   const { top, height } = wrapper.getBoundingClientRect()
-      //   entries.forEach(e => {
-      //     if (!Object.keys(this.groupedList).length) {
-      //       return
-      //     }
-      //     if (e.boundingClientRect.top - top > height / 2) {
-      //       return
-      //     }
-      //     const id = e.target.dataset?.id
-      //     const level = +e.target.dataset?.level
-      //     const newIndex = this.groupedList[level].findIndex(n => n.key === id)
-      //     if (newIndex === -1) {
-      //       return
-      //     }
-      //     if (e.isIntersecting) {
-      //       if (level === 0) {
-      //         if (newIndex > 0) {
-      //           this.currentRootIndex = newIndex - 1
-      //         }
-      //         return
-      //       }
-      //       if (newIndex > 0) {
-      //         this.tree[level] = this.groupedList[level][newIndex - 1]
-      //       }
-      //     } else {
-      //       if (level === 0) {
-      //         this.currentRootIndex = newIndex
-      //         return
-      //       }
-      //       this.tree[level] = this.groupedList[level][newIndex]
-      //     }
-      //   })
-      // })
-      // parents.forEach(r => {
-      //   observer.observe(r)
-      // })
-      // this.tree = {}
+    async selectedRoom() {
+      this.initObserver()
+    },
+    async showOnlyChecked() {
+      this.initObserver()
     },
   },
-  mounted() {
-    // const selectedData = this.outlay.rooms.map(r => {
-    //   return r.jobs.map(this.treeToList)
-    // })
-    // console.log(selectedData)
+  async mounted() {
+    this.initObserver()
   },
   methods: {
     ...mapMutations('priceList', ['setSelectedPriceList']),
@@ -187,12 +105,66 @@ export default {
       }
       return [node.key]
     },
+    async initObserver() {
+      await this.$nextTick()
+      const { wrapper } = this.$refs
+      if (!wrapper) {
+        return
+      }
+      const parents = wrapper.querySelectorAll('.parent')
+      const observer = new IntersectionObserver(entries => {
+        const { wrapper } = this.$refs
+        if (!wrapper) {
+          return
+        }
+        const { top, height } = wrapper.getBoundingClientRect()
+        entries.forEach(e => {
+          if (!Object.keys(this.groupedList).length) {
+            return
+          }
+          if (e.boundingClientRect.top - top > height / 2) {
+            return
+          }
+          const id = e.target.dataset?.id
+          const level = +e.target.dataset?.level
+          const newIndex = this.groupedList[level].findIndex(n => n.key === id)
+          if (newIndex === -1) {
+            return
+          }
+          if (e.isIntersecting) {
+            if (level === 0) {
+              if (newIndex > 0) {
+                this.currentRootIndex = newIndex - 1
+              }
+              if (newIndex === 0) {
+                this.tree = {}
+                this.currentRootIndex = null
+              }
+              return
+            }
+            if (newIndex > 0) {
+              this.tree[level] = this.groupedList[level][newIndex - 1]
+            }
+          } else {
+            if (level === 0) {
+              this.currentRootIndex = newIndex
+              return
+            }
+            this.tree[level] = this.groupedList[level][newIndex]
+          }
+        })
+      })
+      parents.forEach(r => {
+        observer.observe(r)
+      })
+      this.tree = {}
+    },
   },
 }
 </script>
 <template>
   <div class="table-wrapper" ref="wrapper">
-    <table class="table">
+    <table class="table" :class="{ disabled: showOnlyChecked }">
       <col
         v-for="(key, index) in keys"
         :key="key.id"
@@ -201,7 +173,7 @@ export default {
       <col width="60px" />
 
       <tr class="table__row table__row--key table__row--sticky">
-        <th v-for="key in keys" :key="key.id" class="table__cell">
+        <th v-for="key in tableKeys" :key="key.id" class="table__cell">
           {{ key.name }}
         </th>
         <th></th>
@@ -218,10 +190,10 @@ export default {
           </td>
         </tr>
       </template>
-      <template v-if="rows">
+      <template v-if="rows && rows.length > 0">
         <TableRow
           v-for="(node, index) in rows"
-          :key="room ? node.key + index : node.key"
+          :key="selectedRoom ? node.key + index : node.key"
           :node="node"
           :rowIndex="index"
           :selected="selectedValues.includes(node.key)"
@@ -243,6 +215,10 @@ export default {
   border-collapse: collapse;
   table-layout: fixed;
   width: 100%;
+
+  &.disabled {
+    pointer-events: none;
+  }
 
   &__row {
     &--sticky {

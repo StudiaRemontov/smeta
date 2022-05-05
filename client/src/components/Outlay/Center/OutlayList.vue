@@ -1,22 +1,56 @@
 <script>
+import Button from 'primevue/button'
+
+import OutlayItem from './OutlayItem.vue'
+import CreateModal from './Modals/CreateModal.vue'
+import { mapActions, mapGetters } from 'vuex'
+
 export default {
+  components: {
+    Button,
+    OutlayItem,
+    CreateModal,
+  },
+  computed: {
+    ...mapGetters('outlays', ['outlays']),
+  },
   methods: {
+    ...mapActions('outlays', ['create']),
     selectOutlay() {},
+    async createOutlay() {
+      const response = await this.$refs['create-modal'].show({
+        okButton: 'Создать',
+        cancelButton: 'Отмена',
+      })
+      if (response) {
+        try {
+          const data = await this.create(response)
+          console.log(data)
+        } catch (error) {
+          console.log(error)
+        }
+      }
+    },
   },
 }
 </script>
 
 <template>
+  <CreateModal ref="create-modal" />
   <div class="outlay-list">
-    <div class="outlay-item" @click="selectOutlay">
-      <span class="outlay-item__name"> Name 1 </span>
-    </div>
-    <div class="outlay-item">
-      <span class="outlay-item__name"> Name 2 </span>
-    </div>
-    <div class="outlay-item">
-      <span class="outlay-item__name"> Name 3 </span>
-    </div>
+    <template v-if="outlays && outlays.length > 0">
+      <OutlayItem
+        v-for="outlay in outlays"
+        :key="outlay._id"
+        :outlay="outlay"
+      />
+    </template>
+    <Button
+      class="p-button-success"
+      icon="pi pi-plus"
+      iconPos="right"
+      @click="createOutlay"
+    />
   </div>
 </template>
 
@@ -24,10 +58,5 @@ export default {
 .outlay-list {
   display: flex;
   gap: 20px;
-}
-
-.outlay-item {
-  border: 1px solid #a7a7a7;
-  padding: 10px;
 }
 </style>

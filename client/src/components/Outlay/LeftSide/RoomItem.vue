@@ -23,10 +23,7 @@ export default {
         {
           label: 'Редактировать',
           command: () => {
-            this.selectRoom({
-              id: this.room.id,
-              showOnlySelected: false,
-            })
+            this.setSelectedRoom(this.room)
             this.$emit('edit')
           },
         },
@@ -40,21 +37,22 @@ export default {
     }
   },
   computed: {
-    ...mapGetters('outlay', ['showOnlySelected']),
+    ...mapGetters('outlay', ['showOnlyChecked']),
     textColor() {
       return '#fff'
     },
     viewMode: {
       get() {
-        return this.showOnlySelected
+        return this.showOnlyChecked && this.active
       },
       set(value) {
-        this.selectRoom({ id: this.room.id, showOnlySelected: value })
+        this.setSelectedRoom(this.room)
+        this.setShowOnlyChecked(value)
       },
     },
   },
   methods: {
-    ...mapMutations('outlay', ['selectRoom']),
+    ...mapMutations('outlay', ['setSelectedRoom', 'setShowOnlyChecked']),
     openMenu(e) {
       this.$refs.menu.toggle(e)
     },

@@ -30,7 +30,7 @@ export default {
   },
   computed: {
     ...mapGetters('edition', ['active']),
-    ...mapGetters('outlay', ['room', 'activeData', 'showOnlySelected']),
+    ...mapGetters('outlay', ['selectedRoom', 'activeData', 'showOnlySelected']),
     data() {
       return this.node.data
     },
@@ -43,7 +43,7 @@ export default {
           const hasValues = !this.isObjectId(this.node.children[0].key)
           if (hasValues) {
             return this.node.children.filter(n => {
-              return this.room.jobs.find(j => j.key === n.key)
+              return this.selectedRoom.jobs.find(j => j.key === n.key)
             })
           }
         }
@@ -89,8 +89,8 @@ export default {
       }
     },
     isSelected() {
-      if (!this.room) return false
-      return this.room.jobs.find(j => j.key === this.node.key)
+      if (!this.selectedRoom) return false
+      return this.selectedRoom.jobs.find(j => j.key === this.node.key)
     },
   },
   methods: {

@@ -20,29 +20,10 @@ export default {
   },
   async mounted() {
     await this.fetchAll()
-    const outlay = this.outlays.find(out => out._id === this.outlayId)
-    if (!outlay) {
-      return
-    }
-    const edition = this.editions.find(e => e._id === outlay.edition)
-    const activeData = JSON.parse(JSON.stringify(edition))
-    const nodeList = activeData.data.children
-      .map(c => this.treeToList(c, 0, []))
-      .flat()
-    const roots = nodeList.filter(n => this.isObjectId(n.key))
-    this.setActiveData(edition)
-    this.setRoots(roots)
-    this.setNodeList(nodeList)
-    this.setOutlay(outlay)
   },
   methods: {
-    ...mapMutations('outlay', [
-      'setOutlay',
-      'setActiveData',
-      'setNodeList',
-      'setRoots',
-    ]),
-    ...mapActions('outlays', ['fetchAll']),
+    ...mapMutations('outlay', ['setActiveData', 'setNodeList', 'setRoots']),
+    ...mapActions('outlays', ['fetchAll', 'setOutlay']),
     isObjectId(id) {
       return /^[0-9a-fA-F]{24}$/.test(id)
     },
@@ -68,12 +49,11 @@ export default {
 </script>
 
 <template>
-  <main v-if="outlay" class="main">
+  <main class="main">
     <LeftSide />
     <CenterWrapper />
     <RightSide />
   </main>
-  <span v-else> Смета не найдена </span>
 </template>
 
 <style lang="scss" scoped>

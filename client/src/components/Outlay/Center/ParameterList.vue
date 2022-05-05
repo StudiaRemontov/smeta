@@ -5,10 +5,10 @@ import mathExp from 'math-expression-evaluator'
 
 export default {
   computed: {
-    ...mapGetters('outlay', ['room']),
+    ...mapGetters('outlay', ['selectedRoom']),
     parameters() {
-      if (!this.room) return {}
-      return this.room.options
+      if (!this.selectedRoom) return {}
+      return this.selectedRoom.options
     },
     roomOptionsLabels() {
       return roomOptions

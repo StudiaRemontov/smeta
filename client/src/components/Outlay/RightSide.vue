@@ -2,12 +2,16 @@
 import NotificationButton from '@/components/UI/NotificationButton.vue'
 import UserAvatar from '@/components/UI/UserAvatar.vue'
 import InputText from 'primevue/inputtext'
+import { mapGetters } from 'vuex'
 
 export default {
   components: {
     NotificationButton,
     UserAvatar,
     InputText,
+  },
+  computed: {
+    ...mapGetters('outlay', ['outlay']),
   },
 }
 </script>
@@ -20,7 +24,7 @@ export default {
         <UserAvatar />
       </AppButton>
     </div>
-    <div class="right-side__parameters">
+    <div v-if="outlay" class="right-side__parameters">
       <span> Расчеты </span>
       <div class="right-side__rooms">
         <div class="right-side__room">

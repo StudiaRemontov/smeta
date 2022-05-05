@@ -17,15 +17,18 @@ export default {
     }
   },
   computed: {
-    ...mapGetters('outlay', ['roots', 'room', 'activeData']),
+    ...mapGetters('outlay', [
+      'roots',
+      'selectedRoom',
+      'activeData',
+      'keys',
+      'showOnlyChecked',
+    ]),
     data() {
       return this.node.data
     },
     isCategory() {
       return this.node.children.length > 0
-    },
-    keys() {
-      return this.activeData.keys
     },
     isClone() {
       return this.node.isClone
@@ -94,7 +97,7 @@ export default {
 <template>
   <tr
     class="table-row"
-    :class="{ parent: isCategory, selected }"
+    :class="{ parent: isCategory, selected: selected && !showOnlyChecked }"
     v-bind="rowAttrs"
     @click="select"
   >
@@ -106,26 +109,12 @@ export default {
       :colspan="isCategory ? keys.length + 1 : 0"
       :isClone="isClone"
       :isEditing="isCloneEditing"
-      :isSelected="selected"
+      :isSelected="selected && !showOnlyChecked"
     />
-    <!-- <td
-      v-for="(val, key) in data"
-      class="table-cell"
-      :key="key"
-      :colspan="isCategory ? keys.length + 1 : 0"
+    <td
+      v-if="!isCategory && !showOnlyChecked"
+      class="table-cell table-cell--actions"
     >
-      <input
-        v-if="isClone && room"
-        v-model="data[key]"
-        class="input"
-        type="text"
-        @click.stop
-      />
-      <span v-else>
-        {{ val }}
-      </span>
-    </td> -->
-    <td v-if="!isCategory" class="table-cell table-cell--actions">
       <div class="table-cell__actions">
         <button v-if="isClone" class="button" @click.stop="toggleEdit">
           <i v-if="isCloneEditing" class="pi pi-check"></i>
@@ -163,18 +152,10 @@ export default {
   border: none;
 }
 .table-cell {
-  padding: 8px;
-  text-align: center;
-
   &__actions {
     display: flex;
     align-items: center;
     gap: 5px;
   }
 }
-
-// &__row--sticky &__cell {
-//   background-color: transparent;
-//   color: $color-light;
-// }
 </style>

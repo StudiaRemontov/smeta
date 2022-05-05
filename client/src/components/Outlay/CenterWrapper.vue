@@ -2,11 +2,12 @@
 import Button from 'primevue/button'
 import AutoComplete from 'primevue/autocomplete'
 import InputSwitch from 'primevue/inputswitch'
-import TabMenu from 'primevue/tabmenu'
 import MultiSelect from 'primevue/multiselect'
 
 import TreeTable from './Center/TreeTable.vue'
+import TreeTableView from './Center/TreeTableView/TreeTableView.vue'
 import ParameterList from './Center/ParameterList.vue'
+import OutlayList from './Center/OutlayList.vue'
 import { mapGetters, mapMutations } from 'vuex'
 
 export default {
@@ -15,9 +16,10 @@ export default {
     AutoComplete,
     InputSwitch,
     TreeTable,
+    TreeTableView,
     ParameterList,
-    TabMenu,
     MultiSelect,
+    OutlayList,
   },
   data() {
     return {
@@ -52,17 +54,28 @@ export default {
   },
   computed: {
     ...mapGetters('edition', ['active']),
-    ...mapGetters('outlay', ['room', 'roots']),
+    ...mapGetters('outlay', [
+      'selectedRoom',
+      'roots',
+      'outlay',
+      'currentRoomData',
+      'roomsData',
+      'keys',
+      'rooms',
+    ]),
     scrollHeight() {
       return `${this.screenHeight - 100}px`
     },
     jobs() {
-      if (!this.active) return []
-      return this.treeToListOnlyValues(this.active.data)
+      if (!this.selectedRoom) return []
+      return this.currentRoomData.map(n => ({
+        name: n.data[this.keys[0].id],
+        value: n,
+      }))
     },
   },
   watch: {
-    room() {
+    selectedRoom() {
       this.windowResize()
     },
   },
@@ -76,6 +89,9 @@ export default {
   methods: {
     ...mapMutations('outlay', ['selectJob']),
     async windowResize() {
+      if (!this.outlay) {
+        return
+      }
       await this.$nextTick()
       const { autocomplete } = this.$refs
       const { top } = autocomplete.$el.getBoundingClientRect()
@@ -124,7 +140,8 @@ export default {
         `.table-row[data-id="${e.value.value.key}"]`,
       )
       const ROW_HEIGHT = 32
-      const offsetTop = Object.keys(table.tree) * ROW_HEIGHT || ROW_HEIGHT
+      const offsetTop =
+        ROW_HEIGHT + Object.keys(table.tree).length * ROW_HEIGHT || ROW_HEIGHT
       table.$el.scrollTo({
         top: row.offsetTop - offsetTop,
         behavior: 'smooth',
@@ -144,12 +161,11 @@ export default {
         class="p-button-warning"
         @click="showInfo"
       />
-      <TabMenu :model="items" />
-      <!-- <OutlayList /> -->
+      <OutlayList />
     </div>
-    <ParameterList v-if="room" />
+    <ParameterList v-if="selectedRoom" />
 
-    <div class="center__body">
+    <div v-if="outlay" class="center__body">
       <div class="body-actions">
         <div class="search-wrapper">
           <i class="pi pi-search"></i>
@@ -179,7 +195,8 @@ export default {
           <span>Чередовние цветов</span>
         </div>
       </div>
-      <TreeTable ref="table" :striped="striped" />
+      <TreeTable v-if="selectedRoom" ref="table" :striped="striped" />
+      <TreeTableView v-else-if="rooms.length > 0" />
     </div>
   </div>
 </template>
@@ -200,7 +217,7 @@ $header-height: 55px;
     align-items: center;
     border-bottom: 1px solid #ccc;
     padding: 0 20px;
-    padding-bottom: 10px;
+    min-height: 55px;
     box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.4);
     background-color: $color-light;
   }

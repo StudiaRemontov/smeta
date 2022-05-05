@@ -3,31 +3,40 @@ import AppLogo from '@/components/UI/AppLogo.vue'
 import Button from 'primevue/button'
 import RoomList from './LeftSide/RoomList.vue'
 
-import { mapActions, mapGetters, mapMutations } from 'vuex'
+import { mapActions, mapGetters, mapMutations, mapState } from 'vuex'
 
 export default {
   components: { AppLogo, Button, RoomList },
   computed: {
+    ...mapState('outlay', ['selectedValues']),
     ...mapGetters('outlay', [
-      'room',
+      'selectedRoom',
       'outlay',
       'activeData',
-      'nodeList',
+      'roomsData',
+      'rooms',
       'roots',
     ]),
   },
   methods: {
-    ...mapMutations('outlay', ['createRoom', 'selectRoom']),
-    ...mapActions('outlay', ['create']),
+    ...mapMutations('outlay', ['createRoom', 'setSelectedRoom']),
+    ...mapActions('outlay', ['update']),
     back() {},
     isObjectId(id) {
       return /^[0-9a-fA-F]{24}$/.test(id)
     },
     async save() {
       try {
-        const roomList = JSON.parse(JSON.stringify(this.outlay.rooms))
-        const roomsData = roomList.map(room => {
-          const nodes = this.nodeList.filter(n => room.jobs.includes(n.key))
+        const roomsClone = JSON.parse(
+          JSON.stringify(Object.entries(this.roomsData)),
+        )
+
+        const roomsData = roomsClone.map(([roomId, values]) => {
+          const room = this.rooms.find(r => r.id === roomId)
+
+          const nodes = values.filter(value =>
+            this.selectedValues[roomId].includes(value.key),
+          )
           const parents = nodes.filter(n => !n.parent)
 
           const jobs = parents.map(p => this.convertData(p, nodes))
@@ -40,7 +49,7 @@ export default {
           ...this.outlay,
           rooms: roomsData,
         }
-        await this.create(data)
+        await this.update(data)
       } catch (error) {
         console.log(error)
       }
@@ -48,7 +57,7 @@ export default {
     send() {},
     print() {},
     showAllRooms() {
-      this.selectRoom({})
+      this.setSelectedRoom(null)
     },
     convertData(node, selected) {
       const { key, data } = node
@@ -77,7 +86,7 @@ export default {
     <div class="left-side__header">
       <AppLogo />
     </div>
-    <div class="left-side__body">
+    <div v-if="outlay" class="left-side__body">
       <div class="left-side__actions">
         <Button @click="back">
           <i class="pi pi-replay"></i>
@@ -100,7 +109,7 @@ export default {
         <Button
           label="Все комнаты"
           class="button"
-          :class="{ 'p-button-secondary': room }"
+          :class="{ 'p-button-secondary': selectedRoom }"
           @click="showAllRooms"
         />
         <RoomList />

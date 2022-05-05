@@ -3,7 +3,7 @@ import Button from 'primevue/button'
 import ContextMenu from 'primevue/contextmenu'
 import RoomModal from './Modals/RoomModal.vue'
 import RoomItem from './RoomItem.vue'
-import { mapGetters, mapMutations } from 'vuex'
+import { mapActions, mapGetters, mapMutations } from 'vuex'
 
 export default {
   components: { Button, ContextMenu, RoomModal, RoomItem },
@@ -28,21 +28,14 @@ export default {
     }
   },
   computed: {
-    ...mapGetters('outlay', ['outlay', 'room']),
-    rooms() {
-      return this.outlay.rooms
-    },
+    ...mapGetters('outlay', ['outlay', 'selectedRoom', 'rooms']),
     activeRoomId() {
-      return this.room?.id
+      return this.selectedRoom?.id
     },
   },
   methods: {
-    ...mapMutations('outlay', [
-      'selectRoom',
-      'createRoom',
-      'updateRoom',
-      'removeRoom',
-    ]),
+    ...mapMutations('outlay', ['setSelectedRoom', 'updateRoom', 'removeRoom']),
+    ...mapActions('outlay', ['createRoom']),
     openContextMenu(e, id) {
       this.selectRoom({ id })
       this.$refs.menu.show(e)
@@ -90,7 +83,7 @@ export default {
       :key="room.id"
       :room="room"
       :active="activeRoomId === room.id"
-      @click="selectRoom({ id: room.id })"
+      @click="setSelectedRoom(room)"
       @edit="openEditModal"
       @remove="removeRoom"
     />

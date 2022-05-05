@@ -28,7 +28,7 @@ export default {
     return getInitState()
   },
   computed: {
-    ...mapGetters('outlay', ['room']),
+    ...mapGetters('outlay', ['selectedRoom']),
     perimeter() {
       if (!this.formData.width || !this.formData.length) return 0
       return (this.formData.width + this.formData.length) * 2
@@ -67,11 +67,11 @@ export default {
       this.okButton = options.okButton
       this.cancelButton = options.cancelButton
       if (options.edit) {
-        this.formData.name = this.room.name
-        this.formData.width = this.room.options.width
-        this.formData.height = this.room.options.height
-        this.formData.length = this.room.options.length
-        this.formData.spaces = this.room.options.spaces
+        this.formData.name = this.selectedRoom.name
+        this.formData.width = this.selectedRoom.options.width
+        this.formData.height = this.selectedRoom.options.height
+        this.formData.length = this.selectedRoom.options.length
+        this.formData.spaces = this.selectedRoom.options.spaces
       }
       this.$refs.popup.open()
 
@@ -91,10 +91,10 @@ export default {
       const data = {
         name: this.formData.name,
         options: {
-          width: this.formData.width,
-          height: this.formData.height,
-          length: this.formData.length,
-          spaces: this.formData.spaces,
+          width: this.formData.width || 0,
+          height: this.formData.height || 0,
+          length: this.formData.length || 0,
+          spaces: this.formData.spaces || 0,
         },
       }
       this.resolvePromise(data)
