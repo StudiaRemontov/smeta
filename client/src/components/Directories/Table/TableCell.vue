@@ -36,6 +36,21 @@ export default {
     type() {
       return this.key?.type
     },
+    componentName() {
+      const numberComponents = [
+        this.InputType.NUMBER,
+        this.InputType.PRICE,
+        this.InputType.QUANTITY,
+      ]
+      const selectComponents = [this.InputType.SELECT, this.InputType.FORMULA]
+      if (numberComponents.includes(this.type)) {
+        return 'InputNumber'
+      }
+      if (selectComponents.includes(this.type)) {
+        return 'Dropdown'
+      }
+      return 'InputText'
+    },
     newValue: {
       get() {
         return this.modelValue
@@ -45,9 +60,13 @@ export default {
       },
     },
     options() {
-      if (this.type !== this.InputType.SELECT) {
+      if (
+        this.type !== this.InputType.SELECT &&
+        this.type !== this.InputType.FORMULA
+      ) {
         return []
       }
+
       const root = this.roots.find(d => d._id === this.key.root)
       if (!root) {
         return []
@@ -106,24 +125,13 @@ export default {
 </script>
 
 <template>
-  <InputText
-    v-if="type === InputType.STRING"
-    v-model="newValue"
-    placeholder="Введите значение"
-  />
-  <InputNumber
-    v-else-if="type === InputType.NUMBER"
+  <component
+    :is="componentName"
     v-model="newValue"
     :format="false"
-    placeholder="Введите значение"
-  />
-  <Dropdown
-    v-else-if="type === InputType.SELECT"
-    v-model="newValue"
-    ref="dropdown"
-    placeholder="Введите значение"
     :options="options"
     optionLabel="text"
     optionValue="value"
+    placeholder="Введите значение"
   />
 </template>

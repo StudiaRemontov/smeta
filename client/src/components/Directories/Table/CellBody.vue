@@ -24,7 +24,10 @@ export default {
       return this.key?.type
     },
     text() {
-      if (this.type === this.InputType.SELECT) {
+      if (
+        this.type === this.InputType.SELECT ||
+        this.type === this.InputType.FORMULA
+      ) {
         const values = this.getValueOfCell(
           this.key.dirId,
           this.key.root,
@@ -33,7 +36,12 @@ export default {
         )
         return values.join(', ') || 'Пусто'
       }
-      if (this.type === this.InputType.NUMBER && !this.value) {
+      const numberTypes = [
+        this.InputType.NUMBER,
+        this.InputType.PRICE,
+        this.InputType.QUANTITY,
+      ]
+      if (numberTypes.includes(this.type) && !this.value) {
         return 0
       }
       return this.value || 'Пусто'

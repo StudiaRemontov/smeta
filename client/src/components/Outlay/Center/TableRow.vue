@@ -45,11 +45,6 @@ export default {
       }
     },
   },
-  mounted() {
-    if (this.isClone) {
-      this.isCloneEditing = true
-    }
-  },
   methods: {
     ...mapMutations('outlay', ['selectJob', 'unselectJob', 'pushNodeAfter']),
     getParents(node) {
@@ -130,6 +125,7 @@ export default {
 
 <style lang="scss" scoped>
 .table-row {
+  position: relative;
   cursor: pointer;
 
   &.striped:nth-child(even) {

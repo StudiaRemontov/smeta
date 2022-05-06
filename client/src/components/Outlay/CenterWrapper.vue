@@ -68,7 +68,8 @@ export default {
     },
     jobs() {
       if (!this.selectedRoom) return []
-      return this.currentRoomData.map(n => ({
+      const jobs = this.currentRoomData.filter(n => n.children.length === 0)
+      return jobs.map(n => ({
         name: n.data[this.keys[0].id],
         value: n,
       }))
@@ -229,6 +230,7 @@ $header-height: 55px;
     min-height: 0px;
     background-color: $color-light;
     box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.4);
+    border-radius: 5px;
   }
 }
 
@@ -237,7 +239,6 @@ $header-height: 55px;
   gap: 10px;
   align-items: center;
   padding: 20px;
-  padding-bottom: 0;
 }
 
 .search-wrapper {

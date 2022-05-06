@@ -1,14 +1,25 @@
 import axios from '../../axios'
 import { InputType } from '../../enum/InputType'
 
+const getChildren = (directory, directories) => {
+  const children = directories.filter(d => d.parent === directory._id)
+
+  const subChildren = children.map(c => getChildren(c, directories))
+  return [...children, ...subChildren].flat()
+}
+
 export default {
   namespaced: true,
   state: {
     root: null,
     directories: [],
     contentLoaded: false,
+    loading: false,
   },
   mutations: {
+    setLoading(state, payload) {
+      state.loading = payload
+    },
     setRoot(state, payload) {
       state.root = payload
     },
@@ -138,7 +149,6 @@ export default {
           id: response.data._id,
           data: response.data,
         })
-
         return response
       } catch (error) {
         console.log(error)
@@ -160,8 +170,33 @@ export default {
         return Promise.reject(error)
       }
     },
+    async updateAllValuesInsideRoot(
+      { state, dispatch },
+      { rootId, key, value },
+    ) {
+      const root = state.directories.find(d => d._id === rootId)
+      if (!root) {
+        return
+      }
+      if (root.values) {
+        return [root]
+      }
+      const children = getChildren(root, state.directories)
+      const architectures = children.filter(c => c.values)
+      await Promise.all(
+        architectures.map(async arc => {
+          const values = arc.values.map(row => {
+            row.data[key] = value
+            return row
+          })
+          await dispatch('updateDirectoryValues', { id: arc._id, values })
+        }),
+      )
+      // console.log(architectures)
+    },
   },
   getters: {
+    loading: s => s.loading,
     root: s => {
       if (!s.root) {
         return null

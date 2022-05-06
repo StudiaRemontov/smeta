@@ -158,7 +158,10 @@ export default {
       return visibleKeys.map(key => {
         const row = directory.values.find(r => r.id === rowId)
         if (!row) return null
-        if (key.type === this.InputType.SELECT) {
+        if (
+          key.type === this.InputType.SELECT ||
+          key.type === this.InputType.FORMULA
+        ) {
           const findingRow = row.data[key.id]
           return this.getValueOfCell(key.dirId, findingRow, key.keys)
         }
@@ -184,7 +187,15 @@ export default {
         const root = this.getRoot(dir._id)
         const { keys } = root
         const keysTypeSelect = keys.filter(
-          k => k.type === this.InputType.SELECT,
+          k =>
+            k.type === this.InputType.SELECT ||
+            k.type === this.InputType.FORMULA,
+        )
+        const keysTypeNumber = keys.filter(
+          k =>
+            k.type === this.InputType.NUMBER ||
+            k.type === this.InputType.PRICE ||
+            k.type === this.InputType.QUANTITY,
         )
         dir.values = values.map(row => {
           row.data = Object.entries(row.data).reduce((acc, [key, value]) => {
@@ -200,6 +211,8 @@ export default {
               acc[key] = text?.join(', ')
               return acc
             }
+            const isNumber = keysTypeNumber.find(k => k.id === key)
+            value = isNumber ? value || 0 : value
             acc[key] = value
             return acc
           }, {})
@@ -273,7 +286,10 @@ export default {
       </div>
     </template>
     <template #body>
-      <RouterView v-slot="{ Component, route }">
+      <template v-if="directories.length === 0">
+        <span> Невозможно создать прайс лист без справочника </span>
+      </template>
+      <RouterView v-else v-slot="{ Component, route }">
         <CloneView v-if="clone" />
         <component
           v-else-if="route.name !== 'pricelistsIndex'"

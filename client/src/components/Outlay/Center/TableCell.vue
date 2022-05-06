@@ -85,12 +85,27 @@ export default {
       })
     },
   },
+  watch: {
+    isSelected(value) {
+      if (!value) {
+        this.coefIsVisible = false
+      }
+    },
+    isEditing(value) {
+      if (value) return
+      this.setValueBefore()
+    },
+  },
   mounted() {
-    if (this.type === this.InputType.NUMBER) {
-      this.valueBefore = this.modelValue
-    }
+    this.setValueBefore()
   },
   methods: {
+    setValueBefore() {
+      if (this.type === this.InputType.NUMBER) {
+        this.valueBefore = this.modelValue
+        this.coef = 1
+      }
+    },
     getValueOfCell(dirId, root, rowId, keys) {
       const directory = this.directories.find(d => d._id === dirId)
       if (!directory) return null
@@ -108,14 +123,25 @@ export default {
       return vals
     },
     changePrice() {
+      if (this.coef < 1) this.coef = 1
       this.newValue = +(this.valueBefore * this.coef).toFixed(2)
+    },
+    stopEditing() {
+      this.coefIsVisible = false
+    },
+    cellClick(e) {
+      if (this.type === this.InputType.NUMBER && this.isSelected) {
+        e.stopPropagation()
+        this.coefIsVisible = !this.coefIsVisible
+      }
     },
   },
 }
 </script>
 
 <template>
-  <td class="table-cell" :colspan="colspan">
+  <td class="table-cell" :colspan="colspan" @click="cellClick">
+    <div v-if="coefIsVisible" class="blocker" @click.stop="stopEditing"></div>
     <template v-if="isClone && isEditing">
       <input
         v-if="type === InputType.STRING"
@@ -151,7 +177,6 @@ export default {
         v-if="isSelected && type === InputType.NUMBER"
         class="table-cell__value"
         :class="{ editing: coefIsVisible }"
-        @click.stop="coefIsVisible = !coefIsVisible"
       >
         <span>
           {{ modelValue }}
@@ -177,6 +202,15 @@ export default {
 </template>
 
 <style lang="scss" scoped>
+.blocker {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+}
+
 .table-cell {
   padding: 8px;
   text-align: left;
@@ -194,7 +228,6 @@ export default {
       flex: 1;
       display: flex;
       gap: 15px;
-      justify-content: space-between;
       align-items: center;
     }
   }
@@ -215,10 +248,11 @@ export default {
 
 .input {
   max-width: 100%;
+  z-index: 2;
 
   &--coef {
     flex-basis: 50%;
-    width: 50px;
+    max-width: 50px;
     text-align: center;
     /* Chrome, Safari, Edge, Opera */
     &::-webkit-outer-spin-button,

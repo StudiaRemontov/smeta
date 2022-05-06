@@ -65,7 +65,10 @@ export default {
       )
       return directoryOfValues.values.map(row => {
         const text = keys.map(key => {
-          if (key.type === this.InputType.SELECT) {
+          if (
+            key.type === this.InputType.SELECT ||
+            key.type === this.InputType.FORMULA
+          ) {
             const findingRow = row.data[key.id]
             return this.getValueOfCell(
               key.dirId,
@@ -137,6 +140,14 @@ export default {
     :options="options"
     optionLabel="text"
     optionValue="text"
+    :disabled="disabled"
+    :class="{ updated }"
+  />
+  <Dropdown
+    v-else-if="type === InputType.FORMULA"
+    v-model="newValue"
+    placeholder="Введите значение"
+    :options="formulaOptions"
     :disabled="disabled"
     :class="{ updated }"
   />

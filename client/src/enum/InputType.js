@@ -3,4 +3,7 @@ export const InputType = {
   NUMBER: 'Число',
   SELECT: 'Справочник',
   COUNTER: 'Счетчик',
+  PRICE: 'Стоимость',
+  QUANTITY: 'Количество',
+  FORMULA: 'Формула',
 }

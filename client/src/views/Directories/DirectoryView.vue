@@ -64,7 +64,11 @@ export default {
       // это нужно для сопостовления значений с экселем
       return architectures.map(arc => {
         const root = this.getRoot(arc._id)
-        const keys = root.keys.filter(k => k.type !== this.InputType.SELECT)
+        const keys = root.keys.filter(
+          k =>
+            k.type !== this.InputType.SELECT ||
+            k.type !== this.InputType.FORMULA,
+        )
 
         const keyValues = keys.map(key => {
           const obj = {
@@ -279,7 +283,10 @@ export default {
       return values.map((value, rowIndex) => {
         //формирование данных строки
         const data = keys.reduce((acc, key, index) => {
-          if (key.type === this.InputType.SELECT) {
+          if (
+            key.type === this.InputType.SELECT ||
+            key.type === this.InputType.FORMULA
+          ) {
             // получаю архитектуру из которой берутся значения
             const dirOfValues = this.directories.find(d => d._id === key.dirId)
             //нахожу строку в которой находится значение из excel

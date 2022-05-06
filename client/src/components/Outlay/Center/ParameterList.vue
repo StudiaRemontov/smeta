@@ -1,6 +1,5 @@
 <script>
 import { mapGetters } from 'vuex'
-import { roomOptions } from '@/enum/roomOptions'
 import mathExp from 'math-expression-evaluator'
 
 export default {
@@ -9,9 +8,6 @@ export default {
     parameters() {
       if (!this.selectedRoom) return {}
       return this.selectedRoom.options
-    },
-    roomOptionsLabels() {
-      return roomOptions
     },
     calculatedParameters() {
       if (Object.keys(this.parameters).length === 0) return {}
@@ -62,6 +58,7 @@ export default {
   box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.4);
   background-color: $color-light;
   padding: 20px;
+  border-radius: 5px;
 
   &__list {
     display: flex;

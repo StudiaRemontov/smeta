@@ -330,7 +330,6 @@ export default {
           },
         )
 
-        console.log(this.updatedFields)
         this.updatedFields = this.updatedFields.map(({ key }) => key)
       }, 500)
     },

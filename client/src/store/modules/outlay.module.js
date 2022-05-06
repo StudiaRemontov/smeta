@@ -227,7 +227,7 @@ export default {
       state.keys = edition.keys
       state.roomsData = state.outlay.rooms.reduce((acc, room) => {
         const nodes = room.jobs.map(r => treeToList(r, 0)).flat()
-        const mergedNodes = uniqBy([...initNodes, ...nodes], 'key')
+        const mergedNodes = uniqBy([...nodes, ...initNodes], 'key')
         const parents = mergedNodes.filter(n => !n.parent)
         const mergedTree = parents.map(p => convertData(p, mergedNodes))
         const updatedNodes = mergedTree.map(n => treeToList(n, 0)).flat()

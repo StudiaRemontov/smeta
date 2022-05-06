@@ -11,10 +11,16 @@ export default {
     }
   },
   computed: {
-    ...mapGetters('outlay', ['rooms', 'selectedValues', 'keys', 'roomsData']),
+    ...mapGetters('outlay', [
+      'rooms',
+      'selectedValues',
+      'keys',
+      'roomsData',
+      'selectedRoom',
+    ]),
     data() {
       const roomsData = Object.entries(this.roomsData)
-      if (roomsData.length === 0) return []
+      if (roomsData.length === 0 || this.selectedRoom) return []
       const data = roomsData.map(([key, values]) => {
         const foundRoom = this.rooms.find(r => r.id === key)
         if (!foundRoom) return {}
@@ -68,52 +74,55 @@ export default {
   },
   async mounted() {
     await this.$nextTick()
-    const { row } = this.$refs
-    if (!row) return
+    const { row, wrapper } = this.$refs
+    if (!row || !wrapper) return
     const rows = row.filter(r => r.isParent)
     const domNodes = rows.map(r => r.$el)
-    const observer = new IntersectionObserver(entries => {
-      entries.forEach(e => {
-        const { wrapper } = this.$refs
-        if (!wrapper) return
-        const { top, height } = wrapper.getBoundingClientRect()
-        if (!Object.keys(this.groupedList).length) {
-          return
-        }
-        if (e.boundingClientRect.top - top > height / 2) {
-          return
-        }
+    const observer = new IntersectionObserver(
+      entries => {
+        entries.forEach(e => {
+          const { top, height } = wrapper.getBoundingClientRect()
+          if (!Object.keys(this.groupedList).length) {
+            return
+          }
+          if (e.boundingClientRect.top - top > height / 2) {
+            return
+          }
+          const id = e.target.dataset?.id
+          const level = +e.target.dataset?.level
 
-        const id = e.target.dataset?.id
-        const level = +e.target.dataset?.level
-
-        const newIndex = this.groupedList[level].findIndex(n => n.key === id)
-        if (newIndex === -1) {
-          return
-        }
-        if (e.isIntersecting) {
-          if (level === 0) {
+          const newIndex = this.groupedList[level].findIndex(n => n.key === id)
+          if (newIndex === -1) {
+            return
+          }
+          if (e.isIntersecting) {
+            if (level === 0) {
+              if (newIndex > 0) {
+                this.currentRootIndex = newIndex - 1
+              }
+              if (newIndex === 0) {
+                this.tree = {}
+                this.currentRootIndex = null
+              }
+              return
+            }
             if (newIndex > 0) {
-              this.currentRootIndex = newIndex - 1
+              this.tree[level] = this.groupedList[level][newIndex - 1]
             }
-            if (newIndex === 0) {
-              this.tree = {}
-              this.currentRootIndex = null
+          } else {
+            if (level === 0) {
+              this.currentRootIndex = newIndex
+              return
             }
-            return
+            this.tree[level] = this.groupedList[level][newIndex]
           }
-          if (newIndex > 0) {
-            this.tree[level] = this.groupedList[level][newIndex - 1]
-          }
-        } else {
-          if (level === 0) {
-            this.currentRootIndex = newIndex
-            return
-          }
-          this.tree[level] = this.groupedList[level][newIndex]
-        }
-      })
-    })
+        })
+      },
+      {
+        root: wrapper,
+        rootMargin: `-96px 0px 0px 0px`,
+      },
+    )
 
     domNodes.forEach(r => {
       observer.observe(r)

@@ -23,7 +23,7 @@ export default {
   },
   methods: {
     ...mapMutations('outlay', ['setActiveData', 'setNodeList', 'setRoots']),
-    ...mapActions('outlays', ['fetchAll', 'setOutlay']),
+    ...mapActions('outlays', ['fetchAll']),
     isObjectId(id) {
       return /^[0-9a-fA-F]{24}$/.test(id)
     },

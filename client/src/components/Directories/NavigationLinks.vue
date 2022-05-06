@@ -5,7 +5,7 @@ import NavigationLink from './NavigationLink.vue'
 export default {
   components: { NavigationLink },
   computed: {
-    ...mapGetters('directory', ['directories']),
+    ...mapGetters('directory', ['directories', 'loading']),
     directoryId() {
       return this.$route.params.id
     },
@@ -65,7 +65,7 @@ export default {
 }
 </script>
 <template>
-  <div class="links">
+  <div class="links" :class="{ disabled: loading }">
     <NavigationLink
       v-for="(link, index) in links"
       :key="link.url"
@@ -82,5 +82,10 @@ export default {
   gap: 5px;
   align-items: center;
   flex-wrap: wrap;
+
+  &.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
 }
 </style>

@@ -15,6 +15,7 @@ const getInitState = () => ({
   type: '',
   selectedDirectory: '',
   visibleKeys: [],
+  updateMode: false,
 })
 
 export default {
@@ -29,14 +30,17 @@ export default {
       return this.$route.params.id
     },
     filteredTypeOptions() {
-      const hasCounter = this.root.keys.find(
-        k => k.type === this.InputType.COUNTER,
-      )
-      if (hasCounter && this.type !== this.InputType.COUNTER) {
-        return this.typeOptions.filter(t => t !== this.InputType.COUNTER)
-      }
-
-      return this.typeOptions
+      //типы ключей, которые могут быть 1 в архитектуре
+      const singleKeys = [
+        this.InputType.PRICE,
+        this.InputType.QUANTITY,
+        this.InputType.COUNTER,
+      ]
+      const hiddenKeys = singleKeys.filter(type => {
+        if (this.type === type) return false
+        return this.root.keys.find(k => k.type === type)
+      })
+      return this.typeOptions.filter(t => !hiddenKeys.includes(t))
     },
     options() {
       if (!this.id) return []
@@ -59,11 +63,13 @@ export default {
   },
   methods: {
     async show(options) {
+      this.reset()
       this.title = options.title
       this.okButton = options.okButton
       this.cancelButton = options.cancelButton
       this.type = this.InputType.STRING
       if (options.key) {
+        this.updateMode = true
         this.name = options.key.name
         this.type = options.key.type
         this.selectedDirectory = options.key.dirId
@@ -85,7 +91,10 @@ export default {
         name: this.name,
         type: this.type,
       }
-      if (this.type === this.InputType.SELECT) {
+      if (
+        this.type === this.InputType.SELECT ||
+        this.type === this.InputType.FORMULA
+      ) {
         if (!this.selectedDirectory) {
           return
         }
@@ -150,7 +159,10 @@ export default {
             </option>
           </select>
         </div>
-        <div v-if="type === InputType.SELECT" class="form__group">
+        <div
+          v-if="type === InputType.SELECT || type === InputType.FORMULA"
+          class="form__group"
+        >
           <select
             v-model="selectedDirectory"
             class="select"
@@ -178,7 +190,9 @@ export default {
           </div>
         </div>
       </form>
-      <AppButton outlined variant="danger" @click="_remove">Удалить</AppButton>
+      <AppButton v-if="updateMode" outlined variant="danger" @click="_remove">
+        Удалить
+      </AppButton>
       <div class="modal__actions">
         <AppButton outlined @click="_cancel">
           {{ cancelButton }}

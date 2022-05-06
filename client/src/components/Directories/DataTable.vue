@@ -57,11 +57,12 @@ export default {
     },
   },
   methods: {
-    ...mapMutations('directory', ['removeEmptyRows']),
+    ...mapMutations('directory', ['removeEmptyRows', 'setLoading']),
     ...mapActions('directory', [
       'updateDirectoryKeys',
       'updateDirectoryValues',
       'createTableRow',
+      'updateAllValuesInsideRoot',
     ]),
     updateKey(key, value) {
       const keys = this.allKeys.map(item => {
@@ -95,7 +96,28 @@ export default {
       if (!response) {
         return
       }
-      const keys = [...this.allKeys, { id: Date.now() + '', ...response }]
+      const newKey = {
+        id: Date.now() + '',
+        ...response,
+      }
+      const keys = [...this.allKeys, newKey]
+      if (response.type === this.InputType.PRICE) {
+        const quantityKey = {
+          id: Date.now() + 1 + '',
+          name: 'Количество',
+          type: this.InputType.QUANTITY,
+        }
+        keys.push(quantityKey)
+        // await this.updateAllValuesInsideRoot({ rootId: this.root._id })
+        // update all values inside root
+      } else if (response.type === this.InputType.QUANTITY) {
+        // update all values inside root
+        const newValues = this.values.map(row => {
+          row.data[newKey.id] = 0
+          return row
+        })
+        this.updateValues(newValues)
+      }
 
       this.updateArchitecture(keys)
     },
@@ -124,12 +146,17 @@ export default {
         return this.updateArchitecture([])
       }
       const values = this.values.map(row => {
-        return Object.entries(row).reduce((acc, [key, value]) => {
-          if (+key !== keyId) {
+        const data = Object.entries(row.data).reduce((acc, [key, value]) => {
+          if (key !== keyId) {
             acc[key] = value
           }
           return acc
         }, {})
+
+        return {
+          ...row,
+          data,
+        }
       })
       this.updateArchitecture(keys)
       this.updateValues(values)
@@ -141,17 +168,20 @@ export default {
     async createRow() {
       this.createTableRow(this.directoryId)
       await this.$nextTick()
-      const rows = document.querySelectorAll('.p-editable-column')
+      const { table } = this.$refs
+      const rows = table.$el.querySelectorAll('.p-editable-column')
       const rowsLength = rows.length
-      const keysLength = this.editComplete.length
+      const keysLength = this.allKeys.length
       const firstCellOfLastRow = rows[rowsLength - keysLength]
       setTimeout(() => {
-        firstCellOfLastRow.click()
+        firstCellOfLastRow?.click()
       })
     },
     async updateValues(values) {
+      this.setLoading(true)
       try {
         await this.updateDirectoryValues({ id: this.directoryId, values })
+        this.setLoading(false)
       } catch (error) {
         console.log(error)
       }
@@ -168,9 +198,10 @@ export default {
       return key?.type
     },
     editComplete(event) {
-      const { newData, field, index } = event
       setTimeout(() => {
+        const { newData, field, index } = event
         if (this.data[index][field] === newData[field]) {
+          this.setLoading(false)
           return
         }
         this.updateValue(index, field, newData[field])
@@ -192,7 +223,7 @@ export default {
     scrollHeight="flex"
     @cell-edit-complete="editComplete"
   >
-    <template #header>
+    <template #header v-if="allKeys && allKeys.length > 0">
       <div class="table-header">
         <Button @click="createRow">Добавить элемент</Button>
       </div>
