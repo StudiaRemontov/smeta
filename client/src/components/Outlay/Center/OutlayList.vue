@@ -3,6 +3,8 @@ import Button from 'primevue/button'
 
 import OutlayItem from './OutlayItem.vue'
 import CreateModal from './Modals/CreateModal.vue'
+import Menu from 'primevue/menu'
+
 import { mapActions, mapGetters } from 'vuex'
 
 export default {
@@ -10,12 +12,32 @@ export default {
     Button,
     OutlayItem,
     CreateModal,
+    Menu,
+  },
+  data() {
+    return {
+      items: [
+        {
+          label: 'Удалить',
+          command: async () => {
+            try {
+              await this.remove(this.itemToRemove)
+            } catch (error) {
+              console.log(error)
+            } finally {
+              this.itemToRemove = null
+            }
+          },
+        },
+      ],
+      itemToRemove: null,
+    }
   },
   computed: {
     ...mapGetters('outlays', ['outlays']),
   },
   methods: {
-    ...mapActions('outlays', ['create']),
+    ...mapActions('outlays', ['create', 'remove']),
     selectOutlay() {},
     async createOutlay() {
       const response = await this.$refs['create-modal'].show({
@@ -24,12 +46,15 @@ export default {
       })
       if (response) {
         try {
-          const data = await this.create(response)
-          console.log(data)
+          await this.create(response)
         } catch (error) {
           console.log(error)
         }
       }
+    },
+    openMenu(e, id) {
+      this.itemToRemove = id
+      this.$refs.menu.toggle(e)
     },
   },
 }
@@ -37,12 +62,14 @@ export default {
 
 <template>
   <CreateModal ref="create-modal" />
+  <Menu ref="menu" :model="items" :popup="true" />
   <div class="outlay-list">
     <template v-if="outlays && outlays.length > 0">
       <OutlayItem
         v-for="outlay in outlays"
         :key="outlay._id"
         :outlay="outlay"
+        @open-menu="openMenu"
       />
     </template>
     <Button

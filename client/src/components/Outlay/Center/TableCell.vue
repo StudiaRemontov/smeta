@@ -25,6 +25,8 @@ export default {
       coef: 1,
       coefIsVisible: false,
       valueBefore: null,
+      editQuantity: false,
+      timeout: null,
     }
   },
   computed: {
@@ -35,6 +37,18 @@ export default {
         return this.modelValue
       },
       set(value) {
+        if (
+          this.type === this.InputType.PRICE ||
+          this.type === this.InputType.QUANTITY
+        ) {
+          if (this.timeout) {
+            this.timeout = clearTimeout(this.timeout)
+          }
+          this.timeout = setTimeout(() => {
+            this.$emit('update:modelValue', value)
+          }, 500)
+          return
+        }
         this.$emit('update:modelValue', value)
       },
     },
@@ -101,7 +115,7 @@ export default {
   },
   methods: {
     setValueBefore() {
-      if (this.type === this.InputType.NUMBER) {
+      if (this.type === this.InputType.PRICE) {
         this.valueBefore = this.modelValue
         this.coef = 1
       }
@@ -128,9 +142,10 @@ export default {
     },
     stopEditing() {
       this.coefIsVisible = false
+      this.editQuantity = false
     },
     cellClick(e) {
-      if (this.type === this.InputType.NUMBER && this.isSelected) {
+      if (this.type === this.InputType.PRICE && this.isSelected) {
         e.stopPropagation()
         this.coefIsVisible = !this.coefIsVisible
       }
@@ -141,25 +156,36 @@ export default {
 
 <template>
   <td class="table-cell" :colspan="colspan" @click="cellClick">
-    <div v-if="coefIsVisible" class="blocker" @click.stop="stopEditing"></div>
-    <template v-if="isClone && isEditing">
+    <div
+      v-if="coefIsVisible || editQuantity"
+      class="blocker"
+      @click.stop="stopEditing"
+    ></div>
+    <input
+      v-if="type === InputType.QUANTITY"
+      v-model.lazy="newValue"
+      class="input"
+      type="number"
+      @click.stop
+    />
+    <template v-else-if="isClone && isEditing">
       <input
         v-if="type === InputType.STRING"
-        v-model="newValue"
+        v-model.lazy="newValue"
         class="input"
         type="text"
         @click.stop
       />
       <input
-        v-else-if="type === InputType.NUMBER"
-        v-model="newValue"
+        v-else-if="type === InputType.NUMBER || type === InputType.PRICE"
+        v-model.lazy="newValue"
         class="input"
         type="number"
         @click.stop
       />
       <select
         v-else-if="type === InputType.SELECT"
-        v-model="newValue"
+        v-model.lazy="newValue"
         class="input"
         @click.stop
       >
@@ -174,7 +200,7 @@ export default {
     </template>
     <div class="table-cell__value" v-else>
       <div
-        v-if="isSelected && type === InputType.NUMBER"
+        v-if="isSelected && type === InputType.PRICE"
         class="table-cell__value"
         :class="{ editing: coefIsVisible }"
       >
@@ -184,8 +210,8 @@ export default {
         <template v-if="coefIsVisible">
           <span> x </span>
           <input
-            v-model="coef"
-            @input="changePrice"
+            v-model.lazy="coef"
+            @change="changePrice"
             class="input input--coef"
             type="number"
             min="1"
@@ -214,10 +240,6 @@ export default {
 .table-cell {
   padding: 8px;
   text-align: left;
-  // &:not(&--children) {
-  //   font-weight: 600;
-  //   text-align: center !important;
-  // }
 
   &__value {
     display: flex;

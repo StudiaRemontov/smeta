@@ -23,6 +23,8 @@ export default {
       'activeData',
       'keys',
       'showOnlyChecked',
+      'quantityKey',
+      'priceKey',
     ]),
     data() {
       return this.node.data
@@ -44,9 +46,22 @@ export default {
         'data-id': this.node.key,
       }
     },
+    visibleKeys() {
+      return this.isCategory ? [this.keys[0]] : this.keys
+    },
+    sum() {
+      const quantity = this.data[this.quantityKey.id]
+      const price = this.data[this.priceKey.id]
+      return (quantity * price).toFixed(2)
+    },
   },
   methods: {
-    ...mapMutations('outlay', ['selectJob', 'unselectJob', 'pushNodeAfter']),
+    ...mapMutations('outlay', [
+      'selectJob',
+      'unselectJob',
+      'pushNodeAfter',
+      'removeNode',
+    ]),
     getParents(node) {
       const parentNode = this.roots.find(n =>
         n.children.find(c => c.key === node.key),
@@ -82,6 +97,9 @@ export default {
         index: this.rowIndex + 1,
       })
     },
+    removeClone() {
+      this.removeNode(this.node.key)
+    },
     toggleEdit() {
       this.isCloneEditing = !this.isCloneEditing
     },
@@ -97,25 +115,33 @@ export default {
     @click="select"
   >
     <TableCell
-      v-for="(val, key) in data"
-      v-model="data[key]"
-      :key="key"
-      :col="key"
-      :colspan="isCategory ? keys.length + 1 : 0"
+      v-for="key in visibleKeys"
+      v-model.lazy="data[key.id]"
+      :key="key.id"
+      :col="key.id"
+      :colspan="isCategory ? keys.length + 2 : 0"
       :isClone="isClone"
       :isEditing="isCloneEditing"
       :isSelected="selected && !showOnlyChecked"
     />
+    <td v-if="!isCategory" class="table-cell">
+      {{ sum }}
+    </td>
     <td
       v-if="!isCategory && !showOnlyChecked"
       class="table-cell table-cell--actions"
     >
       <div class="table-cell__actions">
-        <button v-if="isClone" class="button" @click.stop="toggleEdit">
-          <i v-if="isCloneEditing" class="pi pi-check"></i>
-          <i v-else class="pi pi-pencil"></i>
-        </button>
-        <button v-if="selected" class="button" @click.stop="clone">
+        <template v-if="isClone">
+          <button class="button" @click.stop="toggleEdit">
+            <i v-if="isCloneEditing" class="pi pi-check"></i>
+            <i v-else class="pi pi-pencil"></i>
+          </button>
+          <button class="button" @click.stop="removeClone">
+            <i class="pi pi-trash"></i>
+          </button>
+        </template>
+        <button v-if="selected && !isClone" class="button" @click.stop="clone">
           <i class="pi pi-copy"></i>
         </button>
       </div>

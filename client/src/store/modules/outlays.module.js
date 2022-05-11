@@ -24,6 +24,9 @@ export default {
         return o
       })
     },
+    removeById(state, id) {
+      state.outlays = state.outlays.filter(o => o._id !== id)
+    },
   },
   actions: {
     async fetchAll({ commit, state }) {
@@ -47,7 +50,19 @@ export default {
         }
         const response = await axios.post('/outlay', outlay)
         commit('pushOutlay', response.data)
-        dispatch('setOutlay', response.data, { root: true })
+        dispatch('outlay/setOutlay', response.data, { root: true })
+        return response
+      } catch (error) {
+        return Promise.reject(error)
+      }
+    },
+    async remove({ commit, dispatch, rootGetters }, id) {
+      try {
+        const response = await axios.delete(`/outlay/${id}`)
+        if (rootGetters['outlay/outlay']?._id === id) {
+          dispatch('outlay/setOutlay', null, { root: true })
+        }
+        commit('removeById', id)
         return response
       } catch (error) {
         return Promise.reject(error)

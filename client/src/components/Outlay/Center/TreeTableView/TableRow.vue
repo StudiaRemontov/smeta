@@ -8,15 +8,23 @@ export default {
     },
   },
   computed: {
-    ...mapGetters('outlay', ['keys']),
+    ...mapGetters('outlay', ['keys', 'quantityKey', 'priceKey']),
     isParent() {
       return this.node.children.length > 0 || this.node.room
     },
     colspan() {
-      return this.isParent ? this.keys.length : 0
+      return this.isParent ? this.keys.length + 1 : 0
     },
     data() {
       return this.node.data
+    },
+    visibleKeys() {
+      return this.isParent ? [this.keys[0]] : this.keys
+    },
+    sum() {
+      const quantity = this.data[this.quantityKey.id]
+      const price = this.data[this.priceKey.id]
+      return (quantity * price).toFixed(2)
     },
   },
 }
@@ -30,13 +38,14 @@ export default {
     :class="{ parent: isParent }"
   >
     <td
-      v-for="(value, key) in data"
+      v-for="key in visibleKeys"
       class="table-cell"
-      :key="key"
+      :key="key.id"
       :colspan="colspan"
     >
-      {{ value }}
+      {{ data[key.id] }}
     </td>
+    <td v-if="!isParent" class="table-cell">{{ sum }}</td>
   </tr>
 </template>
 

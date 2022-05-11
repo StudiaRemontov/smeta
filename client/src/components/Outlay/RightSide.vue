@@ -1,17 +1,105 @@
 <script>
 import NotificationButton from '@/components/UI/NotificationButton.vue'
 import UserAvatar from '@/components/UI/UserAvatar.vue'
-import InputText from 'primevue/inputtext'
-import { mapGetters } from 'vuex'
+import RoomList from '@/components/Outlay/RightSide/RoomList.vue'
+
+import InputNumber from 'primevue/inputnumber'
+import { mapGetters, mapState } from 'vuex'
 
 export default {
   components: {
     NotificationButton,
     UserAvatar,
-    InputText,
+    InputNumber,
+    RoomList,
+  },
+  data() {
+    return {
+      sale: 0,
+      timeout: null,
+    }
   },
   computed: {
-    ...mapGetters('outlay', ['outlay']),
+    ...mapState('outlay', ['selectedValues']),
+    ...mapGetters('outlay', [
+      'outlay',
+      'rooms',
+      'roomsData',
+      'quantityKey',
+      'priceKey',
+      'keys',
+    ]),
+    data() {
+      const roomsClone = JSON.parse(
+        JSON.stringify(Object.entries(this.roomsData)),
+      )
+
+      return roomsClone.map(([roomId, values]) => {
+        const room = this.rooms.find(r => r.id === roomId)
+
+        const nodes = values.filter(value =>
+          this.selectedValues[roomId].includes(value.key),
+        )
+        const parents = nodes.filter(n => !n.parent)
+
+        const jobs = parents.map(p => this.convertData(p, nodes))
+        const vals = jobs.map(category => {
+          const values = this.treeToListOnlyValues(category)
+          const sum = values.reduce((acc, val) => (acc += val.sum), 0)
+          return {
+            name: category.data[this.keys[0].id],
+            sum,
+          }
+        })
+        const sumOfRoom = vals.reduce((acc, val) => (acc += val.sum), 0)
+        return {
+          name: room.name,
+          jobs: vals,
+          sum: sumOfRoom,
+        }
+      })
+    },
+    totalSum() {
+      return this.data.reduce((acc, val) => acc + val.sum, 0)
+    },
+    totalSumWithSale() {
+      if (!this.sale) return this.totalSum
+      const saleValue = (this.totalSum / 100) * this.sale
+      const result = this.totalSum - saleValue
+      return result.toFixed(2)
+    },
+  },
+  methods: {
+    isObjectId(id) {
+      return /^[0-9a-fA-F]{24}$/.test(id)
+    },
+    convertData(node, selected) {
+      const { key, data } = node
+      const children = selected.filter(n => n?.parent === node.key)
+      if (children.length > 0) {
+        const subChildren = children.map(c => this.convertData(c, selected))
+        return {
+          key,
+          data,
+          children: subChildren,
+        }
+      }
+      const sum = data[this.quantityKey.id] * data[this.priceKey.id]
+      return {
+        key,
+        data,
+        children,
+        sum,
+      }
+    },
+    treeToListOnlyValues(node) {
+      const { children, key } = node
+      const childs = children.map(this.treeToListOnlyValues).flat()
+      if (this.isObjectId(key)) {
+        return childs
+      }
+      return [...childs, node]
+    },
   },
 }
 </script>
@@ -26,55 +114,27 @@ export default {
     </div>
     <div v-if="outlay" class="right-side__parameters">
       <span> Расчеты </span>
-      <div class="right-side__rooms">
-        <div class="right-side__room">
-          <div class="right-side__room-head">
-            <span class="right-side__room-name"> Комната 2 </span>
-            <span class="right-side__room-price"> 65 </span>
-          </div>
-          <div class="right-side__rooms">
-            <div class="right-side__room">
-              <div class="right-side__room-head">
-                <span class="right-side__room-name"> Демонтажные </span>
-                <span class="right-side__room-price"> 65 </span>
-              </div>
-            </div>
-            <div class="right-side__room">
-              <div class="right-side__room-head">
-                <span class="right-side__room-name"> Черновые </span>
-                <span class="right-side__room-price"> 65 </span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="right-side__room">
-          <div class="right-side__room-head">
-            <span class="right-side__room-name"> Комната 2 </span>
-            <span class="right-side__room-price"> 65 </span>
-          </div>
-          <div class="right-side__rooms">
-            <div class="right-side__room">
-              <div class="right-side__room-head">
-                <span class="right-side__room-name"> Демонтажные </span>
-                <span class="right-side__room-price"> 65 </span>
-              </div>
-            </div>
-            <div class="right-side__room">
-              <div class="right-side__room-head">
-                <span class="right-side__room-name"> Черновые </span>
-                <span class="right-side__room-price"> 65 </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <RoomList :rooms="data" />
       <div class="right-side__results">
-        <span> Без скидки: 2000 </span>
+        <span>
+          Без скидки: <span class="result"> {{ totalSum }}</span>
+        </span>
         <div class="right-side__sale">
           <span>Скидка (%):</span>
-          <InputText placeholder="%" />
+          <InputNumber
+            v-model="sale"
+            placeholder="%"
+            :format="false"
+            :min="0"
+            :max="100"
+          />
         </div>
-        <span> Итого: 2000 </span>
+        <span>
+          Итого:
+          <span class="result result--sale">
+            {{ totalSumWithSale }}
+          </span>
+        </span>
       </div>
     </div>
   </div>
@@ -111,26 +171,11 @@ $header-height: 55px;
     box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.4);
   }
 
-  &__rooms {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    margin-left: 10px;
-  }
-
-  &__room {
-    &-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 5px;
-    }
-  }
-
   &__results {
     border-top: 1px #ccc solid;
     padding: 10px 0;
     display: flex;
+    gap: 15px;
     flex-direction: column;
     align-items: flex-end;
   }
@@ -143,5 +188,23 @@ $header-height: 55px;
       width: 50px;
     }
   }
+}
+
+.result {
+  padding: 5px;
+  background-color: rgb(208, 255, 0);
+  font-weight: 600;
+
+  &--sale {
+    background-color: rgb(30, 255, 0);
+  }
+}
+
+::v-deep(.p-inputnumber) {
+  .p-inputnumber-input {
+    max-width: 100%;
+    width: 100%;
+  }
+  width: 50px;
 }
 </style>

@@ -63,6 +63,8 @@ export default {
       'updateDirectoryValues',
       'createTableRow',
       'updateAllValuesInsideRoot',
+      'removeAllValuesInsideRoot',
+      'setValuesInsideRoot',
     ]),
     updateKey(key, value) {
       const keys = this.allKeys.map(item => {
@@ -108,15 +110,27 @@ export default {
           type: this.InputType.QUANTITY,
         }
         keys.push(quantityKey)
-        // await this.updateAllValuesInsideRoot({ rootId: this.root._id })
-        // update all values inside root
-      } else if (response.type === this.InputType.QUANTITY) {
-        // update all values inside root
-        const newValues = this.values.map(row => {
-          row.data[newKey.id] = 0
+        //здесь можно сделать намного круче. Это пока что временно
+        //для каждого типа колонки определить дефолтное значение.
+        const newValues = JSON.parse(JSON.stringify(this.values))
+        const newestKeys = [newKey, quantityKey]
+        const defaultValue = 0
+        const values = newValues.map(row => {
+          newestKeys.forEach(k => {
+            row.data[k.id] = defaultValue
+          })
           return row
         })
-        this.updateValues(newValues)
+        await this.setValuesInsideRoot({
+          rootId: this.root._id,
+          values,
+        })
+      } else if (response.type === this.InputType.QUANTITY) {
+        await this.updateAllValuesInsideRoot({
+          rootId: this.root._id,
+          key: newKey.id,
+          value: 0,
+        })
       }
 
       this.updateArchitecture(keys)
@@ -145,21 +159,11 @@ export default {
         await this.updateValues([])
         return this.updateArchitecture([])
       }
-      const values = this.values.map(row => {
-        const data = Object.entries(row.data).reduce((acc, [key, value]) => {
-          if (key !== keyId) {
-            acc[key] = value
-          }
-          return acc
-        }, {})
-
-        return {
-          ...row,
-          data,
-        }
-      })
       this.updateArchitecture(keys)
-      this.updateValues(values)
+      await this.removeAllValuesInsideRoot({
+        rootId: this.root._id,
+        key: keyId,
+      })
     },
     removeRow(rowIndex) {
       const values = this.values.filter((_, index) => index !== rowIndex)

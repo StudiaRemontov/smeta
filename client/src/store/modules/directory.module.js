@@ -178,9 +178,6 @@ export default {
       if (!root) {
         return
       }
-      if (root.values) {
-        return [root]
-      }
       const children = getChildren(root, state.directories)
       const architectures = children.filter(c => c.values)
       await Promise.all(
@@ -192,7 +189,51 @@ export default {
           await dispatch('updateDirectoryValues', { id: arc._id, values })
         }),
       )
-      // console.log(architectures)
+    },
+    async setValuesInsideRoot({ state, dispatch }, { rootId, values }) {
+      const root = state.directories.find(d => d._id === rootId)
+      if (!root) {
+        return
+      }
+      const children = getChildren(root, state.directories)
+      const architectures = children.filter(c => c.values)
+      await Promise.all(
+        architectures.map(async arc => {
+          const data = {
+            ...arc,
+            values,
+          }
+          await dispatch('updateById', { id: arc._id, data })
+        }),
+      )
+    },
+    async removeAllValuesInsideRoot({ state, dispatch }, { rootId, key }) {
+      const root = state.directories.find(d => d._id === rootId)
+      if (!root) {
+        return
+      }
+      const children = getChildren(root, state.directories)
+      const architectures = children.filter(c => c.values)
+      await Promise.all(
+        architectures.map(async arc => {
+          const values = arc.values.map(row => {
+            const data = Object.entries(row.data).reduce(
+              (acc, [keyId, value]) => {
+                if (keyId !== key) {
+                  acc[keyId] = value
+                }
+                return acc
+              },
+              {},
+            )
+            return {
+              ...row,
+              data,
+            }
+          })
+          await dispatch('updateDirectoryValues', { id: arc._id, values })
+        }),
+      )
     },
   },
   getters: {

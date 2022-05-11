@@ -170,12 +170,14 @@ export default {
         :key="key.id"
         :width="index === 0 ? '50%' : ''"
       />
+      <col />
       <col width="60px" />
 
       <tr class="table__row table__row--key table__row--sticky">
         <th v-for="key in tableKeys" :key="key.id" class="table__cell">
           {{ key.name }}
         </th>
+        <th class="table__cell">Сумма</th>
         <th></th>
       </tr>
       <template v-if="treeView.length">
@@ -188,6 +190,7 @@ export default {
           <td class="table__cell" :colspan="keys.length + 1">
             {{ node }}
           </td>
+          <td class="table__cell"></td>
         </tr>
       </template>
       <template v-if="rows && rows.length > 0">
