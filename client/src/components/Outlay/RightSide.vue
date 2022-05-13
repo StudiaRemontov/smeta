@@ -3,14 +3,12 @@ import NotificationButton from '@/components/UI/NotificationButton.vue'
 import UserAvatar from '@/components/UI/UserAvatar.vue'
 import RoomList from '@/components/Outlay/RightSide/RoomList.vue'
 
-import InputNumber from 'primevue/inputnumber'
 import { mapGetters, mapState } from 'vuex'
 
 export default {
   components: {
     NotificationButton,
     UserAvatar,
-    InputNumber,
     RoomList,
   },
   data() {
@@ -45,13 +43,17 @@ export default {
         const jobs = parents.map(p => this.convertData(p, nodes))
         const vals = jobs.map(category => {
           const values = this.treeToListOnlyValues(category)
-          const sum = values.reduce((acc, val) => (acc += val.sum), 0)
+          const sum = values
+            .reduce((acc, val) => (acc += val.sum), 0)
+            .toFixed(2)
           return {
             name: category.data[this.keys[0].id],
             sum,
           }
         })
-        const sumOfRoom = vals.reduce((acc, val) => (acc += val.sum), 0)
+        const sumOfRoom = vals
+          .reduce((acc, val) => (acc += +val.sum), 0)
+          .toFixed(2)
         return {
           name: room.name,
           jobs: vals,
@@ -60,13 +62,18 @@ export default {
       })
     },
     totalSum() {
-      return this.data.reduce((acc, val) => acc + val.sum, 0)
+      return this.data.reduce((acc, val) => acc + +val.sum, 0)
+    },
+    totalSumFormatted() {
+      return this.totalSum.toFixed(2).toLocaleString()
     },
     totalSumWithSale() {
-      if (!this.sale) return this.totalSum
+      if (!this.sale || this.sale < 0 || this.sale > 20) {
+        return this.totalSumFormatted
+      }
       const saleValue = (this.totalSum / 100) * this.sale
-      const result = this.totalSum - saleValue
-      return result.toFixed(2)
+      const result = (this.totalSum - saleValue).toFixed(2)
+      return result.toLocaleString()
     },
   },
   methods: {
@@ -100,6 +107,15 @@ export default {
       }
       return [...childs, node]
     },
+    changeSale(e) {
+      const value = e.target.valueAsNumber
+      if (isNaN(value) || value < 0) {
+        return (this.sale = 0)
+      }
+      if (value > 20) {
+        return (this.sale = 20)
+      }
+    },
   },
 }
 </script>
@@ -117,16 +133,17 @@ export default {
       <RoomList :rooms="data" />
       <div class="right-side__results">
         <span>
-          Без скидки: <span class="result"> {{ totalSum }}</span>
+          Без скидки: <span class="result"> {{ totalSumFormatted }}</span>
         </span>
         <div class="right-side__sale">
           <span>Скидка (%):</span>
-          <InputNumber
+          <input
             v-model="sale"
             placeholder="%"
-            :format="false"
+            type="number"
+            :max="20"
             :min="0"
-            :max="100"
+            @change="changeSale"
           />
         </div>
         <span>

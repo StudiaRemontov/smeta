@@ -1,13 +1,11 @@
 <script>
 import Button from 'primevue/button'
-import Checkbox from 'primevue/checkbox'
 import Menu from 'primevue/menu'
 import { mapGetters, mapMutations } from 'vuex'
 
 export default {
   components: {
     Button,
-    Checkbox,
     Menu,
   },
   props: {
@@ -65,7 +63,10 @@ export default {
     <Menu ref="menu" :model="items" :popup="true" />
     <span class="room-item__title"> {{ room.name }} </span>
     <div class="room-item__actions" @click.stop>
-      <Checkbox v-model="viewMode" :binary="true" />
+      <button class="button" @click="viewMode = !viewMode">
+        <i v-if="viewMode" class="pi pi-circle-fill icon"></i>
+        <i v-else class="pi pi-circle icon"></i>
+      </button>
       <Button class="p-button-text" icon="pi pi-ellipsis-h" @click="openMenu" />
     </div>
   </div>
@@ -111,5 +112,18 @@ export default {
   .p-button-label {
     display: none;
   }
+}
+
+.button {
+  display: flex;
+  align-items: center;
+  background-color: transparent;
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+.icon {
+  color: #fff;
 }
 </style>

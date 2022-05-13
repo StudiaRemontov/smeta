@@ -1,9 +1,11 @@
 <script>
 import { mapGetters, mapMutations } from 'vuex'
 import TableCell from './TableCell.vue'
+import rowColors from '@/mixins/tableRowColors.mixin'
 
 export default {
   components: { TableCell },
+  mixins: [rowColors],
   props: {
     node: {
       type: Object,
@@ -25,6 +27,7 @@ export default {
       'showOnlyChecked',
       'quantityKey',
       'priceKey',
+      'striped',
     ]),
     data() {
       return this.node.data
@@ -45,6 +48,14 @@ export default {
       return {
         'data-id': this.node.key,
       }
+    },
+    rowStyle() {
+      if (this.isCategory) {
+        return {
+          backgroundColor: this.colors[this.node.level],
+        }
+      }
+      return {}
     },
     visibleKeys() {
       return this.isCategory ? [this.keys[0]] : this.keys
@@ -77,7 +88,7 @@ export default {
       return [node, parentNode]
     },
     select() {
-      if (this.isCategory) {
+      if (this.isCategory || this.showOnlyChecked) {
         return
       }
       const parents = this.getParents(this.node)
@@ -96,6 +107,7 @@ export default {
         node: JSON.parse(JSON.stringify(newNode)),
         index: this.rowIndex + 1,
       })
+      this.selectJob(newNode)
     },
     removeClone() {
       this.removeNode(this.node.key)
@@ -110,27 +122,37 @@ export default {
 <template>
   <tr
     class="table-row"
-    :class="{ parent: isCategory, selected: selected && !showOnlyChecked }"
+    :class="{ parent: isCategory, selected, striped }"
+    :style="rowStyle"
     v-bind="rowAttrs"
     @click="select"
   >
-    <TableCell
-      v-for="key in visibleKeys"
-      v-model.lazy="data[key.id]"
-      :key="key.id"
-      :col="key.id"
-      :colspan="isCategory ? keys.length + 2 : 0"
-      :isClone="isClone"
-      :isEditing="isCloneEditing"
-      :isSelected="selected && !showOnlyChecked"
-    />
+    <template v-if="isCategory">
+      <td
+        v-for="key in visibleKeys"
+        class="table-cell"
+        :colspan="keys.length + 2"
+        :key="key.id"
+      >
+        {{ data[key.id] }}
+      </td>
+    </template>
+    <template v-else>
+      <TableCell
+        v-for="key in visibleKeys"
+        v-model.lazy="data[key.id]"
+        :key="key.id"
+        :col="key.id"
+        :isClone="isClone"
+        :isEditing="isCloneEditing"
+        :isSelected="selected"
+      />
+    </template>
+
     <td v-if="!isCategory" class="table-cell">
       {{ sum }}
     </td>
-    <td
-      v-if="!isCategory && !showOnlyChecked"
-      class="table-cell table-cell--actions"
-    >
+    <td v-if="!isCategory" class="table-cell table-cell--actions">
       <div class="table-cell__actions">
         <template v-if="isClone">
           <button class="button" @click.stop="toggleEdit">
@@ -141,7 +163,11 @@ export default {
             <i class="pi pi-trash"></i>
           </button>
         </template>
-        <button v-if="selected && !isClone" class="button" @click.stop="clone">
+        <button
+          v-if="selected && !isClone && !showOnlyChecked"
+          class="button"
+          @click.stop="clone"
+        >
           <i class="pi pi-copy"></i>
         </button>
       </div>
@@ -160,7 +186,6 @@ export default {
 
   &.parent {
     color: $color-light;
-    background-color: var(--blue-500);
   }
 
   &.selected:not(&.parent) {
@@ -179,5 +204,10 @@ export default {
     align-items: center;
     gap: 5px;
   }
+}
+
+.table-cell {
+  padding: 8px;
+  text-align: left;
 }
 </style>

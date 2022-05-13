@@ -18,6 +18,10 @@ export default {
     return {
       items: [
         {
+          label: 'Клонировать',
+          command: () => {},
+        },
+        {
           label: 'Удалить',
           command: async () => {
             try {
@@ -85,5 +89,6 @@ export default {
 .outlay-list {
   display: flex;
   gap: 20px;
+  align-items: center;
 }
 </style>

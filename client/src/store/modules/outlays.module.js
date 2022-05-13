@@ -1,4 +1,4 @@
-import axios from '../../axios/index.js'
+import axios from '../../modules/axios'
 
 export default {
   namespaced: true,

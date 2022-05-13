@@ -2,11 +2,12 @@
 import AppLogo from '@/components/UI/AppLogo.vue'
 import Button from 'primevue/button'
 import RoomList from './LeftSide/RoomList.vue'
+import DownloadModal from './LeftSide/Modals/DownloadModal.vue'
 
 import { mapActions, mapGetters, mapMutations, mapState } from 'vuex'
 
 export default {
-  components: { AppLogo, Button, RoomList },
+  components: { AppLogo, Button, RoomList, DownloadModal },
   computed: {
     ...mapState('outlay', ['selectedValues']),
     ...mapGetters('outlay', [
@@ -49,18 +50,25 @@ export default {
           ...this.outlay,
           rooms: roomsData,
         }
+
         await this.update(data)
       } catch (error) {
         console.log(error)
       }
     },
-    send() {},
+    async download() {
+      await this.$refs.download.show({
+        okButton: 'Скачать',
+        cancelButton: 'Отмена',
+      })
+    },
     print() {},
     showAllRooms() {
       this.setSelectedRoom(null)
     },
     convertData(node, selected) {
-      const { key, data } = node
+      const { key, data, isClone } = node
+
       const children = selected.filter(n => n?.parent === node.key)
       if (children.length > 0) {
         const subChildren = children.map(c => this.convertData(c, selected))
@@ -68,12 +76,14 @@ export default {
           key,
           data,
           children: subChildren,
+          isClone,
         }
       }
       return {
         key,
         data,
         children,
+        isClone,
       }
     },
     showSummary() {},
@@ -83,6 +93,7 @@ export default {
 
 <template>
   <div class="left-side">
+    <DownloadModal ref="download" />
     <div class="left-side__header">
       <AppLogo />
     </div>
@@ -96,9 +107,9 @@ export default {
           <i class="pi pi-save"></i>
           <span>Сохранить</span>
         </Button>
-        <Button @click="send">
-          <i class="pi pi-send"></i>
-          <span>Отправить</span>
+        <Button @click="download">
+          <i class="pi pi-download"></i>
+          <span>Скачать</span>
         </Button>
         <Button @click="print">
           <i class="pi pi-print"></i>

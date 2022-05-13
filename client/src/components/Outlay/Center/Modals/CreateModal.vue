@@ -8,8 +8,6 @@ const getInitState = () => ({
   resolvePromise: undefined,
   rejectPromise: undefined,
   name: '',
-  address: '',
-  clientName: '',
   priceList: null,
 })
 
@@ -53,10 +51,6 @@ export default {
       const data = {
         name: this.name,
         edition: activeEdition,
-        info: {
-          address: this.address,
-          clientName: this.clientName,
-        },
       }
       this.$refs.popup.close()
       this.resolvePromise(data)
@@ -89,14 +83,6 @@ export default {
             ref="input"
             class="input"
           />
-        </div>
-        <div class="form__group">
-          <label class="form__label">Имя клиента</label>
-          <input v-model="clientName" placeholder="Имя" class="input" />
-        </div>
-        <div class="form__group">
-          <label class="form__label">Адрес</label>
-          <input v-model="address" placeholder="Адрес" class="input" />
         </div>
         <div class="form__group">
           <label>Прайс лист</label>

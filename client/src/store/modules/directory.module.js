@@ -1,4 +1,4 @@
-import axios from '../../axios'
+import axios from '../../modules/axios'
 import { InputType } from '../../enum/InputType'
 
 const getChildren = (directory, directories) => {

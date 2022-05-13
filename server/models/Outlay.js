@@ -6,6 +6,10 @@ jobsSchema.add({
   key: {},
   children: [jobsSchema],
   data: {},
+  isClone: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const roomSchema = new mongoose.Schema(

@@ -19,13 +19,15 @@ export default {
     <div v-for="room in rooms" :key="room.id" class="right-side__room">
       <div class="room__head">
         <span class="room__name"> {{ room.name }} </span>
-        <span class="room__price room__price--bold"> {{ room.sum }} </span>
+        <span class="room__price room__price--bold">
+          {{ room.sum.toLocaleString() }}
+        </span>
       </div>
       <div v-if="room.jobs" class="room-list">
         <div v-for="job in room.jobs" :key="job.key" class="right-side__room">
           <div class="room__head">
             <span class="room__name"> {{ job.name }} </span>
-            <span class="room__price"> {{ job.sum }}</span>
+            <span class="room__price"> {{ job.sum.toLocaleString() }}</span>
           </div>
         </div>
       </div>

@@ -1,14 +1,13 @@
 <script>
 import { mapGetters, mapMutations } from 'vuex'
-import TableRow from './TableRow.vue'
+import TableRow from '../TreeTable/TableRow.vue'
+import rowColors from '@/mixins/tableRowColors.mixin'
 
 export default {
   components: {
     TableRow,
   },
-  props: {
-    striped: Boolean,
-  },
+  mixins: [rowColors],
   data() {
     return {
       currentRootIndex: 0,
@@ -28,6 +27,7 @@ export default {
       'roots',
       'currentRoomData',
       'selectedValues',
+      'striped',
     ]),
     tableKeys() {
       if (!this.keys) return []
@@ -164,7 +164,7 @@ export default {
 </script>
 <template>
   <div class="table-wrapper" ref="wrapper">
-    <table class="table" :class="{ disabled: showOnlyChecked }">
+    <table class="table">
       <col
         v-for="(key, index) in keys"
         :key="key.id"
@@ -174,17 +174,24 @@ export default {
       <col width="60px" />
 
       <tr class="table__row table__row--key table__row--sticky">
-        <th v-for="key in tableKeys" :key="key.id" class="table__cell">
+        <th
+          v-for="key in tableKeys"
+          :key="key.id"
+          class="table__cell"
+          :title="key.name"
+        >
           {{ key.name }}
         </th>
-        <th class="table__cell">Сумма</th>
+        <th class="table__cell" title="Сумма">Сумма</th>
         <th></th>
       </tr>
       <template v-if="treeView.length">
         <tr
           v-for="(node, index) in treeView"
           :key="node"
-          :style="`top: ${32 * (index + 1)}px`"
+          :style="`top: ${32 * (index + 1)}px;background-color: ${
+            colors[index + 1]
+          }`"
           class="table__row table__row--sticky"
         >
           <td class="table__cell" :colspan="keys.length + 1">
@@ -227,7 +234,6 @@ export default {
     &--sticky {
       position: sticky;
       top: 0;
-      background-color: var(--blue-600);
       z-index: 2;
     }
 
@@ -251,6 +257,8 @@ export default {
   &__cell {
     padding: 8px;
     background-color: $color-light;
+    text-overflow: ellipsis;
+    overflow: hidden;
 
     &--children {
       text-align: left;

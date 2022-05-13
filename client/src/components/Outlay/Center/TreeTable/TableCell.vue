@@ -25,8 +25,8 @@ export default {
       coef: 1,
       coefIsVisible: false,
       valueBefore: null,
-      editQuantity: false,
       timeout: null,
+      showEditQuantity: false,
     }
   },
   computed: {
@@ -142,13 +142,28 @@ export default {
     },
     stopEditing() {
       this.coefIsVisible = false
-      this.editQuantity = false
+      this.showEditQuantity = false
     },
-    cellClick(e) {
-      if (this.type === this.InputType.PRICE && this.isSelected) {
+    async cellClick(e) {
+      if (
+        (this.type === this.InputType.PRICE ||
+          this.type === this.InputType.QUANTITY) &&
+        this.isSelected
+      ) {
         e.stopPropagation()
         this.coefIsVisible = !this.coefIsVisible
+        if (!this.coefIsVisible) return
+
+        await this.$nextTick()
+        const { coef } = this.$refs
+        coef.focus()
       }
+    },
+    async editQuantity() {
+      this.showEditQuantity = true
+      await this.$nextTick()
+      const { quantity } = this.$refs
+      quantity.focus()
     },
   },
 }
@@ -157,18 +172,11 @@ export default {
 <template>
   <td class="table-cell" :colspan="colspan" @click="cellClick">
     <div
-      v-if="coefIsVisible || editQuantity"
+      v-if="coefIsVisible || showEditQuantity"
       class="blocker"
       @click.stop="stopEditing"
     ></div>
-    <input
-      v-if="type === InputType.QUANTITY"
-      v-model.lazy="newValue"
-      class="input"
-      type="number"
-      @click.stop
-    />
-    <template v-else-if="isClone && isEditing">
+    <template v-if="isClone && isEditing">
       <input
         v-if="type === InputType.STRING"
         v-model.lazy="newValue"
@@ -177,12 +185,30 @@ export default {
         @click.stop
       />
       <input
-        v-else-if="type === InputType.NUMBER || type === InputType.PRICE"
+        v-else-if="type === InputType.NUMBER || type === InputType.QUANTITY"
         v-model.lazy="newValue"
+        :min="0"
         class="input"
         type="number"
         @click.stop
       />
+      <div v-else-if="type === InputType.PRICE" class="price-inputs">
+        <input
+          v-model.lazy="newValue"
+          :min="0"
+          class="input input--small"
+          type="number"
+          @click.stop
+        />
+        <span> x </span>
+        <input
+          v-model.lazy="coef"
+          :min="0"
+          class="input input--coef"
+          type="number"
+          @click.stop
+        />
+      </div>
       <select
         v-else-if="type === InputType.SELECT"
         v-model.lazy="newValue"
@@ -198,9 +224,9 @@ export default {
         </option>
       </select>
     </template>
-    <div class="table-cell__value" v-else>
+    <div class="table-cell__value" v-else-if="isSelected">
       <div
-        v-if="isSelected && type === InputType.PRICE"
+        v-if="type === InputType.PRICE"
         class="table-cell__value"
         :class="{ editing: coefIsVisible }"
       >
@@ -214,16 +240,41 @@ export default {
             @change="changePrice"
             class="input input--coef"
             type="number"
+            ref="coef"
             min="1"
             step="0.1"
+            @blur="coefIsVisible = false"
             @click.stop
           />
         </template>
+      </div>
+      <div
+        v-else-if="type === InputType.QUANTITY"
+        class="table-cell__value"
+        :class="{ editing: coefIsVisible }"
+      >
+        <span v-if="!coefIsVisible">
+          {{ modelValue }}
+        </span>
+        <input
+          v-else
+          v-model.lazy="newValue"
+          class="input"
+          type="number"
+          ref="coef"
+          min="1"
+          step="0.1"
+          @blur="coefIsVisible = false"
+          @click.stop
+        />
       </div>
       <span v-else>
         {{ modelValue }}
       </span>
     </div>
+    <span v-else>
+      {{ modelValue }}
+    </span>
   </td>
 </template>
 
@@ -270,23 +321,35 @@ export default {
 
 .input {
   max-width: 100%;
+  width: 100%;
   z-index: 2;
+
+  &--small {
+    max-width: 50px;
+  }
 
   &--coef {
     flex-basis: 50%;
-    max-width: 50px;
+    max-width: 25px;
     text-align: center;
-    /* Chrome, Safari, Edge, Opera */
-    &::-webkit-outer-spin-button,
-    &::-webkit-inner-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-
-    /* Firefox */
-    &[type='number'] {
-      -moz-appearance: textfield;
-    }
   }
+  /* Chrome, Safari, Edge, Opera */
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  /* Firefox */
+  &[type='number'] {
+    -moz-appearance: textfield;
+  }
+}
+
+.price-inputs {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 5px;
 }
 </style>

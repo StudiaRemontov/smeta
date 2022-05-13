@@ -1,13 +1,20 @@
 <script>
 import { mapGetters } from 'vuex'
 
-import TableRow from './TableRow.vue'
+import TableGridRow from './TableGridRow.vue'
+import tableRowColors from '@/mixins/tableRowColors.mixin'
+
 export default {
-  components: { TableRow },
+  components: { TableGridRow },
+  mixins: [tableRowColors],
   data() {
     return {
       tree: {},
       currentRootIndex: 0,
+      currentRoom: null,
+      currentCategory: null,
+      currentSubCategory: null,
+      subCategories: {},
     }
   },
   computed: {
@@ -43,19 +50,16 @@ export default {
       return data.flat()
     },
     currentRoot() {
-      if (!Object.keys(this.groupedList).length) {
-        return null
-      }
-      return this.groupedList[0][this.currentRootIndex]
+      return this.rooms[this.currentRootIndex]
     },
     tableKeys() {
       if (!this.keys) return []
 
       return this.keys.map((k, index) => {
-        if (index === 0 && this.currentRoot) {
+        if (index === 0) {
           return {
             ...k,
-            name: this.currentRoot.data[this.keys[0].id],
+            name: this.tree[1]?.data[this.keys[0].id] || 'Название',
           }
         }
         return k
@@ -64,63 +68,56 @@ export default {
     groupedList() {
       if (!this.data) return []
       return this.data.reduce((acc, cur) => {
+        if (cur.room) {
+          return acc
+        }
         acc[cur['level']] = [...(acc[cur['level']] || []), cur]
         return acc
       }, {})
     },
+    subCategoriesList() {
+      return this.data.filter(d => d.level > 1 && d.children.length > 0)
+    },
     treeView() {
-      return Object.values(this.tree).map(n => n.data[this.keys[0].id])
+      const filtered = Object.entries(this.tree).filter(([key]) => key > 1)
+      return filtered.map(([_, n]) => n.data[this.keys[0].id])
+    },
+    headerStyle() {
+      const keysLength = this.keys.length
+      return {
+        gridTemplateColumns: `1fr repeat(${keysLength}, 100px)`,
+      }
     },
   },
   async mounted() {
     await this.$nextTick()
     const { row, wrapper } = this.$refs
     if (!row || !wrapper) return
-    const rows = row.filter(r => r.isParent)
+    const rows = row.filter(r => r.isParent || r.isRoom)
     const domNodes = rows.map(r => r.$el)
     const observer = new IntersectionObserver(
       entries => {
         entries.forEach(e => {
           const { top, height } = wrapper.getBoundingClientRect()
-          if (!Object.keys(this.groupedList).length) {
-            return
-          }
           if (e.boundingClientRect.top - top > height / 2) {
             return
           }
           const id = e.target.dataset?.id
           const level = +e.target.dataset?.level
-
-          const newIndex = this.groupedList[level].findIndex(n => n.key === id)
-          if (newIndex === -1) {
-            return
+          if (level === 0) {
+            return this.setCurrentRoom(e, id)
           }
-          if (e.isIntersecting) {
-            if (level === 0) {
-              if (newIndex > 0) {
-                this.currentRootIndex = newIndex - 1
-              }
-              if (newIndex === 0) {
-                this.tree = {}
-                this.currentRootIndex = null
-              }
-              return
-            }
-            if (newIndex > 0) {
-              this.tree[level] = this.groupedList[level][newIndex - 1]
-            }
-          } else {
-            if (level === 0) {
-              this.currentRootIndex = newIndex
-              return
-            }
-            this.tree[level] = this.groupedList[level][newIndex]
+          if (level === 1) {
+            return this.setCurrentCategory(e, id)
+          }
+          if (level > 1) {
+            return this.setSubCategories(e, id)
           }
         })
       },
       {
         root: wrapper,
-        rootMargin: `-96px 0px 0px 0px`,
+        threshold: 1,
       },
     )
 
@@ -128,42 +125,115 @@ export default {
       observer.observe(r)
     })
   },
+  methods: {
+    setCurrentRoom(e, id) {
+      const roomIndex = this.rooms.findIndex(r => r.id === id)
+      if (e.isIntersecting) {
+        if (roomIndex === 0) {
+          this.currentRoom = null
+          return
+        }
+        this.currentRoom = this.rooms[roomIndex - 1]
+        this.currentCategory =
+          this.currentRoom.jobs[this.currentRoom.jobs.length - 1]
+        return
+      }
+      this.currentRoom = this.rooms[roomIndex]
+      return
+    },
+    setCurrentCategory(e, id) {
+      const jobs = this.currentRoom?.jobs || []
+      const categoryIndex = jobs.findIndex(node => node.key === id)
+      if (e.isIntersecting) {
+        if (categoryIndex === 0) {
+          const roomIndex = this.rooms.findIndex(
+            r => r.id === this.currentRoom.id,
+          )
+          if (roomIndex > 0) {
+            this.currentRoom = this.rooms[roomIndex - 1]
+            this.currentCategory =
+              this.currentRoom.jobs[this.currentRoom.jobs.length - 1]
+            return
+          }
+          this.currentCategory = null
+          return
+        }
+        this.currentCategory = jobs[categoryIndex - 1]
+        return
+      }
+      this.currentCategory = jobs[categoryIndex]
+      return
+    },
+    setSubCategories(e, id) {
+      if (!this.currentCategory) return
+      const newIndex = this.subCategoriesList.findIndex(c => c.key === id)
+      if (e.isIntersecting) {
+        if (newIndex === 0) {
+          this.currentSubCategory = null
+          return
+        }
+        this.currentSubCategory = this.subCategoriesList[newIndex - 1]
+        return
+      }
+      this.currentSubCategory = this.subCategoriesList[newIndex]
+    },
+  },
 }
 </script>
 
 <template>
-  <div class="table-wrapper" ref="wrapper">
-    <table class="table">
-      <col
-        v-for="(key, index) in keys"
-        :key="key.id"
-        :width="index === 0 ? '50%' : ''"
-      />
-
-      <tr class="table__row table__row--key table__row--sticky">
-        <th v-for="key in tableKeys" :key="key.id" class="table__cell">
-          {{ key.name }}
-        </th>
-        <th class="table__cell">Сумма</th>
-      </tr>
-      <template v-if="treeView.length">
-        <tr
-          v-for="(node, index) in treeView"
-          :key="node"
-          :style="`top: ${32 * (index + 1)}px`"
-          class="table__row table__row--sticky"
+  <div class="tree-table">
+    <div v-if="currentRoom" class="room">
+      {{ currentRoom.name }}
+    </div>
+    <div class="table-grid">
+      <div
+        class="table-grid__header"
+        :style="[headerStyle, `backgroundColor: ${colors[0]}`]"
+      >
+        <div
+          v-for="(key, index) in keys"
+          :key="key.id"
+          class="table-grid__cell"
         >
-          <td class="table__cell" :colspan="keys.length + 1">
-            {{ node }}
-          </td>
-        </tr>
-      </template>
-      <TableRow v-for="row in data" :key="row.key" ref="row" :node="row" />
-    </table>
+          <span v-if="index === 0 && currentCategory">
+            {{ currentCategory.data[keys[0].id] }}
+          </span>
+          <span v-else>
+            {{ key.name }}
+          </span>
+        </div>
+        <div class="table-grid__cell">Сумма</div>
+      </div>
+      <div
+        v-if="currentSubCategory"
+        class="table-grid__header"
+        :style="[headerStyle, `backgroundColor: ${colors[1]}`]"
+      >
+        <div class="table-grid__cell">
+          {{ currentSubCategory.data[keys[0].id] }}
+        </div>
+      </div>
+      <div class="table-grid__body" ref="wrapper">
+        <TableGridRow
+          v-for="node in data"
+          ref="row"
+          :key="node.key"
+          :node="node"
+          :style="headerStyle"
+        />
+      </div>
+    </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
+.tree-table {
+  display: flex;
+  flex-direction: column;
+  min-height: 0px;
+}
+
 .table-wrapper {
   flex: 1;
   overflow-y: auto;
@@ -184,15 +254,14 @@ export default {
     &.sticky {
       position: sticky;
       top: 0;
-      background-color: var(--blue-600);
       z-index: 2;
     }
 
     &--sticky {
       position: sticky;
       top: 0;
-      background-color: var(--blue-600);
       z-index: 2;
+      background-color: #1c80cf;
     }
 
     &--key {
@@ -221,10 +290,46 @@ export default {
   &__cell {
     padding: 8px;
     background-color: $color-light;
+    text-overflow: ellipsis;
+    overflow: hidden;
 
     &--children {
       text-align: left;
     }
+  }
+}
+
+.room {
+  background-color: $color-dark;
+  color: #fff;
+  height: 32px;
+  padding: 8px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.table-grid {
+  display: flex;
+  flex-direction: column;
+  min-height: 0px;
+
+  &__header &__cell {
+    color: $color-light;
+  }
+
+  &__header,
+  &__row {
+    display: grid;
+  }
+
+  &__body {
+    flex: 1;
+    @include darkScroll;
+    overflow-y: auto;
+  }
+
+  &__cell {
+    padding: 8px;
   }
 }
 </style>

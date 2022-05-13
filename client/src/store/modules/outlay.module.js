@@ -1,4 +1,4 @@
-import axios from '../../axios/index.js'
+import axios from '../../modules/axios'
 import { uniqBy } from 'lodash'
 
 import roomParametersMixin from '../../mixins/roomParameters.mixin'
@@ -7,36 +7,9 @@ import { roomOptions } from '../../enum/roomOptions'
 import { InputType } from '../../enum/InputType'
 
 const { methods } = roomParametersMixin
-/*
-  outlay model: {
-    name,
-    rooms: [
-      {
-        name,
-        options: {
-          width,
-          height,
-          length,
-          spaces*,
-        },
-        jobs: [
-          {
-            id,
-            data,
-            price
-          }
-        ]
-      }
-    ]
-    info: {
-      address,
-      client,
-    }
-  }
-*/
 
 const convertData = (node, selected) => {
-  const { key, data } = node
+  const { key, data, isClone } = node
   const children = selected?.filter(n => n.parent === node.key)
   if (children.length > 0) {
     const subChildren = children.map(c => convertData(c, selected))
@@ -44,12 +17,14 @@ const convertData = (node, selected) => {
       key,
       data,
       children: subChildren,
+      isClone,
     }
   }
   return {
     key,
     data,
     children,
+    isClone,
   }
 }
 
@@ -126,6 +101,8 @@ export default {
     room: null,
     quantityKey: null,
     priceKey: null,
+    formulaKey: null,
+    striped: false,
     activeData: null,
     nodeList: null,
     roots: null,
@@ -198,6 +175,9 @@ export default {
       }
       room.jobs.push(job)
     },
+    setStriped(state, payload) {
+      state.striped = payload
+    },
     updateJob(state, { roomId, job }) {},
     removeJob(state, job) {
       if (!state.outlay || !state.room) return
@@ -208,7 +188,6 @@ export default {
     updateInfo(state, data) {},
     selectJob(state, job) {
       if (!state.selectedRoom) return
-
       const selectedValues = state.selectedValues[state.selectedRoom.id]
       if (!selectedValues) return
       const isExists = !!selectedValues.find(key => key === job.key)
@@ -271,22 +250,23 @@ export default {
         k => k.type === InputType.QUANTITY,
       )
       state.priceKey = directory.keys.find(k => k.type === InputType.PRICE)
-      const formulaKey = directory.keys.find(k => k.type === InputType.FORMULA)
+      state.formulaKey = directory.keys.find(k => k.type === InputType.FORMULA)
       const initData = JSON.parse(JSON.stringify(edition.data.children))
 
       const initNodes = initData.map(n => treeToList(n, 0)).flat()
       state.initNodes = initNodes
       state.keys = edition.keys
       state.roomsData = state.outlay.rooms.reduce((acc, room) => {
+        const initNodesClone = JSON.parse(JSON.stringify(initNodes))
         const nodes = room.jobs.map(r => treeToList(r, 0)).flat()
         const roomParameters = room.options
         getQuantityByFormula(
-          initNodes,
+          initNodesClone,
           roomParameters,
           state.quantityKey.id,
-          formulaKey.id,
+          state.formulaKey.id,
         )
-        const mergedNodes = uniqBy([...nodes, ...initNodes], 'key')
+        const mergedNodes = uniqBy([...nodes, ...initNodesClone], 'key')
         const parents = mergedNodes.filter(n => !n.parent)
         const mergedTree = parents.map(p => convertData(p, mergedNodes))
         const updatedNodes = mergedTree.map(n => treeToList(n, 0)).flat()
@@ -311,10 +291,14 @@ export default {
       }
       state.outlay.rooms.push(room)
       state.roomsData[room.id] = JSON.parse(JSON.stringify(state.initNodes))
-      //set quantity
-      // const roomData = JSON.parse(JSON.stringify(state.initNodes))
-      // const roomParameters = room.options
-      // // const test = getQuantityByFormula(null, roomParameters)
+      const roomData = JSON.parse(JSON.stringify(state.initNodes))
+      const roomParameters = room.options
+      getQuantityByFormula(
+        roomData,
+        roomParameters,
+        state.quantityKey.id,
+        state.formulaKey.id,
+      )
       state.roomsData[room.id] = roomData
       state.selectedValues[room.id] = []
       commit('setSelectedRoom', room)
@@ -375,6 +359,7 @@ export default {
     showOnlyChecked: s => s.showOnlyChecked,
     quantityKey: s => s.quantityKey,
     priceKey: s => s.priceKey,
+    striped: s => s.striped,
     activeData: s => s.activeData,
     showOnlySelected: s => s.room?.showOnlySelected,
     nodeList: s => s.nodeList,

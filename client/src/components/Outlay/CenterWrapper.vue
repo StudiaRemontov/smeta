@@ -4,10 +4,12 @@ import AutoComplete from 'primevue/autocomplete'
 import InputSwitch from 'primevue/inputswitch'
 import MultiSelect from 'primevue/multiselect'
 
-import TreeTable from './Center/TreeTable.vue'
+import TreeTable from './Center/TreeTable/TreeTable.vue'
 import TreeTableView from './Center/TreeTableView/TreeTableView.vue'
 import ParameterList from './Center/ParameterList.vue'
 import OutlayList from './Center/OutlayList.vue'
+import InfoModal from './Center/Modals/InfoModal.vue'
+
 import { mapGetters, mapMutations } from 'vuex'
 
 export default {
@@ -20,11 +22,11 @@ export default {
     ParameterList,
     MultiSelect,
     OutlayList,
+    InfoModal,
   },
   data() {
     return {
       screenHeight: null,
-      striped: false,
       selectedJob: null,
       filteredJobs: [],
       selectedFastJobs: [],
@@ -63,16 +65,26 @@ export default {
       'keys',
       'rooms',
     ]),
+    striped: {
+      get() {
+        return this.$store.getters['outlay/striped']
+      },
+      set(value) {
+        this.setStriped(value)
+      },
+    },
     scrollHeight() {
       return `${this.screenHeight - 100}px`
     },
     jobs() {
       if (!this.selectedRoom) return []
-      const jobs = this.currentRoomData.filter(n => n.children.length === 0)
-      return jobs.map(n => ({
-        name: n.data[this.keys[0].id],
-        value: n,
-      }))
+      const parents = this.roots.filter(r => !r.parent)
+      return parents.map(p => {
+        return {
+          name: p.data[this.keys[0].id],
+          items: p.children.map(this.treeToListOnlyValues).flat(),
+        }
+      })
     },
   },
   watch: {
@@ -88,7 +100,7 @@ export default {
     window.removeEventListener('resize', this.windowResize)
   },
   methods: {
-    ...mapMutations('outlay', ['selectJob']),
+    ...mapMutations('outlay', ['selectJob', 'setStriped']),
     async windowResize() {
       if (!this.outlay) {
         return
@@ -98,7 +110,9 @@ export default {
       const { top } = autocomplete.$el.getBoundingClientRect()
       this.screenHeight = window.innerHeight - top
     },
-    showInfo() {},
+    showInfo() {
+      this.$refs['info-modal'].show()
+    },
     isObjectId(id) {
       return /^[0-9a-fA-F]{24}$/.test(id)
     },
@@ -111,15 +125,25 @@ export default {
       return [
         ...childs,
         {
-          name: node.data[this.active.keys[0].id],
+          name: node.data[this.keys[0].id],
           value: node,
         },
       ]
     },
     searchJob(e) {
-      this.filteredJobs = this.jobs.filter(jobs => {
-        return jobs.name.toLowerCase().startsWith(e.query.toLowerCase())
-      })
+      const query = e.query
+      const filteredJobs = []
+
+      for (const category of this.jobs) {
+        const filteredItems = category.items.filter(j =>
+          j.name.toLowerCase().startsWith(query.toLowerCase()),
+        )
+        if (filteredItems && filteredItems.length) {
+          filteredJobs.push({ ...category, ...{ items: filteredItems } })
+        }
+      }
+
+      this.filteredJobs = filteredJobs
     },
     getParents(node) {
       const parentNode = this.roots.find(n =>
@@ -156,9 +180,10 @@ export default {
 
 <template>
   <div class="center">
+    <InfoModal ref="info-modal" />
     <div class="center__header">
       <Button
-        icon="pi pi-question-circle"
+        icon="pi pi-info-circle"
         class="p-button-warning"
         @click="showInfo"
       />
@@ -174,9 +199,11 @@ export default {
             v-model="selectedJob"
             ref="autocomplete"
             class="search"
+            field="name"
+            optionGroupLabel="name"
+            optionGroupChildren="items"
             :scrollHeight="scrollHeight"
             :suggestions="filteredJobs"
-            field="name"
             placeholder="Поиск"
             @complete="searchJob($event)"
             @item-select="findJob"
@@ -239,6 +266,7 @@ $header-height: 55px;
   gap: 10px;
   align-items: center;
   padding: 20px;
+  flex-wrap: wrap;
 }
 
 .search-wrapper {
