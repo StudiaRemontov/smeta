@@ -209,12 +209,7 @@ $header-height: 55px;
 
 .result {
   padding: 5px;
-  background-color: rgb(208, 255, 0);
   font-weight: 600;
-
-  &--sale {
-    background-color: rgb(30, 255, 0);
-  }
 }
 
 ::v-deep(.p-inputnumber) {

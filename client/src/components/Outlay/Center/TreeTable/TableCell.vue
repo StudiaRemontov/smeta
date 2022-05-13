@@ -145,6 +145,9 @@ export default {
       this.showEditQuantity = false
     },
     async cellClick(e) {
+      if (this.isEditing) {
+        return e.stopPropagation()
+      }
       if (
         (this.type === this.InputType.PRICE ||
           this.type === this.InputType.QUANTITY) &&
@@ -194,7 +197,7 @@ export default {
       />
       <div v-else-if="type === InputType.PRICE" class="price-inputs">
         <input
-          v-model.lazy="newValue"
+          v-model="newValue"
           :min="0"
           class="input input--small"
           type="number"
@@ -202,10 +205,11 @@ export default {
         />
         <span> x </span>
         <input
-          v-model.lazy="coef"
+          v-model="coef"
           :min="0"
           class="input input--coef"
           type="number"
+          @input="changePrice"
           @click.stop
         />
       </div>
