@@ -9,12 +9,9 @@ export default {
   mixins: [tableRowColors],
   data() {
     return {
-      tree: {},
-      currentRootIndex: 0,
       currentRoom: null,
       currentCategory: null,
       currentSubCategory: null,
-      subCategories: {},
     }
   },
   computed: {
@@ -28,59 +25,25 @@ export default {
     data() {
       const roomsData = Object.entries(this.roomsData)
       if (roomsData.length === 0 || this.selectedRoom) return []
-      const data = roomsData.map(([key, values]) => {
+      return roomsData.map(([key, values]) => {
         const foundRoom = this.rooms.find(r => r.id === key)
+        const children = values.filter(c =>
+          this.selectedValues[key].includes(c.key),
+        )
         if (!foundRoom) return {}
-        const roomNode = {
+        return {
           key,
           data: {
             [this.keys[0].id]: foundRoom.name,
           },
-          children: [],
+          children,
           room: true,
           level: 0,
         }
-
-        const selectedNodes = values.filter(n =>
-          this.selectedValues[key].includes(n.key),
-        )
-        const nodes = selectedNodes.map(n => ({ ...n, level: n.level + 1 }))
-        return [roomNode, ...nodes]
       })
-      return data.flat()
-    },
-    currentRoot() {
-      return this.rooms[this.currentRootIndex]
-    },
-    tableKeys() {
-      if (!this.keys) return []
-
-      return this.keys.map((k, index) => {
-        if (index === 0) {
-          return {
-            ...k,
-            name: this.tree[1]?.data[this.keys[0].id] || 'Название',
-          }
-        }
-        return k
-      })
-    },
-    groupedList() {
-      if (!this.data) return []
-      return this.data.reduce((acc, cur) => {
-        if (cur.room) {
-          return acc
-        }
-        acc[cur['level']] = [...(acc[cur['level']] || []), cur]
-        return acc
-      }, {})
     },
     subCategoriesList() {
-      return this.data.filter(d => d.level > 1 && d.children.length > 0)
-    },
-    treeView() {
-      const filtered = Object.entries(this.tree).filter(([key]) => key > 1)
-      return filtered.map(([_, n]) => n.data[this.keys[0].id])
+      return []
     },
     headerStyle() {
       const keysLength = this.keys.length
@@ -91,10 +54,9 @@ export default {
   },
   async mounted() {
     await this.$nextTick()
-    const { row, wrapper } = this.$refs
-    if (!row || !wrapper) return
-    const rows = row.filter(r => r.isParent || r.isRoom)
-    const domNodes = rows.map(r => r.$el)
+    const { wrapper } = this.$refs
+    if (!wrapper) return
+    const rows = wrapper.querySelectorAll('.table-row.parent, .table-row.room')
     const observer = new IntersectionObserver(
       entries => {
         entries.forEach(e => {
@@ -120,8 +82,7 @@ export default {
         threshold: 1,
       },
     )
-
-    domNodes.forEach(r => {
+    rows.forEach(r => {
       observer.observe(r)
     })
   },
@@ -167,6 +128,7 @@ export default {
     setSubCategories(e, id) {
       if (!this.currentCategory) return
       const newIndex = this.subCategoriesList.findIndex(c => c.key === id)
+
       if (e.isIntersecting) {
         if (newIndex === 0) {
           this.currentSubCategory = null
@@ -176,6 +138,16 @@ export default {
         return
       }
       this.currentSubCategory = this.subCategoriesList[newIndex]
+    },
+    scrollTo(roomId, nodeKey) {
+      const { wrapper } = this.$refs
+      const row = wrapper.querySelector(
+        `.table-row[data-room="${roomId}"][data-id="${nodeKey}"]`,
+      )
+      wrapper.scrollTo({
+        top: row.offsetTop,
+        behavior: 'smooth',
+      })
     },
   },
 }
@@ -217,10 +189,12 @@ export default {
       <div class="table-grid__body" ref="wrapper">
         <TableGridRow
           v-for="node in data"
-          ref="row"
           :key="node.key"
           :node="node"
           :style="headerStyle"
+          :room="node.key"
+          :level="0"
+          isRoom
         />
       </div>
     </div>
@@ -239,64 +213,6 @@ export default {
   overflow-y: auto;
   @include darkScroll;
   position: relative;
-}
-
-.table {
-  border-collapse: collapse;
-  table-layout: fixed;
-  width: 100%;
-
-  &.disabled {
-    pointer-events: none;
-  }
-
-  &__row {
-    &.sticky {
-      position: sticky;
-      top: 0;
-      z-index: 2;
-    }
-
-    &--sticky {
-      position: sticky;
-      top: 0;
-      z-index: 2;
-      background-color: #1c80cf;
-    }
-
-    &--key {
-      background-color: $color-dark;
-    }
-  }
-
-  &__row.sticky &__cell {
-    background-color: transparent;
-    color: $color-light;
-    text-align: left;
-  }
-
-  &__row--sticky &__cell {
-    background-color: transparent;
-    color: $color-light;
-    text-align: left;
-  }
-
-  &__row--key &__cell {
-    &:first-child {
-      text-align: left;
-    }
-  }
-
-  &__cell {
-    padding: 8px;
-    background-color: $color-light;
-    text-overflow: ellipsis;
-    overflow: hidden;
-
-    &--children {
-      text-align: left;
-    }
-  }
 }
 
 .room {
@@ -326,10 +242,11 @@ export default {
     flex: 1;
     @include darkScroll;
     overflow-y: auto;
+    position: relative;
   }
 
   &__cell {
-    padding: 8px;
+    @include table-cell;
   }
 }
 </style>

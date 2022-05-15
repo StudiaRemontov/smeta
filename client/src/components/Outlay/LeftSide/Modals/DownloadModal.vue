@@ -55,20 +55,5 @@ export default {
 </template>
 
 <style lang="scss" scoped>
-.modal {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 10px;
-
-  &__title {
-    font-weight: 700;
-    font-size: $font-medium;
-  }
-
-  &__actions {
-    align-self: flex-end;
-    gap: 10px;
-  }
-}
+@include modal;
 </style>

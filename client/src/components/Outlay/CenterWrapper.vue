@@ -41,21 +41,9 @@ export default {
           label: 'Работы 3',
         },
       ],
-      items: [
-        {
-          label: 'Смета 1',
-        },
-        {
-          label: 'Смета 2',
-        },
-        {
-          label: 'Смета 3',
-        },
-      ],
     }
   },
   computed: {
-    ...mapGetters('edition', ['active']),
     ...mapGetters('outlay', [
       'selectedRoom',
       'roots',
@@ -64,6 +52,7 @@ export default {
       'roomsData',
       'keys',
       'rooms',
+      'selectedValues',
     ]),
     striped: {
       get() {
@@ -77,18 +66,44 @@ export default {
       return `${this.screenHeight - 100}px`
     },
     jobs() {
-      if (!this.selectedRoom) return []
+      if (!this.selectedRoom) {
+        const rooms = this.rooms.map(r => ({
+          key: r.id,
+          data: {
+            [this.keys[0].id]: r.name,
+          },
+          children: this.roomsData[r.id],
+        }))
+
+        return rooms.map(r => {
+          const values = r.children
+            .map(r => this.treeToListOnlyValues(r, []))
+            .flat()
+          const filtered = values.filter(v =>
+            this.selectedValues[r.key].includes(v.key),
+          )
+          const items = filtered.map(v => ({ ...v, room: r.key }))
+
+          return {
+            name: r.data[this.keys[0].id],
+            items,
+          }
+        })
+      }
       const parents = this.roots.filter(r => !r.parent)
       return parents.map(p => {
         return {
           name: p.data[this.keys[0].id],
-          items: p.children.map(this.treeToListOnlyValues).flat(),
+          items: p.children.map(p => this.treeToListOnlyValues(p, [])).flat(),
         }
       })
     },
   },
   watch: {
     selectedRoom() {
+      this.windowResize()
+    },
+    outlay() {
       this.windowResize()
     },
   },
@@ -105,6 +120,7 @@ export default {
       if (!this.outlay) {
         return
       }
+
       await this.$nextTick()
       const { autocomplete } = this.$refs
       const { top } = autocomplete.$el.getBoundingClientRect()
@@ -116,16 +132,18 @@ export default {
     isObjectId(id) {
       return /^[0-9a-fA-F]{24}$/.test(id)
     },
-    treeToListOnlyValues(node) {
+    treeToListOnlyValues(node, parents = []) {
       const { children, key } = node
-      const childs = children.map(this.treeToListOnlyValues).flat()
       if (this.isObjectId(key)) {
-        return childs
+        parents.push(node.data[this.keys[0].id])
+        return children.map(c => this.treeToListOnlyValues(c, parents)).flat()
       }
+      const arrayName = [...parents, node.data[this.keys[0].id]]
+      const name = arrayName.join('/')
       return [
-        ...childs,
         {
-          name: node.data[this.keys[0].id],
+          key,
+          name,
           value: node,
         },
       ]
@@ -136,7 +154,7 @@ export default {
 
       for (const category of this.jobs) {
         const filteredItems = category.items.filter(j =>
-          j.name.toLowerCase().startsWith(query.toLowerCase()),
+          j.name.toLowerCase().includes(query.toLowerCase()),
         )
         if (filteredItems && filteredItems.length) {
           filteredJobs.push({ ...category, ...{ items: filteredItems } })
@@ -145,34 +163,34 @@ export default {
 
       this.filteredJobs = filteredJobs
     },
-    getParents(node) {
-      const parentNode = this.roots.find(n =>
-        n.children.find(c => c.key === node.key),
-      )
-
-      if (!parentNode) {
-        return [node]
+    getNodeFromTree(node, nodeKey, parents = []) {
+      const { key, children } = node
+      if (key === nodeKey) {
+        return [...parents, node]
       }
-      if (parentNode.level > 0) {
-        return [node, ...this.getParents(parentNode)]
-      }
-
-      return [node, parentNode]
+      parents.push(node)
+      return children.map(c => this.getNodeFromTree(c, nodeKey, parents)).flat()
     },
     findJob(e) {
+      const key = e.value.value.key
+      const room = e.value.room
+      if (!this.selectedRoom) {
+        return this.$refs.table.scrollTo(room, key)
+      }
       const { table } = this.$refs
       const row = table.$el.querySelector(
         `.table-row[data-id="${e.value.value.key}"]`,
       )
       const ROW_HEIGHT = 32
-      const offsetTop =
-        ROW_HEIGHT + Object.keys(table.tree).length * ROW_HEIGHT || ROW_HEIGHT
+      const offsetTop = ROW_HEIGHT
       table.$el.scrollTo({
         top: row.offsetTop - offsetTop,
         behavior: 'smooth',
       })
-      const parents = this.getParents(e.value.value)
-      parents.forEach(this.selectJob)
+      // const parents = this.roomsData[this.selectedRoom.id]
+      //   .map(n => this.getNodeFromTree(n, e.value.value.key))
+      //   .flat()
+      // parents.forEach(this.selectJob)
     },
   },
 }
@@ -190,7 +208,6 @@ export default {
       <OutlayList />
     </div>
     <ParameterList v-if="selectedRoom" />
-
     <div v-if="outlay" class="center__body">
       <div class="body-actions">
         <div class="search-wrapper">
@@ -224,7 +241,7 @@ export default {
         </div>
       </div>
       <TreeTable v-if="selectedRoom" ref="table" :striped="striped" />
-      <TreeTableView v-else-if="rooms.length > 0" />
+      <TreeTableView v-else-if="rooms.length > 0" ref="table" />
     </div>
   </div>
 </template>
@@ -238,6 +255,7 @@ $header-height: 55px;
   gap: 10px;
   padding-top: 0;
   min-height: 0px;
+  overflow: auto;
 
   &__header {
     display: flex;
@@ -296,11 +314,5 @@ $header-height: 55px;
   display: flex;
   align-items: center;
   gap: 5px;
-}
-</style>
-
-<style lang="scss">
-.p-tabview-panels {
-  display: none;
 }
 </style>

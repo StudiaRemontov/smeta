@@ -1,5 +1,5 @@
 <script>
-import { mapGetters, mapMutations } from 'vuex'
+import { mapGetters } from 'vuex'
 import TableRow from '../TreeTable/TableRow.vue'
 import rowColors from '@/mixins/tableRowColors.mixin'
 
@@ -10,52 +10,34 @@ export default {
   mixins: [rowColors],
   data() {
     return {
-      currentRootIndex: 0,
-      tree: {},
+      category: null,
+      subCategory: null,
     }
   },
   computed: {
-    ...mapGetters('priceList', ['priceLists']),
-    ...mapGetters('edition', ['editions']),
     ...mapGetters('outlay', [
       'keys',
-      'activeData',
       'showOnlyChecked',
-      'nodeList',
       'selectedRoom',
       'outlay',
-      'roots',
       'currentRoomData',
       'selectedValues',
-      'striped',
+      'priceKey',
     ]),
     tableKeys() {
       if (!this.keys) return []
 
       return this.keys.map((k, index) => {
-        if (index === 0 && this.currentRoot) {
-          return {
-            ...k,
-            name: this.currentRoot.data[this.keys[0].id],
-          }
-        }
+        // if (index === 0 && this.currentRoot) {
+        //   return {
+        //     ...k,
+        //     name: this.currentRoot.data[this.keys[0].id],
+        //   }
+        // }
         return k
       })
     },
-    data() {
-      if (!this.activeData) return []
-
-      return this.activeData.data
-    },
-    currentRoot() {
-      if (!Object.keys(this.groupedList).length) {
-        return null
-      }
-      return this.groupedList[0][this.currentRootIndex]
-    },
-    rows() {
-      if (!this.outlay || !this.keys.length) return []
-
+    tableData() {
       if (this.showOnlyChecked) {
         return this.currentRoomData.filter(n =>
           this.selectedValues.includes(n.key),
@@ -63,32 +45,18 @@ export default {
       }
       return this.currentRoomData
     },
-    groupedList() {
-      if (!this.roots) return []
-
-      if (this.showOnlyChecked) {
-        const roots = this.roots.filter(r =>
-          this.selectedValues.includes(r.key),
-        )
-        return roots.reduce((acc, cur) => {
-          acc[cur['level']] = [...(acc[cur['level']] || []), cur]
-          return acc
-        }, {})
-      }
-      return this.roots.reduce((acc, cur) => {
-        acc[cur['level']] = [...(acc[cur['level']] || []), cur]
-        return acc
-      }, {})
+    categories() {
+      return this.tableData
     },
-    treeView() {
-      return Object.values(this.tree).map(n => n.data[this.keys[0].id])
+    subCategories() {
+      return this.tableData.map(this.getSubCategories).flat()
     },
   },
   watch: {
-    async selectedRoom() {
+    selectedRoom() {
       this.initObserver()
     },
-    async showOnlyChecked() {
+    showOnlyChecked() {
       this.initObserver()
     },
   },
@@ -96,14 +64,15 @@ export default {
     this.initObserver()
   },
   methods: {
-    ...mapMutations('priceList', ['setSelectedPriceList']),
-    ...mapMutations('outlay', ['setActiveData', 'setNodeList', 'setRoots']),
-    treeToList(node) {
-      const { key, children } = node
+    getSubCategories(node) {
+      const { children } = node
       if (children && children.length > 0) {
-        if (key) return [node.key, ...node.children.map(this.treeToList)].flat()
+        if (children[0].children.length === 0) {
+          return [node]
+        }
+        return node.children.map(this.getSubCategories).flat()
       }
-      return [node.key]
+      return []
     },
     async initObserver() {
       await this.$nextTick()
@@ -119,45 +88,35 @@ export default {
         }
         const { top, height } = wrapper.getBoundingClientRect()
         entries.forEach(e => {
-          if (!Object.keys(this.groupedList).length) {
-            return
-          }
           if (e.boundingClientRect.top - top > height / 2) {
             return
           }
           const id = e.target.dataset?.id
           const level = +e.target.dataset?.level
-          const newIndex = this.groupedList[level].findIndex(n => n.key === id)
-          if (newIndex === -1) {
-            return
-          }
+          const newIndex = level
+            ? this.subCategories.findIndex(n => n.key === id)
+            : this.categories.findIndex(n => n.key === id)
+
           if (e.isIntersecting) {
-            if (level === 0) {
-              if (newIndex > 0) {
-                this.currentRootIndex = newIndex - 1
-              }
-              if (newIndex === 0) {
-                this.tree = {}
-                this.currentRootIndex = null
-              }
-              return
-            }
-            if (newIndex > 0) {
-              this.tree[level] = this.groupedList[level][newIndex - 1]
-            }
-          } else {
-            if (level === 0) {
-              this.currentRootIndex = newIndex
-              return
-            }
-            this.tree[level] = this.groupedList[level][newIndex]
+            // if (level === 0) {
+            //   if (newIndex > 0) {
+            //     const category = this.categories[newIndex - 1]
+            //     console.log(category)
+            //     this.category = category
+            //     return
+            //   }
+            //   this.category = null
+            // }
+            // return
           }
+          // if (level === 0) {
+          // }
+          // console.log(newIndex)
         })
       })
       parents.forEach(r => {
         observer.observe(r)
       })
-      this.tree = {}
     },
   },
 }
@@ -165,19 +124,12 @@ export default {
 <template>
   <div class="table-wrapper" ref="wrapper">
     <table class="table">
-      <col
-        v-for="(key, index) in keys"
-        :key="key.id"
-        :width="index === 0 ? '50%' : ''"
-      />
-      <col />
-      <col width="60px" />
-
       <tr class="table__row table__row--key table__row--sticky">
         <th
           v-for="key in tableKeys"
           :key="key.id"
           class="table__cell"
+          :class="{ price: key.id === priceKey.id }"
           :title="key.name"
         >
           {{ key.name }}
@@ -185,7 +137,7 @@ export default {
         <th class="table__cell" title="Сумма">Сумма</th>
         <th></th>
       </tr>
-      <template v-if="treeView.length">
+      <!-- <template v-if="treeView.length">
         <tr
           v-for="(node, index) in treeView"
           :key="node"
@@ -199,14 +151,14 @@ export default {
           </td>
           <td class="table__cell"></td>
         </tr>
-      </template>
-      <template v-if="rows && rows.length > 0">
+      </template> -->
+      <template v-if="tableData && tableData.length > 0">
         <TableRow
-          v-for="(node, index) in rows"
-          :key="selectedRoom ? node.key + index : node.key"
+          v-for="(node, index) in tableData"
+          :key="node.key"
           :node="node"
-          :rowIndex="index"
-          :selected="selectedValues.includes(node.key)"
+          :level="0"
+          :index="index"
         />
       </template>
     </table>
@@ -216,19 +168,15 @@ export default {
 <style lang="scss" scoped>
 .table-wrapper {
   flex: 1;
-  overflow-y: auto;
+  overflow: auto;
   @include darkScroll;
   position: relative;
+  margin-bottom: 10px;
 }
 
 .table {
   border-collapse: collapse;
-  table-layout: fixed;
   width: 100%;
-
-  &.disabled {
-    pointer-events: none;
-  }
 
   &__row {
     &--sticky {
@@ -260,8 +208,13 @@ export default {
     text-overflow: ellipsis;
     overflow: hidden;
 
-    &--children {
-      text-align: left;
+    &:first-of-type {
+      max-width: 400px;
+      min-width: 300px;
+    }
+
+    &.price {
+      min-width: 100px;
     }
   }
 }

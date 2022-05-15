@@ -23,9 +23,6 @@ export default {
     ...mapMutations('outlay', ['createRoom', 'setSelectedRoom']),
     ...mapActions('outlay', ['update']),
     back() {},
-    isObjectId(id) {
-      return /^[0-9a-fA-F]{24}$/.test(id)
-    },
     async save() {
       try {
         const roomsClone = JSON.parse(
@@ -34,23 +31,19 @@ export default {
 
         const roomsData = roomsClone.map(([roomId, values]) => {
           const room = this.rooms.find(r => r.id === roomId)
-
-          const nodes = values.filter(value =>
-            this.selectedValues[roomId].includes(value.key),
+          const filtered = values.filter(n =>
+            this.selectedValues[roomId].includes(n.key),
           )
-          const parents = nodes.filter(n => !n.parent)
-
-          const jobs = parents.map(p => this.convertData(p, nodes))
+          const nodes = filtered.map(n => this.filterNodes(n, roomId))
           return {
             ...room,
-            jobs,
+            jobs: nodes,
           }
         })
         const data = {
           ...this.outlay,
           rooms: roomsData,
         }
-
         await this.update(data)
       } catch (error) {
         console.log(error)
@@ -66,25 +59,15 @@ export default {
     showAllRooms() {
       this.setSelectedRoom(null)
     },
-    convertData(node, selected) {
-      const { key, data, isClone } = node
-
-      const children = selected.filter(n => n?.parent === node.key)
-      if (children.length > 0) {
-        const subChildren = children.map(c => this.convertData(c, selected))
-        return {
-          key,
-          data,
-          children: subChildren,
-          isClone,
-        }
+    filterNodes(node, roomId) {
+      const { children } = node
+      node.children = children.filter(n =>
+        this.selectedValues[roomId].includes(n.key),
+      )
+      if (node.children.length > 0) {
+        node.children.map(c => this.filterNodes(c, roomId))
       }
-      return {
-        key,
-        data,
-        children,
-        isClone,
-      }
+      return node
     },
     showSummary() {},
   },

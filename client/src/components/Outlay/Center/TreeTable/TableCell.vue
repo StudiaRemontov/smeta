@@ -295,6 +295,7 @@ export default {
 .table-cell {
   padding: 8px;
   text-align: left;
+  @include table-cell;
 
   &__value {
     display: flex;
@@ -334,7 +335,7 @@ export default {
 
   &--coef {
     flex-basis: 50%;
-    max-width: 25px;
+    width: 25px;
     text-align: center;
   }
   /* Chrome, Safari, Edge, Opera */

@@ -51,12 +51,4 @@ export default {
     border: 1px #2196f3 solid;
   }
 }
-
-.button {
-  display: flex;
-  align-items: center;
-  background-color: transparent;
-  cursor: pointer;
-  border: none;
-}
 </style>

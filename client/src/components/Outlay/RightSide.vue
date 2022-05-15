@@ -14,7 +14,6 @@ export default {
   data() {
     return {
       sale: 0,
-      timeout: null,
     }
   },
   computed: {
@@ -34,18 +33,25 @@ export default {
 
       return roomsClone.map(([roomId, values]) => {
         const room = this.rooms.find(r => r.id === roomId)
-
         const nodes = values.filter(value =>
           this.selectedValues[roomId].includes(value.key),
         )
-        const parents = nodes.filter(n => !n.parent)
 
-        const jobs = parents.map(p => this.convertData(p, nodes))
-        const vals = jobs.map(category => {
+        const vals = nodes.map(category => {
           const values = this.treeToListOnlyValues(category)
-          const sum = values
-            .reduce((acc, val) => (acc += val.sum), 0)
+          const selectedValues = values.filter(v =>
+            this.selectedValues[roomId].includes(v.key),
+          )
+
+          const sum = selectedValues
+            .reduce((acc, val) => {
+              const sum =
+                val.data[this.quantityKey.id] * val.data[this.priceKey.id]
+
+              return acc + sum
+            }, 0)
             .toFixed(2)
+
           return {
             name: category.data[this.keys[0].id],
             sum,
@@ -80,32 +86,15 @@ export default {
     isObjectId(id) {
       return /^[0-9a-fA-F]{24}$/.test(id)
     },
-    convertData(node, selected) {
-      const { key, data } = node
-      const children = selected.filter(n => n?.parent === node.key)
-      if (children.length > 0) {
-        const subChildren = children.map(c => this.convertData(c, selected))
-        return {
-          key,
-          data,
-          children: subChildren,
-        }
-      }
-      const sum = data[this.quantityKey.id] * data[this.priceKey.id]
-      return {
-        key,
-        data,
-        children,
-        sum,
-      }
-    },
     treeToListOnlyValues(node) {
       const { children, key } = node
       const childs = children.map(this.treeToListOnlyValues).flat()
+
       if (this.isObjectId(key)) {
         return childs
       }
-      return [...childs, node]
+
+      return [node]
     },
     changeSale(e) {
       const value = e.target.valueAsNumber
@@ -210,13 +199,5 @@ $header-height: 55px;
 .result {
   padding: 5px;
   font-weight: 600;
-}
-
-::v-deep(.p-inputnumber) {
-  .p-inputnumber-input {
-    max-width: 100%;
-    width: 100%;
-  }
-  width: 50px;
 }
 </style>

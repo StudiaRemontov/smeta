@@ -14,3 +14,45 @@
     background-color: #555;
   }
 }
+
+@mixin table-row {
+  position: relative;
+  cursor: pointer;
+
+  &.striped:nth-child(even) {
+    background-color: rgb(232, 232, 232);
+  }
+
+  &.parent {
+    color: $color-light;
+  }
+
+  &.selected:not(&.parent) {
+    background-color: #b7f0ba;
+  }
+}
+
+@mixin table-cell {
+  padding: 8px;
+  text-align: left;
+  min-width: 100px;
+}
+
+@mixin modal {
+  .modal {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 10px;
+  
+    &__title {
+      font-weight: 700;
+      font-size: $font-medium;
+    }
+  
+    &__actions {
+      align-self: flex-end;
+      gap: 10px;
+    }
+  }
+}

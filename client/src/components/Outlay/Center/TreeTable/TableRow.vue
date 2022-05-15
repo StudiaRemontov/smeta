@@ -1,18 +1,27 @@
 <script>
 import { mapGetters, mapMutations } from 'vuex'
-import TableCell from './TableCell.vue'
+import StretchedRow from './TableRows/StretchedRow.vue'
+import DefaultRow from './TableRows/DefaultRow.vue'
+import SelectedRow from './TableRows/SelectedRow.vue'
+import CloneRow from './TableRows/CloneRow.vue'
+
 import rowColors from '@/mixins/tableRowColors.mixin'
 
 export default {
-  components: { TableCell },
+  name: 'TalbeRow',
+  components: { StretchedRow, DefaultRow, SelectedRow, CloneRow },
   mixins: [rowColors],
   props: {
     node: {
       type: Object,
     },
-    rowIndex: Number,
-    selected: Boolean,
+    level: Number,
+    index: Number,
+    parent: {
+      type: Object,
+    },
   },
+  emits: ['select-node'],
   data() {
     return {
       isCloneEditing: false,
@@ -21,19 +30,26 @@ export default {
   computed: {
     ...mapGetters('outlay', [
       'roots',
-      'selectedRoom',
-      'activeData',
       'keys',
       'showOnlyChecked',
       'quantityKey',
       'priceKey',
       'striped',
+      'selectedValues',
     ]),
     data() {
       return this.node.data
     },
+    children() {
+      if (this.showOnlyChecked) {
+        return this.node.children.filter(n =>
+          this.selectedValues.includes(n.key),
+        )
+      }
+      return this.node.children
+    },
     isCategory() {
-      return this.node.children.length > 0
+      return this.children.length > 0
     },
     isClone() {
       return this.node.isClone
@@ -42,7 +58,7 @@ export default {
       if (this.isCategory) {
         return {
           'data-id': this.node.key,
-          'data-level': this.node.level,
+          'data-level': this.level,
         }
       }
       return {
@@ -52,65 +68,77 @@ export default {
     rowStyle() {
       if (this.isCategory) {
         return {
-          backgroundColor: this.colors[this.node.level],
+          backgroundColor: this.colors[this.level],
         }
       }
       return {}
-    },
-    visibleKeys() {
-      return this.isCategory ? [this.keys[0]] : this.keys
     },
     sum() {
       const quantity = this.data[this.quantityKey.id]
       const price = this.data[this.priceKey.id]
       return (quantity * price).toFixed(2)
     },
+    selected() {
+      return this.selectedValues.includes(this.node.key)
+    },
   },
   methods: {
     ...mapMutations('outlay', [
       'selectJob',
       'unselectJob',
-      'pushNodeAfter',
-      'removeNode',
+      'updateNodeChildren',
     ]),
-    getParents(node) {
-      const parentNode = this.roots.find(n =>
-        n.children.find(c => c.key === node.key),
-      )
-
-      if (!parentNode) {
-        return [node]
-      }
-      if (parentNode.level > 0) {
-        return [node, ...this.getParents(parentNode)]
-      }
-
-      return [node, parentNode]
-    },
     select() {
-      if (this.isCategory || this.showOnlyChecked) {
+      if (this.showOnlyChecked || this.isCloneEditing) {
         return
       }
-      const parents = this.getParents(this.node)
-      if (this.selected) {
-        return parents.forEach(this.unselectJob)
+      if (!this.selected) {
+        this.selectJob(this.node)
+        return this.$emit('select-node')
       }
-      return parents.forEach(this.selectJob)
+
+      if (this.isCategory) {
+        const hasSelectedValues = !!this.node.children.find(n =>
+          this.selectedValues.includes(n.key),
+        )
+
+        if (!hasSelectedValues) {
+          this.unselectJob(this.node)
+        }
+        return this.$emit('select-node')
+      }
+      this.unselectJob(this.node)
+      this.$emit('select-node')
     },
     clone() {
+      const clone = JSON.parse(JSON.stringify(this.node))
       const newNode = {
-        ...this.node,
+        ...clone,
+        data: {
+          ...clone.data,
+          [this.keys[0].id]: clone.data[this.keys[0].id] + '*',
+        },
         key: Date.now() + '',
         isClone: true,
       }
-      this.pushNodeAfter({
-        node: JSON.parse(JSON.stringify(newNode)),
-        index: this.rowIndex + 1,
-      })
+
+      const children = [
+        ...this.parent.children.slice(0, this.index + 1),
+        {
+          ...newNode,
+        },
+        ...this.parent.children.slice(this.index + 1),
+      ]
+      this.updateNodeChildren({ node: this.parent, children })
       this.selectJob(newNode)
     },
     removeClone() {
-      this.removeNode(this.node.key)
+      const children = this.parent.children.filter(c => c.key !== this.node.key)
+      this.updateNodeChildren({ node: this.parent, children })
+      if (this.selected) {
+        return this.select()
+      }
+      this.unselectJob(this.node)
     },
     toggleEdit() {
       this.isCloneEditing = !this.isCloneEditing
@@ -127,87 +155,36 @@ export default {
     v-bind="rowAttrs"
     @click="select"
   >
-    <template v-if="isCategory">
-      <td
-        v-for="key in visibleKeys"
-        class="table-cell"
-        :colspan="keys.length + 2"
-        :key="key.id"
-      >
-        {{ data[key.id] }}
-      </td>
+    <StretchedRow v-if="isCategory" :data="data" />
+    <template v-else-if="!isClone">
+      <DefaultRow v-if="!selected" :node="node" :sum="sum" @clone="clone" />
+      <SelectedRow v-else :node="node" :sum="sum" @clone="clone" />
     </template>
     <template v-else>
-      <TableCell
-        v-for="key in visibleKeys"
-        v-model.lazy="data[key.id]"
-        :key="key.id"
-        :col="key.id"
-        :isClone="isClone"
+      <CloneRow
+        :node="node"
+        :sum="sum"
         :isEditing="isCloneEditing"
-        :isSelected="selected"
+        @toggleEdit="toggleEdit"
+        @remove="removeClone"
       />
     </template>
-
-    <td v-if="!isCategory" class="table-cell">
-      {{ sum }}
-    </td>
-    <td v-if="!isCategory" class="table-cell table-cell--actions">
-      <div class="table-cell__actions">
-        <template v-if="isClone">
-          <button class="button" @click.stop="toggleEdit">
-            <i v-if="isCloneEditing" class="pi pi-check"></i>
-            <i v-else class="pi pi-pencil"></i>
-          </button>
-          <button class="button" @click.stop="removeClone">
-            <i class="pi pi-trash"></i>
-          </button>
-        </template>
-        <button
-          v-if="selected && !isClone && !showOnlyChecked"
-          class="button"
-          @click.stop="clone"
-        >
-          <i class="pi pi-copy"></i>
-        </button>
-      </div>
-    </td>
   </tr>
+  <template v-if="children && children.length > 0">
+    <TableRow
+      v-for="(child, index) in children"
+      :key="child.key"
+      :node="child"
+      :level="level + 1"
+      :index="index"
+      :parent="node"
+      @select-node="select"
+    />
+  </template>
 </template>
 
 <style lang="scss" scoped>
 .table-row {
-  position: relative;
-  cursor: pointer;
-
-  &.striped:nth-child(even) {
-    background-color: rgb(232, 232, 232);
-  }
-
-  &.parent {
-    color: $color-light;
-  }
-
-  &.selected:not(&.parent) {
-    background-color: #b7f0ba;
-  }
-}
-
-.button {
-  background-color: transparent;
-  cursor: pointer;
-  border: none;
-}
-.table-cell {
-  &__actions {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-  }
-}
-
-.table-cell {
-  padding: 8px;
-  text-align: left;
+  @include table-row;
 }
 </style>

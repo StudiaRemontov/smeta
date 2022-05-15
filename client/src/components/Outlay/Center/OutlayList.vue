@@ -42,7 +42,6 @@ export default {
   },
   methods: {
     ...mapActions('outlays', ['create', 'remove']),
-    selectOutlay() {},
     async createOutlay() {
       const response = await this.$refs['create-modal'].show({
         okButton: 'Создать',

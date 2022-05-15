@@ -97,5 +97,6 @@ export default {
 .table-cell {
   padding: 8px;
   background-color: $color-light;
+  @include table-cell;
 }
 </style>

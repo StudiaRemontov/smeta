@@ -8,46 +8,15 @@ import { InputType } from '../../enum/InputType'
 
 const { methods } = roomParametersMixin
 
-const convertData = (node, selected) => {
-  const { key, data, isClone } = node
-  const children = selected?.filter(n => n.parent === node.key)
-  if (children.length > 0) {
-    const subChildren = children.map(c => convertData(c, selected))
-    return {
-      key,
-      data,
-      children: subChildren,
-      isClone,
-    }
-  }
-  return {
-    key,
-    data,
-    children,
-    isClone,
-  }
-}
-
-const treeToList = (node, level, parent) => {
+const treeToList = node => {
   const { children } = node
-  if (parent) {
-    node.parent = parent
-  }
   if (children && children.length > 0) {
-    return [
-      {
-        ...node,
-        level,
-      },
-      ...node.children.map(c => treeToList(c, level + 1, node.key)),
-    ].flat()
+    if (children[0].children.length === 0) {
+      return [node]
+    }
+    return node.children.map(treeToList).flat()
   }
-  return [
-    {
-      ...node,
-      level,
-    },
-  ]
+  return []
 }
 
 const treeToListOnlyValues = node => {
@@ -62,29 +31,48 @@ const isObjectId = id => {
   return /^[0-9a-fA-F]{24}$/.test(id)
 }
 
-const getQuantityByFormula = (nodes, options, quantityKey, formulaKey) => {
-  const spaces = methods.getSpaces(options.spaces)
-  const perimeter = methods.getPerimeter(options.width, options.length)
-  const calculatedProperties = {
-    [roomOptions.perimeter]: perimeter,
-    [roomOptions.floorArea]: methods.getFloorArea(
-      options.width,
-      options.length,
-    ),
-    [roomOptions.wallArea]: methods.getWallArea(
-      perimeter,
-      options.height,
-      spaces,
-    ),
+const getQuantityByFormula = (
+  node,
+  calculatedProperties,
+  quantityKey,
+  formulaKey,
+) => {
+  const { children } = node
+  if (children.length === 0) {
+    const formula = node.data[formulaKey]
+    node.data[quantityKey] = calculatedProperties[formula] || 0
+    return
+  }
+  children.forEach(c =>
+    getQuantityByFormula(c, calculatedProperties, quantityKey, formulaKey),
+  )
+}
+
+const updateNodeInTree = (node, key, children) => {
+  if (node.key == key) {
+    node.children = children
+  } else if (node.children.length > 0) {
+    node.children.forEach(child => {
+      updateNodeInTree(child, key, children)
+    })
+  }
+}
+
+const mergeTree = (node, nodes) => {
+  const { key, children } = node
+  const isExistsInNodes = nodes.find(n => n.key === key)
+
+  if (isExistsInNodes) {
+    node.children = uniqBy([...isExistsInNodes.children, ...children], 'key')
+    return [node]
   }
 
-  nodes.forEach(n => {
-    const formula = n.data[formulaKey]
-    if (!formula) {
-      return
-    }
-    n.data[quantityKey] = calculatedProperties[formula] || 0
-  })
+  return [
+    {
+      ...node,
+      children: children.map(child => mergeTree(child, nodes)).flat(),
+    },
+  ]
 }
 
 export default {
@@ -96,6 +84,7 @@ export default {
     showOnlyChecked: false,
     keys: [],
     initNodes: null,
+    initData: null,
     roomsData: {},
     selectedValues: {},
     room: null,
@@ -178,33 +167,22 @@ export default {
     setStriped(state, payload) {
       state.striped = payload
     },
-    updateJob(state, { roomId, job }) {},
     removeJob(state, job) {
       if (!state.outlay || !state.room) return
 
       const room = state.outlay.rooms.find(r => r.id === state.room)
       room.jobs = room.jobs.filter(r => r.key !== job.key)
     },
-    updateInfo(state, data) {},
     selectJob(state, job) {
       if (!state.selectedRoom) return
       const selectedValues = state.selectedValues[state.selectedRoom.id]
       if (!selectedValues) return
-      const isExists = !!selectedValues.find(key => key === job.key)
-      if (isExists) return
       selectedValues.push(job.key)
     },
     unselectJob(state, job) {
       if (!state.selectedRoom) return
-
       const selectedValues = state.selectedValues[state.selectedRoom.id]
       if (!selectedValues) return
-      if (job.children && job.children.length > 0) {
-        const isEmpty = job.children.find(n =>
-          selectedValues.find(key => key === n.key),
-        )
-        if (isEmpty) return
-      }
       state.selectedValues[state.selectedRoom.id] = selectedValues.filter(
         key => key !== job.key,
       )
@@ -225,6 +203,11 @@ export default {
       ]
 
       state.roomsData[state.selectedRoom.id] = newArr
+    },
+    updateNodeChildren(state, { node, children }) {
+      state.roomsData[state.selectedRoom.id].forEach(root => {
+        updateNodeInTree(root, node.key, children)
+      })
     },
     removeNode(state, nodeKey) {
       if (!state.selectedRoom) return
@@ -252,26 +235,37 @@ export default {
       state.priceKey = directory.keys.find(k => k.type === InputType.PRICE)
       state.formulaKey = directory.keys.find(k => k.type === InputType.FORMULA)
       const initData = JSON.parse(JSON.stringify(edition.data.children))
-
-      const initNodes = initData.map(n => treeToList(n, 0)).flat()
-      state.initNodes = initNodes
+      state.initData = initData
       state.keys = edition.keys
       state.roomsData = state.outlay.rooms.reduce((acc, room) => {
-        const initNodesClone = JSON.parse(JSON.stringify(initNodes))
-        const nodes = room.jobs.map(r => treeToList(r, 0)).flat()
-        const roomParameters = room.options
-        getQuantityByFormula(
-          initNodesClone,
-          roomParameters,
-          state.quantityKey.id,
-          state.formulaKey.id,
+        const nodes = room.jobs.map(treeToList).flat()
+        const clone = JSON.parse(JSON.stringify(initData))
+        const mergedTree = clone.map(c => mergeTree(c, nodes)).flat()
+        const { options } = room
+        const spaces = methods.getSpaces(options.spaces)
+        const perimeter = methods.getPerimeter(options.width, options.length)
+        const calculatedProperties = {
+          [roomOptions.perimeter]: perimeter,
+          [roomOptions.floorArea]: methods.getFloorArea(
+            options.width,
+            options.length,
+          ),
+          [roomOptions.wallArea]: methods.getWallArea(
+            perimeter,
+            options.height,
+            spaces,
+          ),
+        }
+        mergedTree.forEach(n =>
+          getQuantityByFormula(
+            n,
+            calculatedProperties,
+            state.quantityKey.id,
+            state.formulaKey.id,
+          ),
         )
-        const mergedNodes = uniqBy([...nodes, ...initNodesClone], 'key')
-        const parents = mergedNodes.filter(n => !n.parent)
-        const mergedTree = parents.map(p => convertData(p, mergedNodes))
-        const updatedNodes = mergedTree.map(n => treeToList(n, 0)).flat()
 
-        acc[room.id] = updatedNodes
+        acc[room.id] = mergedTree
         return acc
       }, {})
       state.selectedValues = state.outlay.rooms.reduce((acc, room) => {
@@ -290,16 +284,30 @@ export default {
         jobs: [],
       }
       state.outlay.rooms.push(room)
-      state.roomsData[room.id] = JSON.parse(JSON.stringify(state.initNodes))
-      const roomData = JSON.parse(JSON.stringify(state.initNodes))
-      const roomParameters = room.options
-      getQuantityByFormula(
-        roomData,
-        roomParameters,
-        state.quantityKey.id,
-        state.formulaKey.id,
+      const clone = JSON.parse(JSON.stringify(state.initData))
+      const spaces = methods.getSpaces(options.spaces)
+      const perimeter = methods.getPerimeter(options.width, options.length)
+      const calculatedProperties = {
+        [roomOptions.perimeter]: perimeter,
+        [roomOptions.floorArea]: methods.getFloorArea(
+          options.width,
+          options.length,
+        ),
+        [roomOptions.wallArea]: methods.getWallArea(
+          perimeter,
+          options.height,
+          spaces,
+        ),
+      }
+      clone.forEach(n =>
+        getQuantityByFormula(
+          n,
+          calculatedProperties,
+          state.quantityKey.id,
+          state.formulaKey.id,
+        ),
       )
-      state.roomsData[room.id] = roomData
+      state.roomsData[room.id] = clone
       state.selectedValues[room.id] = []
       commit('setSelectedRoom', room)
     },
