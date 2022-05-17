@@ -127,20 +127,16 @@ export default {
       }
     },
     async updateDirectoryValues({ dispatch }, { id, values }) {
-      try {
-        values =
-          values &&
-          values.filter(row => {
-            const isRowEmpty = Object.values(row.data).every(value => !value)
-            return !isRowEmpty
-          })
-        const data = {
-          values,
-        }
-        await dispatch('updateById', { id, data })
-      } catch (error) {
-        console.log(error)
+      values =
+        values &&
+        values.filter(row => {
+          const isRowEmpty = Object.values(row.data).every(value => !value)
+          return !isRowEmpty
+        })
+      const data = {
+        values,
       }
+      return await dispatch('updateById', { id, data })
     },
     async updateById({ commit }, { id, data }) {
       try {

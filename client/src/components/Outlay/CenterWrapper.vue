@@ -157,40 +157,20 @@ export default {
           j.name.toLowerCase().includes(query.toLowerCase()),
         )
         if (filteredItems && filteredItems.length) {
-          filteredJobs.push({ ...category, ...{ items: filteredItems } })
+          filteredJobs.push({ ...category, items: filteredItems })
         }
       }
 
       this.filteredJobs = filteredJobs
     },
-    getNodeFromTree(node, nodeKey, parents = []) {
-      const { key, children } = node
-      if (key === nodeKey) {
-        return [...parents, node]
-      }
-      parents.push(node)
-      return children.map(c => this.getNodeFromTree(c, nodeKey, parents)).flat()
-    },
     findJob(e) {
       const key = e.value.value.key
       const room = e.value.room
-      if (!this.selectedRoom) {
-        return this.$refs.table.scrollTo(room, key)
-      }
       const { table } = this.$refs
-      const row = table.$el.querySelector(
-        `.table-row[data-id="${e.value.value.key}"]`,
-      )
-      const ROW_HEIGHT = 32
-      const offsetTop = ROW_HEIGHT
-      table.$el.scrollTo({
-        top: row.offsetTop - offsetTop,
-        behavior: 'smooth',
-      })
-      // const parents = this.roomsData[this.selectedRoom.id]
-      //   .map(n => this.getNodeFromTree(n, e.value.value.key))
-      //   .flat()
-      // parents.forEach(this.selectJob)
+      if (!this.selectedRoom) {
+        return table.scrollTo(room, key)
+      }
+      table.scrollTo(key)
     },
   },
 }

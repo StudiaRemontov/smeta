@@ -35,7 +35,11 @@
 @mixin table-cell {
   padding: 8px;
   text-align: left;
-  min-width: 100px;
+
+  &:not(&--actions) {
+    min-width: 100px;
+  }
+
 }
 
 @mixin modal {

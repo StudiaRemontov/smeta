@@ -20,31 +20,13 @@ export default {
     ]),
   },
   methods: {
-    ...mapMutations('outlay', ['createRoom', 'setSelectedRoom']),
+    ...mapMutations('outlay', ['createRoom', 'setSelectedRoom', 'setOutlay']),
     ...mapActions('outlay', ['update']),
     back() {},
     async save() {
+      this.setOutlay()
       try {
-        const roomsClone = JSON.parse(
-          JSON.stringify(Object.entries(this.roomsData)),
-        )
-
-        const roomsData = roomsClone.map(([roomId, values]) => {
-          const room = this.rooms.find(r => r.id === roomId)
-          const filtered = values.filter(n =>
-            this.selectedValues[roomId].includes(n.key),
-          )
-          const nodes = filtered.map(n => this.filterNodes(n, roomId))
-          return {
-            ...room,
-            jobs: nodes,
-          }
-        })
-        const data = {
-          ...this.outlay,
-          rooms: roomsData,
-        }
-        await this.update(data)
+        await this.update()
       } catch (error) {
         console.log(error)
       }
@@ -58,16 +40,6 @@ export default {
     print() {},
     showAllRooms() {
       this.setSelectedRoom(null)
-    },
-    filterNodes(node, roomId) {
-      const { children } = node
-      node.children = children.filter(n =>
-        this.selectedValues[roomId].includes(n.key),
-      )
-      if (node.children.length > 0) {
-        node.children.map(c => this.filterNodes(c, roomId))
-      }
-      return node
     },
     showSummary() {},
   },

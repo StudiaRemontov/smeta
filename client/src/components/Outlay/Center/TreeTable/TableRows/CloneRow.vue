@@ -156,7 +156,6 @@ export default {
 
 <style lang="scss" scoped>
 .table-cell {
-  max-width: 100px;
   @include table-cell;
 }
 

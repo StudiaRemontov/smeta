@@ -1,15 +1,19 @@
 <script>
+import { mapGetters } from 'vuex'
 export default {
   emits: ['clone'],
+  computed: {
+    ...mapGetters('outlay', ['showOnlyChecked']),
+  },
 }
 </script>
 
 <template>
-  <td class="table-cell table-cell--actions">
+  <div class="table-cell table-cell--actions">
     <button class="button" @click.stop="this.$emit('clone')">
       <i class="pi pi-copy"></i>
     </button>
-  </td>
+  </div>
 </template>
 
 <style lang="scss" scoped>

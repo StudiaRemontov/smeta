@@ -47,6 +47,9 @@ export default {
         directory => directory._id === this.directoryId,
       )
     },
+    values() {
+      return this.directory.values.map(r => r.data)
+    },
     subFolders() {
       if (!this.directory) {
         return []

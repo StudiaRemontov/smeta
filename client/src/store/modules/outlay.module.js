@@ -1,5 +1,6 @@
 import axios from '../../modules/axios'
 import { uniqBy } from 'lodash'
+import idb from '../local/idb'
 
 import roomParametersMixin from '../../mixins/roomParameters.mixin'
 
@@ -75,6 +76,15 @@ const mergeTree = (node, nodes) => {
   ]
 }
 
+const filterNodes = (node, selectedValues) => {
+  const { children } = node
+  node.children = children.filter(n => selectedValues.includes(n.key))
+  if (node.children.length > 0) {
+    node.children.map(c => filterNodes(c, selectedValues))
+  }
+  return node
+}
+
 export default {
   namespaced: true,
   state: {
@@ -97,6 +107,25 @@ export default {
     roots: null,
   },
   mutations: {
+    setOutlay(state) {
+      const { selectedValues, roomsData, outlay } = state
+      const roomsClone = JSON.parse(JSON.stringify(Object.entries(roomsData)))
+      const data = roomsClone.map(([roomId, values]) => {
+        const room = outlay.rooms.find(r => r.id === roomId)
+        const filtered = values.filter(n =>
+          selectedValues[roomId].includes(n.key),
+        )
+        const nodes = filtered.map(n => filterNodes(n, selectedValues[roomId]))
+        return {
+          ...room,
+          jobs: nodes,
+        }
+      })
+      state.outlay = {
+        ...outlay,
+        rooms: data,
+      }
+    },
     setSelectedRoom(state, payload) {
       state.selectedRoom = payload
     },
@@ -144,16 +173,6 @@ export default {
         return r
       })
     },
-    removeRoom(state, roomId) {
-      if (!state.outlay) return
-      state.outlay.rooms = state.outlay.rooms.filter(r => r.id !== roomId)
-      if (state.room === roomId) {
-        state.room = null
-      }
-      delete state.roomsData[roomId]
-      delete state.selectedValues[roomId]
-      state.selectedRoom = null
-    },
     addJob(state, job) {
       if (!state.outlay || !state.room) return
 
@@ -177,7 +196,9 @@ export default {
       if (!state.selectedRoom) return
       const selectedValues = state.selectedValues[state.selectedRoom.id]
       if (!selectedValues) return
-      selectedValues.push(job.key)
+      if (!selectedValues.includes(job.key)) {
+        selectedValues.push(job.key)
+      }
     },
     unselectJob(state, job) {
       if (!state.selectedRoom) return
@@ -215,11 +236,22 @@ export default {
         state.selectedRoom.id
       ].filter(n => n.key !== nodeKey)
     },
+    resetOutlay(state) {
+      state.outlay = null
+      state.edition = null
+      state.quantityKey = null
+      state.priceKey = null
+      state.formulaKey = null
+      state.initData = null
+      state.keys = null
+      state.roomsData = null
+      state.selectedValues = null
+    },
   },
   actions: {
     setOutlay({ state, commit, rootGetters }, payload) {
       if (!payload) {
-        return (state.outlay = null)
+        return commit('resetOutlay')
       }
       state.outlay = JSON.parse(JSON.stringify(payload))
       const edition = rootGetters['edition/editions'].find(
@@ -240,7 +272,6 @@ export default {
       state.roomsData = state.outlay.rooms.reduce((acc, room) => {
         const nodes = room.jobs.map(treeToList).flat()
         const clone = JSON.parse(JSON.stringify(initData))
-        const mergedTree = clone.map(c => mergeTree(c, nodes)).flat()
         const { options } = room
         const spaces = methods.getSpaces(options.spaces)
         const perimeter = methods.getPerimeter(options.width, options.length)
@@ -256,7 +287,7 @@ export default {
             spaces,
           ),
         }
-        mergedTree.forEach(n =>
+        clone.forEach(n =>
           getQuantityByFormula(
             n,
             calculatedProperties,
@@ -264,6 +295,7 @@ export default {
             state.formulaKey.id,
           ),
         )
+        const mergedTree = clone.map(c => mergeTree(c, nodes)).flat()
 
         acc[room.id] = mergedTree
         return acc
@@ -275,7 +307,7 @@ export default {
       }, {})
       commit('setSelectedRoom', null)
     },
-    createRoom({ commit, state }, { name, options }) {
+    async createRoom({ commit, state, dispatch }, { name, options }) {
       if (!state.outlay) return
       const room = {
         id: Date.now() + '',
@@ -310,6 +342,18 @@ export default {
       state.roomsData[room.id] = clone
       state.selectedValues[room.id] = []
       commit('setSelectedRoom', room)
+      return await dispatch('saveLocaly')
+    },
+    async removeRoom({ state, dispatch }, roomId) {
+      if (!state.outlay) return
+      state.outlay.rooms = state.outlay.rooms.filter(r => r.id !== roomId)
+      if (state.room === roomId) {
+        state.room = null
+      }
+      delete state.roomsData[roomId]
+      delete state.selectedValues[roomId]
+      state.selectedRoom = null
+      return await dispatch('saveLocaly')
     },
     async create({ rootGetters }, data) {
       try {
@@ -322,17 +366,32 @@ export default {
         return Promise.reject(error)
       }
     },
-    async update({ state, commit }, data) {
+    async update({ state, commit }) {
       if (!state.outlay) return
       const { _id } = state.outlay
       try {
-        const response = await axios.put(`/outlay/${_id}`, data)
+        const response = await axios.put(`/outlay/${_id}`, state.outlay)
         commit(
           'outlays/updateById',
           { id: _id, data: response.data },
           { root: true },
         )
+        await idb.removeOutlay(_id)
         return response
+      } catch (error) {
+        return Promise.reject(error)
+      }
+    },
+    async saveLocaly({ state, commit }) {
+      try {
+        commit('setOutlay')
+        const { outlay } = state
+        await idb.saveOutlay(outlay)
+        commit(
+          'outlays/updateById',
+          { id: outlay._id, data: outlay },
+          { root: true },
+        )
       } catch (error) {
         return Promise.reject(error)
       }

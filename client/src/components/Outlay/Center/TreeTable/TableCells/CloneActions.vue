@@ -11,7 +11,7 @@ export default {
 </script>
 
 <template>
-  <td class="table-cell table-cell--actions">
+  <div class="table-cell table-cell--actions">
     <button class="button" @click.stop="$emit('toggleEdit')">
       <i v-if="isEditing" class="pi pi-check"></i>
       <i v-else class="pi pi-pencil"></i>
@@ -19,7 +19,7 @@ export default {
     <button class="button" @click.stop="$emit('remove')">
       <i class="pi pi-trash"></i>
     </button>
-  </td>
+  </div>
 </template>
 
 <style lang="scss" scoped>

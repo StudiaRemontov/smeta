@@ -7,10 +7,13 @@ import CloneRow from './TableRows/CloneRow.vue'
 
 import rowColors from '@/mixins/tableRowColors.mixin'
 
+import emitter from '@/modules/eventBus'
+
 export default {
   name: 'TalbeRow',
   components: { StretchedRow, DefaultRow, SelectedRow, CloneRow },
   mixins: [rowColors],
+  inheritAttrs: false,
   props: {
     node: {
       type: Object,
@@ -29,13 +32,12 @@ export default {
   },
   computed: {
     ...mapGetters('outlay', [
-      'roots',
       'keys',
-      'showOnlyChecked',
-      'quantityKey',
-      'priceKey',
       'striped',
       'selectedValues',
+      'quantityKey',
+      'priceKey',
+      'showOnlyChecked',
     ]),
     data() {
       return this.node.data
@@ -110,7 +112,7 @@ export default {
       this.unselectJob(this.node)
       this.$emit('select-node')
     },
-    clone() {
+    async clone() {
       const clone = JSON.parse(JSON.stringify(this.node))
       const newNode = {
         ...clone,
@@ -121,16 +123,22 @@ export default {
         key: Date.now() + '',
         isClone: true,
       }
+      const { children } = this.parent
+      const index = this.showOnlyChecked
+        ? children.findIndex(n => n.key === this.node.key)
+        : this.index
 
-      const children = [
-        ...this.parent.children.slice(0, this.index + 1),
+      const newChildren = [
+        ...children.slice(0, index + 1),
         {
           ...newNode,
         },
-        ...this.parent.children.slice(this.index + 1),
+        ...children.slice(index + 1),
       ]
-      this.updateNodeChildren({ node: this.parent, children })
+      this.updateNodeChildren({ node: this.parent, children: newChildren })
       this.selectJob(newNode)
+      await this.$nextTick()
+      emitter.$emit('cloned', newNode.key)
     },
     removeClone() {
       const children = this.parent.children.filter(c => c.key !== this.node.key)
@@ -148,29 +156,28 @@ export default {
 </script>
 
 <template>
-  <tr
+  <div
     class="table-row"
-    :class="{ parent: isCategory, selected, striped }"
-    :style="rowStyle"
     v-bind="rowAttrs"
+    :class="{ parent: isCategory, selected, striped }"
+    :style="[rowStyle, $attrs.style]"
     @click="select"
   >
-    <StretchedRow v-if="isCategory" :data="data" />
+    <StretchedRow v-if="isCategory" :data="data" :level="level" />
     <template v-else-if="!isClone">
       <DefaultRow v-if="!selected" :node="node" :sum="sum" @clone="clone" />
       <SelectedRow v-else :node="node" :sum="sum" @clone="clone" />
     </template>
-    <template v-else>
-      <CloneRow
-        :node="node"
-        :sum="sum"
-        :isEditing="isCloneEditing"
-        @toggleEdit="toggleEdit"
-        @remove="removeClone"
-      />
-    </template>
-  </tr>
-  <template v-if="children && children.length > 0">
+    <CloneRow
+      v-else
+      :node="node"
+      :sum="sum"
+      :isEditing="isCloneEditing"
+      @toggleEdit="toggleEdit"
+      @remove="removeClone"
+    />
+  </div>
+  <template v-if="isCategory">
     <TableRow
       v-for="(child, index) in children"
       :key="child.key"
@@ -178,6 +185,7 @@ export default {
       :level="level + 1"
       :index="index"
       :parent="node"
+      :style="$attrs.style"
       @select-node="select"
     />
   </template>
@@ -185,6 +193,17 @@ export default {
 
 <style lang="scss" scoped>
 .table-row {
+  display: grid;
+  align-items: center;
+
   @include table-row;
+
+  &.parent &__cell {
+    color: #fff;
+  }
+}
+
+.table-cell {
+  @include table-cell;
 }
 </style>

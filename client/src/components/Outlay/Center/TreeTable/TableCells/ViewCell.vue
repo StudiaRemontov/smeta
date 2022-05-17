@@ -9,9 +9,9 @@ export default {
 </script>
 
 <template>
-  <td class="table-cell">
+  <div class="table-cell">
     {{ value }}
-  </td>
+  </div>
 </template>
 
 <style lang="scss" scoped>

@@ -44,7 +44,7 @@ export default {
 </script>
 
 <template>
-  <td class="table-cell" @click.stop="toggleEditMode">
+  <div class="table-cell" @click.stop="toggleEditMode">
     <div class="table-cell__wrapper">
       <span>
         {{ modelValue }}
@@ -63,7 +63,7 @@ export default {
         />
       </template>
     </div>
-  </td>
+  </div>
 </template>
 
 <style lang="scss" scoped>

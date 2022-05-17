@@ -44,7 +44,19 @@ export default {
     },
     options() {
       if (!this.id) return []
-      return this.directories.filter(d => d._id !== this.id && d.values)
+      const architectures = this.directories.filter(
+        d => d._id !== this.id && d.values,
+      )
+      const architecturesWithParents = architectures.map(d => {
+        const parents = this.getParentTree(d)
+        const names = parents.map(p => p.name)
+        const text = names.join('/')
+        return {
+          ...d,
+          text,
+        }
+      })
+      return architecturesWithParents
     },
     avaliableKeys() {
       if (!this.selectedDirectory) {
@@ -128,6 +140,15 @@ export default {
       this.selectedDirectory = ''
       this.visibleKeys = []
     },
+    getParentTree(directory) {
+      if (directory.parent) {
+        const parent = this.directories.find(
+          ({ _id }) => _id === directory.parent,
+        )
+        return [...this.getParentTree(parent), directory]
+      }
+      return [directory]
+    },
   },
 }
 </script>
@@ -173,7 +194,7 @@ export default {
               :key="option._id"
               :value="option._id"
             >
-              {{ option.name }}
+              {{ option.text }}
             </option>
           </select>
           <div v-if="selectedDirectory">

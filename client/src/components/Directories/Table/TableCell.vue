@@ -1,18 +1,9 @@
 <script>
 import keyTypes from '@/mixins/keyTypes.mixin'
 
-import InputText from 'primevue/inputtext'
-import Dropdown from 'primevue/dropdown'
-import InputNumber from 'primevue/inputnumber'
-
 import { mapGetters } from 'vuex'
 
 export default {
-  components: {
-    InputText,
-    Dropdown,
-    InputNumber,
-  },
   mixins: [keyTypes],
   props: {
     modelValue: {
@@ -28,6 +19,12 @@ export default {
     },
   },
   emits: ['update:modelValue'],
+  data() {
+    return {
+      timeout: null,
+      hasUnmounted: false,
+    }
+  },
   computed: {
     ...mapGetters('directory', ['root', 'roots', 'directories']),
     key() {
@@ -56,7 +53,28 @@ export default {
         return this.modelValue
       },
       set(value) {
-        this.$emit('update:modelValue', value)
+        const numberTypes = [
+          this.InputType.PRICE,
+          this.InputType.QUANTITY,
+          this.InputType.NUMBER,
+        ]
+        if (numberTypes.includes(this.type)) {
+          if (this.timeout) {
+            clearTimeout(this.timeout)
+          }
+          this.timeout = setTimeout(() => {
+            if (!this.hasUnmounted) {
+              return this.$emit(
+                'update:modelValue',
+                this.rowIndex,
+                this.field,
+                value,
+              )
+            }
+          }, 1000)
+          return
+        }
+        this.$emit('update:modelValue', this.rowIndex, this.field, value)
       },
     },
     options() {
@@ -78,7 +96,7 @@ export default {
       const directoryOfValues = this.directories.find(
         d => d._id === this.key.dirId,
       )
-      return directoryOfValues.values.map(row => {
+      const values = directoryOfValues.values.map(row => {
         const text = keys.map(key => {
           if (key.type === this.InputType.SELECT) {
             const findingRow = row.data[key.id]
@@ -93,15 +111,19 @@ export default {
           return row.data[key.id]
         })
         return {
-          hidden: false,
           value: row.id,
           text: text.join(', '),
         }
       })
+
+      return [
+        { value: undefined, text: 'Выберите значение', hidden: true },
+        ...values,
+      ]
     },
   },
-  mounted() {
-    this.$refs?.dropdown?.show()
+  unmounted() {
+    this.hasUnmounted = true
   },
   methods: {
     getValueOfCell(dirId, root, rowId, keys) {
@@ -125,13 +147,54 @@ export default {
 </script>
 
 <template>
-  <component
-    :is="componentName"
-    v-model="newValue"
-    :format="false"
-    :options="options"
-    optionLabel="text"
-    optionValue="value"
+  <input
+    v-if="type === InputType.STRING"
+    v-model.lazy="newValue"
+    class="input"
     placeholder="Введите значение"
+    type="text"
   />
+  <input
+    v-else-if="type === InputType.NUMBER"
+    v-model.lazy="newValue"
+    class="input"
+    placeholder="Введите значение"
+    type="number"
+  />
+  <input
+    v-else-if="type === InputType.PRICE || type === InputType.QUANTITY"
+    v-model.lazy="newValue"
+    class="input"
+    placeholder="Введите значение"
+    type="number"
+    :min="0"
+  />
+  <select
+    v-else-if="type === InputType.SELECT || type === InputType.FORMULA"
+    v-model="newValue"
+    class="input"
+  >
+    <option
+      v-for="option in options"
+      :key="option.value"
+      :hidden="option.hidden"
+      :value="option.value"
+    >
+      {{ option.text }}
+    </option>
+  </select>
 </template>
+
+<style lang="scss" scoped>
+.input {
+  max-width: 100%;
+  outline: none;
+  border-radius: 4px;
+  border: 1px solid #ced4da;
+  padding: 6px;
+
+  &:focus {
+    border-color: #3b82f6;
+  }
+}
+</style>

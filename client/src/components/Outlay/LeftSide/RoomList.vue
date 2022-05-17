@@ -34,8 +34,8 @@ export default {
     },
   },
   methods: {
-    ...mapMutations('outlay', ['setSelectedRoom', 'updateRoom', 'removeRoom']),
-    ...mapActions('outlay', ['createRoom']),
+    ...mapMutations('outlay', ['setSelectedRoom', 'updateRoom']),
+    ...mapActions('outlay', ['createRoom', 'removeRoom']),
     openContextMenu(e, id) {
       this.selectRoom({ id })
       this.$refs.menu.show(e)

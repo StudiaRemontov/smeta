@@ -9,17 +9,38 @@ export default {
         return {}
       },
     },
+    level: {
+      type: Number,
+    },
   },
   computed: {
     ...mapGetters('outlay', ['keys']),
+    cells() {
+      const firstKey = this.keys[0].id
+      const name = this.data[firstKey]
+      const categoryKey = {
+        id: firstKey,
+        name,
+      }
+      if (this.level === 0) {
+        const mainKeys = this.keys.map((key, index) => {
+          if (index === 0) {
+            return categoryKey
+          }
+          return key
+        })
+        return [...mainKeys, { id: 'Сумма', name: 'Сумма' }]
+      }
+      return [categoryKey]
+    },
   },
 }
 </script>
 
 <template>
-  <td class="table-cell" :colspan="keys.length + 2">
-    {{ data[keys[0].id] }}
-  </td>
+  <div v-for="cell in cells" :key="cell.id" class="table-cell">
+    {{ cell.name }}
+  </div>
 </template>
 
 <style lang="scss" scoped>

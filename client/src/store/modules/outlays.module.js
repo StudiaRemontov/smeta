@@ -1,4 +1,15 @@
 import axios from '../../modules/axios'
+import idb from '../local/idb'
+
+const mergeData = (local, server) => {
+  return server.map(s => {
+    const savedLocaly = local.find(l => l._id === s._id)
+    if (savedLocaly) {
+      return savedLocaly
+    }
+    return s
+  })
+}
 
 export default {
   namespaced: true,
@@ -33,10 +44,15 @@ export default {
       if (state.contentLoaded) {
         return
       }
+      const localOutlays = await idb.getOutlays()
       try {
         commit('setContentLoaded', true)
         const response = await axios.get('/outlay')
-        commit('setOutlays', response.data)
+        const data =
+          localOutlays.length > 0
+            ? mergeData(localOutlays, response.data)
+            : response.data
+        commit('setOutlays', data)
         return response
       } catch (error) {
         return Promise.reject(error)
@@ -63,6 +79,7 @@ export default {
           dispatch('outlay/setOutlay', null, { root: true })
         }
         commit('removeById', id)
+        await idb.removeOutlay(id)
         return response
       } catch (error) {
         return Promise.reject(error)

@@ -8,7 +8,6 @@ import Column from 'primevue/column'
 import Button from 'primevue/button'
 
 import TableCell from './Table/TableCell.vue'
-import CellBody from './Table/CellBody.vue'
 
 export default {
   components: {
@@ -17,7 +16,6 @@ export default {
     Column,
     Button,
     TableCell,
-    CellBody,
   },
   mixins: [keyTypes],
   props: {
@@ -201,15 +199,8 @@ export default {
       const key = this.eidtableKeys.find(k => k.id === keyId)
       return key?.type
     },
-    editComplete(event) {
-      setTimeout(() => {
-        const { newData, field, index } = event
-        if (this.data[index][field] === newData[field]) {
-          this.setLoading(false)
-          return
-        }
-        this.updateValue(index, field, newData[field])
-      })
+    change(index, field, value) {
+      this.updateValue(index, field, value)
     },
   },
 }
@@ -221,11 +212,9 @@ export default {
     ref="table"
     :value="data"
     :resizableColumns="true"
-    edit-mode="cell"
     showGridlines
     :scrollable="true"
     scrollHeight="flex"
-    @cell-edit-complete="editComplete"
   >
     <template #header v-if="allKeys && allKeys.length > 0">
       <div class="table-header">
@@ -251,9 +240,6 @@ export default {
       :header="key.name"
       class="column"
     >
-      <template #editor="{ data, field, index }">
-        <TableCell v-model="data[field]" :field="field" :rowIndex="index" />
-      </template>
       <template #header="{ column }">
         <Button
           icon="pi pi-pencil"
@@ -261,8 +247,13 @@ export default {
           @click="openEditModal(column.key)"
         />
       </template>
-      <template #body="{ data, field }">
-        <CellBody :value="data[field]" :field="field" />
+      <template #body="{ data, field, index }">
+        <TableCell
+          v-model.lazy="data[field]"
+          :field="field"
+          :rowIndex="index"
+          @update:modelValue="change"
+        />
       </template>
     </Column>
     <Column field="create" class="create-cell">

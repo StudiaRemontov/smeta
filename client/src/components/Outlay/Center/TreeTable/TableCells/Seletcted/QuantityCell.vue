@@ -35,7 +35,7 @@ export default {
 </script>
 
 <template>
-  <td class="table-cell" @click.stop="toggleEditMode">
+  <div class="table-cell" @click.stop="toggleEditMode">
     <div class="table-cell__wrapper">
       <span v-if="!isEditing">
         {{ modelValue }}
@@ -50,12 +50,11 @@ export default {
         @blur="isEditing = false"
       />
     </div>
-  </td>
+  </div>
 </template>
 
 <style lang="scss" scoped>
 .table-cell {
-  max-width: 100px;
   @include table-cell;
 }
 

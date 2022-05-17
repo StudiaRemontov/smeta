@@ -1,7 +1,7 @@
 <script>
 import { mapGetters } from 'vuex'
 
-import TableGridRow from './TableGridRow.vue'
+import TableGridRow from './TableRow.vue'
 import tableRowColors from '@/mixins/tableRowColors.mixin'
 
 export default {
@@ -12,6 +12,7 @@ export default {
       currentRoom: null,
       currentCategory: null,
       currentSubCategory: null,
+      subCategories: [],
     }
   },
   computed: {
@@ -42,9 +43,6 @@ export default {
         }
       })
     },
-    subCategoriesList() {
-      return []
-    },
     headerStyle() {
       const keysLength = this.keys.length
       return {
@@ -53,6 +51,14 @@ export default {
     },
   },
   async mounted() {
+    const nodesWithLevel = this.data.map(d => this.setLevels(d, 0))
+    this.subCategories = nodesWithLevel.reduce((acc, n) => {
+      const categories = this.getSubCategories(n)
+
+      acc[n.key] = categories.filter(c => c.level > 1)
+      return acc
+    }, {})
+
     await this.$nextTick()
     const { wrapper } = this.$refs
     if (!wrapper) return
@@ -87,16 +93,38 @@ export default {
     })
   },
   methods: {
+    setLevels(node, level = 0) {
+      const { children } = node
+
+      if (children.length > 0) {
+        node.level = level
+        node.children = children.map(c => this.setLevels(c, level + 1))
+      }
+      return node
+    },
+    getSubCategories(node) {
+      const { children } = node
+      if (children.length > 0) {
+        return [node, ...children.map(this.getSubCategories).flat()]
+      }
+      return []
+    },
     setCurrentRoom(e, id) {
       const roomIndex = this.rooms.findIndex(r => r.id === id)
       if (e.isIntersecting) {
         if (roomIndex === 0) {
           this.currentRoom = null
+          this.currentCategory = null
+          this.currentSubCategory = null
           return
         }
         this.currentRoom = this.rooms[roomIndex - 1]
-        this.currentCategory =
-          this.currentRoom.jobs[this.currentRoom.jobs.length - 1]
+        const roomId = this.currentRoom.id
+        const lastCategoryIndex = this.currentRoom.jobs.length - 1
+        this.currentCategory = this.currentRoom.jobs[lastCategoryIndex]
+        const lastSubCategoryIndex = this.subCategories[roomId].length - 1
+        this.currentSubCategory =
+          this.subCategories[roomId][lastSubCategoryIndex]
         return
       }
       this.currentRoom = this.rooms[roomIndex]
@@ -112,11 +140,10 @@ export default {
           )
           if (roomIndex > 0) {
             this.currentRoom = this.rooms[roomIndex - 1]
-            this.currentCategory =
-              this.currentRoom.jobs[this.currentRoom.jobs.length - 1]
+            const lastIndex = this.currentRoom.jobs.length - 1
+            this.currentCategory = this.currentRoom.jobs[lastIndex]
             return
           }
-          this.currentCategory = null
           return
         }
         this.currentCategory = jobs[categoryIndex - 1]
@@ -127,17 +154,17 @@ export default {
     },
     setSubCategories(e, id) {
       if (!this.currentCategory) return
-      const newIndex = this.subCategoriesList.findIndex(c => c.key === id)
+      const newIndex = this.subCategories[this.currentRoom.id].findIndex(
+        c => c.key === id,
+      )
 
       if (e.isIntersecting) {
-        if (newIndex === 0) {
-          this.currentSubCategory = null
-          return
-        }
-        this.currentSubCategory = this.subCategoriesList[newIndex - 1]
+        this.currentSubCategory =
+          this.subCategories[this.currentRoom.id][newIndex - 1]
         return
       }
-      this.currentSubCategory = this.subCategoriesList[newIndex]
+      this.currentSubCategory =
+        this.subCategories[this.currentRoom.id][newIndex]
     },
     scrollTo(roomId, nodeKey) {
       const { wrapper } = this.$refs
@@ -208,13 +235,6 @@ export default {
   min-height: 0px;
 }
 
-.table-wrapper {
-  flex: 1;
-  overflow-y: auto;
-  @include darkScroll;
-  position: relative;
-}
-
 .room {
   background-color: $color-dark;
   color: #fff;
@@ -241,7 +261,7 @@ export default {
   &__body {
     flex: 1;
     @include darkScroll;
-    overflow-y: auto;
+    overflow-y: overlay;
     position: relative;
   }
 

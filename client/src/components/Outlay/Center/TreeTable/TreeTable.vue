@@ -1,6 +1,6 @@
 <script>
-import { mapGetters } from 'vuex'
-import TableRow from '../TreeTable/TableRow.vue'
+import { mapActions, mapGetters, mapMutations } from 'vuex'
+import TableRow from './TableRow.vue'
 import rowColors from '@/mixins/tableRowColors.mixin'
 
 export default {
@@ -12,6 +12,9 @@ export default {
     return {
       category: null,
       subCategory: null,
+      timeout: null,
+      currentCategory: null,
+      currentSubCategory: null,
     }
   },
   computed: {
@@ -23,17 +26,19 @@ export default {
       'currentRoomData',
       'selectedValues',
       'priceKey',
+      'roomsData',
+      'rooms',
     ]),
     tableKeys() {
       if (!this.keys) return []
 
       return this.keys.map((k, index) => {
-        // if (index === 0 && this.currentRoot) {
-        //   return {
-        //     ...k,
-        //     name: this.currentRoot.data[this.keys[0].id],
-        //   }
-        // }
+        if (index === 0 && this.currentCategory) {
+          return {
+            ...k,
+            name: this.currentCategory.data[this.keys[0].id],
+          }
+        }
         return k
       })
     },
@@ -51,6 +56,12 @@ export default {
     subCategories() {
       return this.tableData.map(this.getSubCategories).flat()
     },
+    headerStyle() {
+      const keysLength = this.tableKeys.length + 1
+      return {
+        gridTemplateColumns: `1fr repeat(${keysLength}, 100px)`,
+      }
+    },
   },
   watch: {
     selectedRoom() {
@@ -59,11 +70,30 @@ export default {
     showOnlyChecked() {
       this.initObserver()
     },
+    currentRoomData: {
+      handler() {
+        if (this.selectedRoom) {
+          this.save()
+        }
+      },
+      deep: true,
+    },
+    'selectedValues.length'() {
+      if (this.selectedRoom) {
+        this.save()
+      }
+    },
   },
   async mounted() {
     this.initObserver()
   },
+  unmounted() {
+    this.save()
+  },
   methods: {
+    ...mapMutations('outlay', ['selectJob']),
+    ...mapMutations('outlays', ['updateById']),
+    ...mapActions('outlay', ['saveLocaly']),
     getSubCategories(node) {
       const { children } = node
       if (children && children.length > 0) {
@@ -73,6 +103,27 @@ export default {
         return node.children.map(this.getSubCategories).flat()
       }
       return []
+    },
+    setCurrentCategory(e, id) {
+      const categoryIndex = this.tableData.findIndex(node => node.key === id)
+      if (e.isIntersecting) {
+        if (categoryIndex === 0) {
+          return (this.currentCategory = null)
+        }
+        this.currentCategory = this.tableData[categoryIndex - 1]
+        return
+      }
+      this.currentCategory = this.tableData[categoryIndex]
+      return
+    },
+    setCurrentSubCategory(e, id) {
+      if (!this.currentCategory) return
+      const newIndex = this.subCategories.findIndex(c => c.key === id)
+      if (e.isIntersecting) {
+        this.currentSubCategory = this.subCategories[newIndex - 1]
+        return
+      }
+      this.currentSubCategory = this.subCategories[newIndex]
     },
     async initObserver() {
       await this.$nextTick()
@@ -93,129 +144,123 @@ export default {
           }
           const id = e.target.dataset?.id
           const level = +e.target.dataset?.level
-          const newIndex = level
-            ? this.subCategories.findIndex(n => n.key === id)
-            : this.categories.findIndex(n => n.key === id)
-
-          if (e.isIntersecting) {
-            // if (level === 0) {
-            //   if (newIndex > 0) {
-            //     const category = this.categories[newIndex - 1]
-            //     console.log(category)
-            //     this.category = category
-            //     return
-            //   }
-            //   this.category = null
-            // }
-            // return
+          if (level === 0) {
+            return this.setCurrentCategory(e, id)
           }
-          // if (level === 0) {
-          // }
-          // console.log(newIndex)
+          if (level > 0) {
+            return this.setCurrentSubCategory(e, id)
+          }
         })
       })
       parents.forEach(r => {
         observer.observe(r)
       })
     },
+    save() {
+      if (this.timeout) {
+        this.timeout = clearTimeout(this.timeout)
+      }
+      this.timeout = setTimeout(async () => {
+        await this.saveLocaly()
+      }, 500)
+    },
+    getNodeFromTree(node, nodeKey, parents) {
+      const { key, children } = node
+      if (key === nodeKey) {
+        return [...parents, node]
+      }
+      return children
+        .map(c => this.getNodeFromTree(c, nodeKey, [...parents, node]))
+        .flat()
+    },
+    scrollTo(nodeKey) {
+      const { wrapper } = this.$refs
+      const row = wrapper.querySelector(`.table-row[data-id="${nodeKey}"]`)
+      wrapper.scrollTo({
+        top: row.offsetTop,
+        behavior: 'smooth',
+      })
+      const parents = this.roomsData[this.selectedRoom.id]
+        .map(n => this.getNodeFromTree(n, nodeKey, []))
+        .flat()
+      parents.forEach(this.selectJob)
+    },
   },
 }
 </script>
 <template>
-  <div class="table-wrapper" ref="wrapper">
-    <table class="table">
-      <tr class="table__row table__row--key table__row--sticky">
-        <th
+  <div class="tree-table">
+    <div class="table-grid">
+      <div
+        v-if="currentCategory"
+        class="table-grid__header"
+        :style="[headerStyle, `backgroundColor: ${colors[0]}`]"
+      >
+        <div
           v-for="key in tableKeys"
           :key="key.id"
-          class="table__cell"
-          :class="{ price: key.id === priceKey.id }"
           :title="key.name"
+          class="table-grid__cell"
         >
-          {{ key.name }}
-        </th>
-        <th class="table__cell" title="Сумма">Сумма</th>
-        <th></th>
-      </tr>
-      <!-- <template v-if="treeView.length">
-        <tr
-          v-for="(node, index) in treeView"
-          :key="node"
-          :style="`top: ${32 * (index + 1)}px;background-color: ${
-            colors[index + 1]
-          }`"
-          class="table__row table__row--sticky"
-        >
-          <td class="table__cell" :colspan="keys.length + 1">
-            {{ node }}
-          </td>
-          <td class="table__cell"></td>
-        </tr>
-      </template> -->
-      <template v-if="tableData && tableData.length > 0">
+          <span>
+            {{ key.name }}
+          </span>
+        </div>
+        <div class="table-grid__cell">Сумма</div>
+      </div>
+      <div
+        v-if="currentSubCategory"
+        class="table-grid__header"
+        :style="[headerStyle, `backgroundColor: ${colors[1]}`]"
+      >
+        <div class="table-grid__cell">
+          {{ currentSubCategory.data[keys[0].id] }}
+        </div>
+      </div>
+      <div class="table-grid__body" ref="wrapper">
         <TableRow
           v-for="(node, index) in tableData"
           :key="node.key"
           :node="node"
           :level="0"
           :index="index"
+          :style="headerStyle"
         />
-      </template>
-    </table>
+      </div>
+    </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
-.table-wrapper {
-  flex: 1;
-  overflow: auto;
-  @include darkScroll;
-  position: relative;
-  margin-bottom: 10px;
+.tree-table {
+  display: flex;
+  flex-direction: column;
+  min-height: 0px;
 }
 
-.table {
-  border-collapse: collapse;
-  width: 100%;
+.table-grid {
+  display: flex;
+  flex-direction: column;
+  min-height: 0px;
 
-  &__row {
-    &--sticky {
-      position: sticky;
-      top: 0;
-      z-index: 2;
-    }
-
-    &--key {
-      background-color: $color-dark;
-    }
-  }
-
-  &__row--sticky &__cell {
-    background-color: transparent;
+  &__header &__cell {
     color: $color-light;
-    text-align: left;
   }
 
-  &__row--key &__cell {
-    &:first-child {
-      text-align: left;
-    }
+  &__header,
+  &__row {
+    display: grid;
+  }
+
+  &__body {
+    flex: 1;
+    @include darkScroll;
+    overflow-y: overlay;
+    position: relative;
   }
 
   &__cell {
-    padding: 8px;
-    background-color: $color-light;
-    text-overflow: ellipsis;
-    overflow: hidden;
-
-    &:first-of-type {
-      max-width: 400px;
-      min-width: 300px;
-    }
-
-    &.price {
-      min-width: 100px;
-    }
+    @include table-cell;
   }
 }
 </style>
