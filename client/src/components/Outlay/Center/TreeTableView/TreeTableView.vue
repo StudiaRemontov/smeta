@@ -4,6 +4,8 @@ import { mapGetters } from 'vuex'
 import TableGridRow from './TableRow.vue'
 import tableRowColors from '@/mixins/tableRowColors.mixin'
 
+import { filterNodes } from '@/store/modules/outlay.module'
+
 export default {
   components: { TableGridRow },
   mixins: [tableRowColors],
@@ -28,9 +30,11 @@ export default {
       if (roomsData.length === 0 || this.selectedRoom) return []
       return roomsData.map(([key, values]) => {
         const foundRoom = this.rooms.find(r => r.id === key)
-        const children = values.filter(c =>
-          this.selectedValues[key].includes(c.key),
+        const clone = JSON.parse(JSON.stringify(values))
+        const children = clone.map(node =>
+          filterNodes(node, this.selectedValues[key]),
         )
+
         if (!foundRoom) return {}
         return {
           key,
@@ -46,51 +50,17 @@ export default {
     headerStyle() {
       const keysLength = this.keys.length
       return {
-        gridTemplateColumns: `1fr repeat(${keysLength}, 100px)`,
+        gridTemplateColumns: `4fr repeat(${keysLength}, minmax(100px, 1fr))`,
       }
     },
   },
-  async mounted() {
-    const nodesWithLevel = this.data.map(d => this.setLevels(d, 0))
-    this.subCategories = nodesWithLevel.reduce((acc, n) => {
-      const categories = this.getSubCategories(n)
-
-      acc[n.key] = categories.filter(c => c.level > 1)
-      return acc
-    }, {})
-
-    await this.$nextTick()
-    const { wrapper } = this.$refs
-    if (!wrapper) return
-    const rows = wrapper.querySelectorAll('.table-row.parent, .table-row.room')
-    const observer = new IntersectionObserver(
-      entries => {
-        entries.forEach(e => {
-          const { top, height } = wrapper.getBoundingClientRect()
-          if (e.boundingClientRect.top - top > height / 2) {
-            return
-          }
-          const id = e.target.dataset?.id
-          const level = +e.target.dataset?.level
-          if (level === 0) {
-            return this.setCurrentRoom(e, id)
-          }
-          if (level === 1) {
-            return this.setCurrentCategory(e, id)
-          }
-          if (level > 1) {
-            return this.setSubCategories(e, id)
-          }
-        })
+  watch: {
+    roomsData: {
+      handler() {
+        this.initObserver()
       },
-      {
-        root: wrapper,
-        threshold: 1,
-      },
-    )
-    rows.forEach(r => {
-      observer.observe(r)
-    })
+      immediate: true,
+    },
   },
   methods: {
     setLevels(node, level = 0) {
@@ -139,9 +109,6 @@ export default {
             r => r.id === this.currentRoom.id,
           )
           if (roomIndex > 0) {
-            this.currentRoom = this.rooms[roomIndex - 1]
-            const lastIndex = this.currentRoom.jobs.length - 1
-            this.currentCategory = this.currentRoom.jobs[lastIndex]
             return
           }
           return
@@ -153,11 +120,10 @@ export default {
       return
     },
     setSubCategories(e, id) {
-      if (!this.currentCategory) return
+      if (!this.currentRoom || !this.subCategories[this.currentRoom.id]) return
       const newIndex = this.subCategories[this.currentRoom.id].findIndex(
         c => c.key === id,
       )
-
       if (e.isIntersecting) {
         this.currentSubCategory =
           this.subCategories[this.currentRoom.id][newIndex - 1]
@@ -176,6 +142,50 @@ export default {
         behavior: 'smooth',
       })
     },
+    async initObserver() {
+      const nodesWithLevel = this.data.map(d => this.setLevels(d, 0))
+      this.subCategories = nodesWithLevel.reduce((acc, n) => {
+        const categories = this.getSubCategories(n)
+
+        acc[n.key] = categories.filter(c => c.level > 1)
+        return acc
+      }, {})
+
+      await this.$nextTick()
+      const { wrapper } = this.$refs
+      if (!wrapper) return
+      const rows = wrapper.querySelectorAll(
+        '.table-row.parent, .table-row.room',
+      )
+      const observer = new IntersectionObserver(
+        entries => {
+          entries.forEach(e => {
+            const { top, height } = wrapper.getBoundingClientRect()
+            if (e.boundingClientRect.top - top > height / 2) {
+              return
+            }
+            const id = e.target.dataset?.id
+            const level = +e.target.dataset?.level
+            if (level === 0) {
+              return this.setCurrentRoom(e, id)
+            }
+            if (level === 1) {
+              return this.setCurrentCategory(e, id)
+            }
+            if (level > 1) {
+              return this.setSubCategories(e, id)
+            }
+          })
+        },
+        {
+          root: wrapper,
+          threshold: 1,
+        },
+      )
+      rows.forEach(r => {
+        observer.observe(r)
+      })
+    },
   },
 }
 </script>
@@ -187,6 +197,7 @@ export default {
     </div>
     <div class="table-grid">
       <div
+        v-if="currentCategory"
         class="table-grid__header"
         :style="[headerStyle, `backgroundColor: ${colors[0]}`]"
       >
@@ -195,14 +206,17 @@ export default {
           :key="key.id"
           class="table-grid__cell"
         >
-          <span v-if="index === 0 && currentCategory">
+          <span
+            v-if="index === 0 && currentCategory"
+            :title="currentCategory.data[keys[0].id]"
+          >
             {{ currentCategory.data[keys[0].id] }}
           </span>
-          <span v-else>
+          <span v-else :title="key.name">
             {{ key.name }}
           </span>
         </div>
-        <div class="table-grid__cell">Сумма</div>
+        <div class="table-grid__cell" title="Сумма">Сумма</div>
       </div>
       <div
         v-if="currentSubCategory"

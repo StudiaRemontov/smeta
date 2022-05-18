@@ -20,6 +20,9 @@ export default {
         this.$emit('update:modelValue', value)
       },
     },
+    isCorrectValue() {
+      return this.modelValue > 0
+    },
   },
   methods: {
     async toggleEditMode() {
@@ -35,27 +38,35 @@ export default {
 </script>
 
 <template>
-  <div class="table-cell" @click.stop="toggleEditMode">
-    <div class="table-cell__wrapper">
-      <span v-if="!isEditing">
-        {{ modelValue }}
-      </span>
-      <input
-        v-else
-        v-model="newValue"
-        class="input"
-        ref="input"
-        type="number"
-        :min="1"
-        @blur="isEditing = false"
-      />
-    </div>
+  <div
+    class="table-cell"
+    :class="{ danger: !isCorrectValue }"
+    @click.stop="toggleEditMode"
+  >
+    <span v-if="!isEditing">
+      {{ modelValue }}
+    </span>
+    <input
+      v-else
+      v-model="newValue"
+      class="input"
+      ref="input"
+      type="number"
+      :min="1"
+      @blur="isEditing = false"
+    />
   </div>
 </template>
 
 <style lang="scss" scoped>
 .table-cell {
   @include table-cell;
+
+  &.danger {
+    color: #ff3737;
+    font-weight: 600;
+    border-bottom: #ff3737 1px solid;
+  }
 }
 
 .input {

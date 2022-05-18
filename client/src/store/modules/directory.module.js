@@ -1,11 +1,18 @@
 import axios from '../../modules/axios'
 import { InputType } from '../../enum/InputType'
+import Key from '../../helpers/Key'
 
 const getChildren = (directory, directories) => {
   const children = directories.filter(d => d.parent === directory._id)
 
   const subChildren = children.map(c => getChildren(c, directories))
   return [...children, ...subChildren].flat()
+}
+
+const getArchitectires = (root, directories) => {
+  const children = getChildren(root, directories)
+
+  return children.filter(d => d.values)
 }
 
 export default {
@@ -39,6 +46,10 @@ export default {
         }
         return d
       })
+    },
+    updateDirectoryValues(state, { id, values }) {
+      const directory = state.directories.find(d => d._id === id)
+      directory.values = values
     },
     removeDirectory(state, payload) {
       state.directories = state.directories.filter(d => d._id !== payload)
@@ -95,48 +106,21 @@ export default {
         console.log(error)
       }
     },
-    async updateTableArchitecture({ state, dispatch }, { id, data }) {
+    async updateDirectoryValues(_, { id, values }) {
       try {
-        const directory = state.directories.find(d => d._id === id)
-        if (!directory) return
-        data.values = data.values.filter(row => {
-          const isRowEmpty = Object.values(row.data).every(value => !value)
-          return !isRowEmpty
-        })
-
-        const newData = {
-          data: {
-            ...directory.data,
-            ...data,
-          },
+        values =
+          values &&
+          values.filter(row => {
+            const isRowEmpty = Object.values(row.data).every(value => !value)
+            return !isRowEmpty
+          })
+        const data = {
+          values,
         }
-        await dispatch('updateById', { id: directory._id, data: newData })
+        await axios.put(`/directory/${id}`, data)
       } catch (error) {
-        console.log(error)
         return Promise.reject(error)
       }
-    },
-    async updateDirectoryKeys({ dispatch, state }, keys) {
-      try {
-        const data = {
-          keys,
-        }
-        await dispatch('updateById', { id: state.root, data })
-      } catch (error) {
-        console.log(error)
-      }
-    },
-    async updateDirectoryValues({ dispatch }, { id, values }) {
-      values =
-        values &&
-        values.filter(row => {
-          const isRowEmpty = Object.values(row.data).every(value => !value)
-          return !isRowEmpty
-        })
-      const data = {
-        values,
-      }
-      return await dispatch('updateById', { id, data })
     },
     async updateById({ commit }, { id, data }) {
       try {
@@ -166,70 +150,104 @@ export default {
         return Promise.reject(error)
       }
     },
-    async updateAllValuesInsideRoot(
-      { state, dispatch },
-      { rootId, key, value },
-    ) {
-      const root = state.directories.find(d => d._id === rootId)
-      if (!root) {
-        return
-      }
-      const children = getChildren(root, state.directories)
-      const architectures = children.filter(c => c.values)
-      await Promise.all(
-        architectures.map(async arc => {
-          const values = arc.values.map(row => {
-            row.data[key] = value
-            return row
-          })
-          await dispatch('updateDirectoryValues', { id: arc._id, values })
-        }),
-      )
-    },
-    async setValuesInsideRoot({ state, dispatch }, { rootId, values }) {
-      const root = state.directories.find(d => d._id === rootId)
-      if (!root) {
-        return
-      }
-      const children = getChildren(root, state.directories)
-      const architectures = children.filter(c => c.values)
-      await Promise.all(
-        architectures.map(async arc => {
-          const data = {
-            ...arc,
-            values,
-          }
-          await dispatch('updateById', { id: arc._id, data })
-        }),
-      )
-    },
-    async removeAllValuesInsideRoot({ state, dispatch }, { rootId, key }) {
-      const root = state.directories.find(d => d._id === rootId)
-      if (!root) {
-        return
-      }
-      const children = getChildren(root, state.directories)
-      const architectures = children.filter(c => c.values)
-      await Promise.all(
-        architectures.map(async arc => {
-          const values = arc.values.map(row => {
-            const data = Object.entries(row.data).reduce(
-              (acc, [keyId, value]) => {
-                if (keyId !== key) {
-                  acc[keyId] = value
-                }
-                return acc
-              },
-              {},
-            )
-            return {
-              ...row,
-              data,
+    async createKey({ state, getters, dispatch }, { name, type }) {
+      try {
+        const key = new Key(name, type)
+        const { directories } = state
+        const root = directories.find(d => d._id === getters.root._id)
+        const rootClone = JSON.parse(JSON.stringify(root))
+        rootClone.keys.push(key)
+        const response = await dispatch('updateById', {
+          id: root._id,
+          data: rootClone,
+        })
+        if (key.type === InputType.COUNTER) {
+          return response
+        }
+        const architectures = getArchitectires(root, directories)
+        const defaultValue = Key.getDefaultValue(key.type)
+        return await Promise.all(
+          architectures.map(async arc => {
+            const clone = JSON.parse(JSON.stringify(arc))
+            if (!clone.values.length) {
+              return Promise.reject()
             }
-          })
-          await dispatch('updateDirectoryValues', { id: arc._id, values })
-        }),
-      )
+            clone.values = arc.values.map(row => {
+              row.data[key.id] = defaultValue
+              return row
+            })
+            return await dispatch('updateById', { id: arc._id, data: arc })
+          }),
+        )
+      } catch (error) {
+        return Promise.reject(error)
+      }
+    },
+    async removeKey({ state, dispatch, getters }, keyId) {
+      try {
+        const { directories } = state
+        const root = directories.find(d => d._id === getters.root._id)
+        const rootClone = JSON.parse(JSON.stringify(root))
+        rootClone.keys = rootClone.keys.filter(k => k.id !== keyId)
+        await dispatch('updateById', { id: root._id, data: rootClone })
+        const architectures = getArchitectires(root, directories)
+        return await Promise.all(
+          architectures.map(async arc => {
+            const clone = JSON.parse(JSON.stringify(arc))
+            if (!clone.values.length) {
+              return
+            }
+            clone.values = arc.values.map(row => {
+              row.data = Object.entries(row.data).reduce(
+                (acc, [key, value]) => {
+                  if (keyId !== key) {
+                    acc[key] = value
+                  }
+                  return acc
+                },
+                {},
+              )
+              return row
+            })
+            return await dispatch('updateById', { id: arc._id, data: arc })
+          }),
+        )
+      } catch (error) {
+        return Promise.reject(error)
+      }
+    },
+    async updateKey({ state, getters, dispatch }, { id, newKey }) {
+      try {
+        const { directories } = state
+        const root = directories.find(d => d._id === getters.root._id)
+        const clone = JSON.parse(JSON.stringify(root))
+        const { keys } = clone
+        clone.keys = keys.map(k => {
+          if (k.id === id) {
+            return {
+              id,
+              ...newKey,
+            }
+          }
+          return k
+        })
+        return await dispatch('updateById', { id: root._id, data: clone })
+      } catch (error) {
+        return Promise.reject(error)
+      }
+    },
+    async updateValues({ state, commit }, { id, values }) {
+      try {
+        const directory = state.directories.find(d => d._id === id)
+        const clone = JSON.parse(JSON.stringify(directory))
+        clone.values = values
+        const response = await axios.put(`/directory/${id}`, clone)
+        const newValues = response.data.values
+        commit('updateDirectoryValues', { id, values: newValues })
+        return response
+      } catch (error) {
+        return Promise.reject(error)
+      }
     },
   },
   getters: {

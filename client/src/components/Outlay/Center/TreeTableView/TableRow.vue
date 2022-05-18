@@ -55,9 +55,8 @@ export default {
       if (!this.isParent) {
         return {}
       }
-
       return {
-        backgroundColor: this.colors[this.node.level - 1] || this.colors[0],
+        backgroundColor: this.colors[this.level - 1] || this.colors[0],
       }
     },
     sum() {
@@ -88,10 +87,15 @@ export default {
       {{ node.data[keys[0].id] }}
     </div>
     <template v-else>
-      <div v-for="key in keys" :key="key.id" class="table-row__cell">
+      <div
+        v-for="key in keys"
+        :key="key.id"
+        class="table-row__cell"
+        :title="node.data[key.id]"
+      >
         {{ node.data[key.id] }}
       </div>
-      <div v-if="!isParent && !isRoom" class="table-row__cell">
+      <div v-if="!isParent && !isRoom" class="table-row__cell" :title="sum">
         {{ sum }}
       </div>
     </template>

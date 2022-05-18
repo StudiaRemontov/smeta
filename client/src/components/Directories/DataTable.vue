@@ -19,8 +19,8 @@ export default {
   },
   mixins: [keyTypes],
   props: {
-    values: {
-      type: Array,
+    directory: {
+      type: Object,
       required: true,
     },
   },
@@ -42,9 +42,15 @@ export default {
       return this.root?.keys.find(k => k.type === this.InputType.COUNTER)
     },
     data() {
-      if (!this.values?.length) {
+      if (!this.tableData?.length) {
         return []
       }
+      return this.tableData.map(r => r.data)
+    },
+    values() {
+      return this.directory.values
+    },
+    tableData() {
       return this.values.map(r => r.data)
     },
   },
@@ -55,152 +61,67 @@ export default {
     },
   },
   methods: {
-    ...mapMutations('directory', ['removeEmptyRows', 'setLoading']),
-    ...mapActions('directory', [
-      'updateDirectoryKeys',
-      'updateDirectoryValues',
-      'createTableRow',
-      'updateAllValuesInsideRoot',
-      'removeAllValuesInsideRoot',
-      'setValuesInsideRoot',
+    ...mapMutations('directory', [
+      'removeEmptyRows',
+      'setLoading',
+      'updateDirectory',
     ]),
-    updateKey(key, value) {
-      const keys = this.allKeys.map(item => {
-        if (item.id === key) {
-          return {
-            ...item,
-            ...value,
+    ...mapActions('directory', [
+      'createTableRow',
+      'updateValues',
+      'createKey',
+      'removeKey',
+      'updateKey',
+    ]),
+    async createRow() {
+      this.createTableRow(this.directoryId)
+    },
+    async change(index, field, value) {
+      try {
+        const tableData = JSON.parse(JSON.stringify(this.values))
+        const values = tableData.map((row, rowIndex) => {
+          if (rowIndex === index) {
+            row.data[field] = value
           }
-        }
-        return item
-      })
-
-      this.updateArchitecture(keys)
+          return row
+        })
+        await this.updateValues({
+          id: this.directoryId,
+          values,
+        })
+      } catch (error) {
+        this.updateDirectory({ id: this.directory._id, data: this.directory })
+      }
     },
-    updateValue(rowIndex, key, value) {
-      const newValues = JSON.parse(JSON.stringify(this.values))
-      const values = newValues.map((row, index) => {
-        if (index === rowIndex) {
-          row.data[key] = value
-        }
-        return row
-      })
-      this.updateValues(values)
-    },
-    async openKeyModal() {
+    async createKey() {
       const response = await this.$refs['key-modal'].show({
         title: 'Добавить колонку',
         okButton: 'Добавить',
         cancelButton: 'Отмена',
       })
-      if (!response) {
-        return
-      }
-      const newKey = {
-        id: Date.now() + '',
-        ...response,
-      }
-      const keys = [...this.allKeys, newKey]
-      if (response.type === this.InputType.PRICE) {
-        const quantityKey = {
-          id: Date.now() + 1 + '',
-          name: 'Количество',
-          type: this.InputType.QUANTITY,
-        }
-        keys.push(quantityKey)
-        //здесь можно сделать намного круче. Это пока что временно
-        //для каждого типа колонки определить дефолтное значение.
-        const newValues = JSON.parse(JSON.stringify(this.values))
-        const newestKeys = [newKey, quantityKey]
-        const defaultValue = 0
-        const values = newValues.map(row => {
-          newestKeys.forEach(k => {
-            row.data[k.id] = defaultValue
-          })
-          return row
-        })
-        await this.setValuesInsideRoot({
-          rootId: this.root._id,
-          values,
-        })
-      } else if (response.type === this.InputType.QUANTITY) {
-        await this.updateAllValuesInsideRoot({
-          rootId: this.root._id,
-          key: newKey.id,
-          value: 0,
-        })
-      }
+      if (!response) return
 
-      this.updateArchitecture(keys)
+      this.createKey(response)
     },
-    async openEditModal(key) {
-      const keyToEdit = this.allKeys.find(k => k.id === key)
+    async editKey(id) {
+      const keyToEdit = this.allKeys.find(k => k.id === id)
       const response = await this.$refs['key-modal'].show({
         title: 'Изменить колонку',
         okButton: 'Сохранить',
         cancelButton: 'Отмена',
         key: keyToEdit,
       })
-      if (!response) {
-        return
-      }
-      if (response.remove) {
-        return this.removeKey(key)
-      }
-
-      this.updateKey(key, response)
-    },
-    async removeKey(keyId) {
-      const keys = this.allKeys.filter(({ id }) => id !== keyId)
-
-      if (keys.length === 0) {
-        await this.updateValues([])
-        return this.updateArchitecture([])
-      }
-      this.updateArchitecture(keys)
-      await this.removeAllValuesInsideRoot({
-        rootId: this.root._id,
-        key: keyId,
-      })
-    },
-    removeRow(rowIndex) {
-      const values = this.values.filter((_, index) => index !== rowIndex)
-      this.updateValues(values)
-    },
-    async createRow() {
-      this.createTableRow(this.directoryId)
-      await this.$nextTick()
-      const { table } = this.$refs
-      const rows = table.$el.querySelectorAll('.p-editable-column')
-      const rowsLength = rows.length
-      const keysLength = this.allKeys.length
-      const firstCellOfLastRow = rows[rowsLength - keysLength]
-      setTimeout(() => {
-        firstCellOfLastRow?.click()
-      })
-    },
-    async updateValues(values) {
-      this.setLoading(true)
       try {
-        await this.updateDirectoryValues({ id: this.directoryId, values })
-        this.setLoading(false)
+        if (response.remove) {
+          return await this.removeKey(id)
+        }
+        await this.updateKey({
+          id,
+          newKey: response,
+        })
       } catch (error) {
         console.log(error)
       }
-    },
-    async updateArchitecture(keys) {
-      try {
-        await this.updateDirectoryKeys(keys)
-      } catch (error) {
-        console.log(error)
-      }
-    },
-    getTypeOfField(keyId) {
-      const key = this.eidtableKeys.find(k => k.id === keyId)
-      return key?.type
-    },
-    change(index, field, value) {
-      this.updateValue(index, field, value)
     },
   },
 }
@@ -210,7 +131,7 @@ export default {
   <KeyModal ref="key-modal" />
   <DataTable
     ref="table"
-    :value="data"
+    :value="tableData"
     :resizableColumns="true"
     showGridlines
     :scrollable="true"
@@ -226,7 +147,7 @@ export default {
         <Button
           icon="pi pi-pencil"
           class="p-button-rounded p-button-text"
-          @click="openEditModal(counter.id)"
+          @click="editKey(counter.id)"
         />
       </template>
       <template #body="{ index }">
@@ -244,25 +165,21 @@ export default {
         <Button
           icon="pi pi-pencil"
           class="p-button-rounded p-button-text"
-          @click="openEditModal(column.key)"
+          @click="editKey(column.key)"
         />
       </template>
       <template #body="{ data, field, index }">
         <TableCell
-          v-model.lazy="data[field]"
+          :value="data[field]"
           :field="field"
           :rowIndex="index"
-          @update:modelValue="change"
+          @change="change"
         />
       </template>
     </Column>
     <Column field="create" class="create-cell">
       <template #header>
-        <Button
-          label="Добавить колонку"
-          @click="openKeyModal"
-          icon="pi pi-plus"
-        />
+        <Button label="Добавить колонку" @click="createKey" icon="pi pi-plus" />
       </template>
       <template #body="{ index }">
         <Button

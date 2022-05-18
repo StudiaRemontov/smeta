@@ -3,6 +3,8 @@ import { mapActions, mapGetters, mapMutations } from 'vuex'
 import TableRow from './TableRow.vue'
 import rowColors from '@/mixins/tableRowColors.mixin'
 
+import { filterNodes } from '@/store/modules/outlay.module'
+
 export default {
   components: {
     TableRow,
@@ -44,9 +46,10 @@ export default {
     },
     tableData() {
       if (this.showOnlyChecked) {
-        return this.currentRoomData.filter(n =>
-          this.selectedValues.includes(n.key),
-        )
+        const clone = JSON.parse(JSON.stringify(this.currentRoomData))
+        return clone
+          .filter(n => filterNodes(n, this.selectedValues))
+          .filter(n => n.children.length > 0)
       }
       return this.currentRoomData
     },
@@ -57,9 +60,9 @@ export default {
       return this.tableData.map(this.getSubCategories).flat()
     },
     headerStyle() {
-      const keysLength = this.tableKeys.length + 1
+      const keysLength = this.tableKeys.length
       return {
-        gridTemplateColumns: `1fr repeat(${keysLength}, 100px)`,
+        gridTemplateColumns: `4fr repeat(${keysLength}, minmax(100px, 1fr)) 50px`,
       }
     },
   },
@@ -117,7 +120,6 @@ export default {
       return
     },
     setCurrentSubCategory(e, id) {
-      if (!this.currentCategory) return
       const newIndex = this.subCategories.findIndex(c => c.key === id)
       if (e.isIntersecting) {
         this.currentSubCategory = this.subCategories[newIndex - 1]

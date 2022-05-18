@@ -206,18 +206,20 @@ export default {
             @item-select="findJob"
           />
         </div>
-        <MultiSelect
-          v-model="selectedFastJobs"
-          class="multiselect"
-          placeholder="Быстрые работы"
-          :options="fastJobs"
-          optionLabel="label"
-        />
-        <div class="switch-wrapper">
-          <div class="switch">
-            <InputSwitch v-model="striped" />
+        <div class="body-actions__group">
+          <MultiSelect
+            v-model="selectedFastJobs"
+            class="multiselect"
+            placeholder="Быстрые работы"
+            :options="fastJobs"
+            optionLabel="label"
+          />
+          <div class="switch-wrapper">
+            <div class="switch">
+              <InputSwitch v-model="striped" />
+            </div>
+            <span>Чередовние цветов</span>
           </div>
-          <span>Чередовние цветов</span>
         </div>
       </div>
       <TreeTable v-if="selectedRoom" ref="table" :striped="striped" />
@@ -235,7 +237,6 @@ $header-height: 55px;
   gap: 10px;
   padding-top: 0;
   min-height: 0px;
-  overflow: auto;
 
   &__header {
     display: flex;
@@ -265,15 +266,20 @@ $header-height: 55px;
   align-items: center;
   padding: 20px;
   flex-wrap: wrap;
+
+  &__group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
 }
 
 .search-wrapper {
-  max-width: 65%;
-  width: 100%;
   min-width: 300px;
   display: flex;
   align-items: center;
   gap: 10px;
+  flex: 1 1 auto;
 }
 
 ::v-deep(.p-autocomplete) {

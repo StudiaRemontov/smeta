@@ -411,7 +411,7 @@ export default {
         v-else-if="subFolders.length && !directory.values"
         :items="subFolders"
       />
-      <DataTable v-else :values="directory.values" />
+      <DataTable v-else :directory="directory" />
     </template>
   </ContentBody>
 </template>

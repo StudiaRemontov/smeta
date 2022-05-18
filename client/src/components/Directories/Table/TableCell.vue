@@ -6,7 +6,7 @@ import { mapGetters } from 'vuex'
 export default {
   mixins: [keyTypes],
   props: {
-    modelValue: {
+    value: {
       required: true,
     },
     field: {
@@ -18,7 +18,7 @@ export default {
       type: Number,
     },
   },
-  emits: ['update:modelValue'],
+  emits: ['change'],
   data() {
     return {
       timeout: null,
@@ -50,7 +50,7 @@ export default {
     },
     newValue: {
       get() {
-        return this.modelValue
+        return this.value
       },
       set(value) {
         const numberTypes = [
@@ -64,17 +64,12 @@ export default {
           }
           this.timeout = setTimeout(() => {
             if (!this.hasUnmounted) {
-              return this.$emit(
-                'update:modelValue',
-                this.rowIndex,
-                this.field,
-                value,
-              )
+              return this.$emit('change', this.rowIndex, this.field, value)
             }
-          }, 1000)
+          }, 300)
           return
         }
-        this.$emit('update:modelValue', this.rowIndex, this.field, value)
+        this.$emit('change', this.rowIndex, this.field, value)
       },
     },
     options() {

@@ -76,7 +76,7 @@ const mergeTree = (node, nodes) => {
   ]
 }
 
-const filterNodes = (node, selectedValues) => {
+export const filterNodes = (node, selectedValues) => {
   const { children } = node
   node.children = children.filter(n => selectedValues.includes(n.key))
   if (node.children.length > 0) {
