@@ -1,14 +1,16 @@
 <script>
-import LeftSide from '@/components/Outlay/LeftSide.vue'
-import CenterWrapper from '@/components/Outlay/CenterWrapper.vue'
-import RightSide from '@/components/Outlay/RightSide.vue'
-import { mapActions } from 'vuex'
+import { mapActions, mapGetters } from 'vuex'
+
+import HeaderRow from '@/components/Outlay/HeaderRow.vue'
+import BodyRow from '@/components/Outlay/BodyRow.vue'
 
 export default {
   components: {
-    LeftSide,
-    CenterWrapper,
-    RightSide,
+    HeaderRow,
+    BodyRow,
+  },
+  computed: {
+    ...mapGetters('outlay', ['outlay']),
   },
   async mounted() {
     await this.fetchAll()
@@ -21,9 +23,8 @@ export default {
 
 <template>
   <main class="main">
-    <LeftSide />
-    <CenterWrapper />
-    <RightSide />
+    <HeaderRow />
+    <BodyRow v-if="outlay" />
   </main>
 </template>
 
@@ -32,6 +33,7 @@ export default {
   height: 100vh;
   width: 100vw;
   display: grid;
-  grid-template-columns: min-content 1fr min-content;
+  grid-template-rows: 70px 1fr;
+  gap: 15px;
 }
 </style>

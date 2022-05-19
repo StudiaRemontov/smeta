@@ -109,9 +109,13 @@ export default {
   mutations: {
     setOutlay(state) {
       const { selectedValues, roomsData, outlay } = state
+      if (!outlay) {
+        return
+      }
+      const outlayClone = JSON.parse(JSON.stringify(outlay))
       const roomsClone = JSON.parse(JSON.stringify(Object.entries(roomsData)))
       const data = roomsClone.map(([roomId, values]) => {
-        const room = outlay.rooms.find(r => r.id === roomId)
+        const room = outlayClone.rooms.find(r => r.id === roomId)
         const filtered = values.filter(n =>
           selectedValues[roomId].includes(n.key),
         )
@@ -121,10 +125,21 @@ export default {
           jobs: nodes,
         }
       })
-      state.outlay = {
-        ...outlay,
+      const newData = {
+        ...outlayClone,
         rooms: data,
       }
+      Object.assign(state.outlay, newData)
+    },
+    setSale(state, payload) {
+      const value = parseInt(payload)
+      if (isNaN(value) || value < 0) {
+        return (state.outlay.sale = 0)
+      }
+      if (value > 20) {
+        return (state.outlay.sale = 20)
+      }
+      state.outlay.sale = value
     },
     setSelectedRoom(state, payload) {
       state.selectedRoom = payload
@@ -269,7 +284,8 @@ export default {
       const initData = JSON.parse(JSON.stringify(edition.data.children))
       state.initData = initData
       state.keys = edition.keys
-      state.roomsData = state.outlay.rooms.reduce((acc, room) => {
+      const rooms = JSON.parse(JSON.stringify(state.outlay.rooms))
+      state.roomsData = rooms.reduce((acc, room) => {
         const nodes = room.jobs.map(treeToList).flat()
         const clone = JSON.parse(JSON.stringify(initData))
         const { options } = room
@@ -386,12 +402,9 @@ export default {
       try {
         commit('setOutlay')
         const { outlay } = state
-        await idb.saveOutlay(outlay)
-        commit(
-          'outlays/updateById',
-          { id: outlay._id, data: outlay },
-          { root: true },
-        )
+        const data = JSON.parse(JSON.stringify(outlay))
+        await idb.saveOutlay(data)
+        commit('outlays/updateById', { id: outlay._id, data }, { root: true })
       } catch (error) {
         return Promise.reject(error)
       }
@@ -406,10 +419,13 @@ export default {
     selectedRoom: s => s.selectedRoom,
     roomsData: s => s.roomsData,
     currentRoomData: s => {
-      if (!s.selectedRoom) return []
+      if (!s.selectedRoom || !s.outlay) {
+        return []
+      }
       return s.roomsData[s.selectedRoom.id]
     },
     selectedValues: s => {
+      if (!s.outlay) return []
       if (!s.selectedRoom) {
         return Object.entries(s.selectedValues).reduce((acc, [key, value]) => {
           acc[key] = value
@@ -427,6 +443,7 @@ export default {
     quantityKey: s => s.quantityKey,
     priceKey: s => s.priceKey,
     striped: s => s.striped,
+    sale: s => s.outlay.sale,
     activeData: s => s.activeData,
     showOnlySelected: s => s.room?.showOnlySelected,
     nodeList: s => s.nodeList,

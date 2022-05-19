@@ -90,12 +90,11 @@ export default {
 <style lang="scss" scoped>
 .outlay-item {
   cursor: pointer;
-  border: 1px solid #a7a7a7;
-  border-radius: 10px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 20px 15px 15px;
+  border: 1px solid #808080;
+  border-radius: 10px;
 
   &__header {
     display: flex;

@@ -61,6 +61,11 @@ const schema = new mongoose.Schema(
       type: mongoose.SchemaTypes.ObjectId,
       required: true,
     },
+    sale: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
     rooms: [roomSchema],
   },
   {
