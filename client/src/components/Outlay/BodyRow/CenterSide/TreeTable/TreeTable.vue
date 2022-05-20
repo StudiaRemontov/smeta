@@ -195,11 +195,20 @@ export default {
     },
     scrollTo(nodeKey) {
       const { wrapper } = this.$refs
+      if (this.showOnlyChecked) {
+        return this.selectNode(nodeKey)
+      }
       const row = wrapper.querySelector(`.table-row[data-id="${nodeKey}"]`)
+      if (!row) {
+        return
+      }
       wrapper.scrollTo({
         top: row.offsetTop,
         behavior: 'smooth',
       })
+      this.selectNode(nodeKey)
+    },
+    selectNode(nodeKey) {
       const parents = this.roomsData[this.selectedRoom.id]
         .map(n => this.getNodeFromTree(n, nodeKey, []))
         .flat()
