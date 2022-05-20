@@ -13,6 +13,7 @@ const config = require('./config/index')
 const directory = require('./router/directory')
 const edition = require('./router/edition')
 const pricelist = require('./router/priceList')
+const outlay = require('./router/outlay')
 
 //middleware
 const errorMiddleware = require('./middleware/error-middleware')
@@ -44,6 +45,7 @@ app.use(express.json())
 app.use('/api/directory', directory)
 app.use('/api/edition', edition)
 app.use('/api/pricelist', pricelist)
+app.use('/api/outlay', outlay)
 
 //middleware
 app.use(errorMiddleware)

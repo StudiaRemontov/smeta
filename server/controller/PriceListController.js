@@ -1,6 +1,6 @@
 const PriceListService = require('../services/PriceListService')
 
-class DirectoryController {
+class PriceListController {
   static async getAll(req, res, next) {
     try {
       const response = await PriceListService.get()
@@ -45,4 +45,4 @@ class DirectoryController {
   }
 }
 
-module.exports = DirectoryController
+module.exports = PriceListController
