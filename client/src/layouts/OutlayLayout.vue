@@ -33,7 +33,7 @@ export default {
   height: 100vh;
   width: 100vw;
   display: grid;
-  grid-template-rows: 70px 1fr;
+  grid-template-rows: 60px 1fr;
   gap: 15px;
 }
 </style>

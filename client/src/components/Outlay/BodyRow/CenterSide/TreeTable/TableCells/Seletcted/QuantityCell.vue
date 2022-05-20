@@ -36,6 +36,7 @@ export default {
         await this.$nextTick()
         const { input } = this.$refs
         input.focus()
+        input.select()
       }
     },
   },
@@ -59,6 +60,7 @@ export default {
       type="number"
       :min="1"
       @blur="isEditing = false"
+      @keyup.enter="isEditing = false"
     />
   </div>
 </template>

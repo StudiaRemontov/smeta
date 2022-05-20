@@ -18,6 +18,7 @@ export default {
   width: 270px;
   display: flex;
   align-items: center;
+  justify-content: center;
   background-color: $color-dark;
   border-radius: 0px 0px 10px 0px;
   box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);

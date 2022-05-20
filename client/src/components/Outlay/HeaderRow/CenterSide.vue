@@ -94,7 +94,7 @@ export default {
     background-color: $color-light;
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
     border-radius: 0px 0px 10px 10px;
-    padding: 15px;
+    padding: 10px 15px;
     flex: 1;
     display: flex;
     gap: 15px;

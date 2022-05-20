@@ -42,6 +42,7 @@ export default {
         await this.$nextTick()
         const { input } = this.$refs
         input.focus()
+        input.select()
       }
     },
   },
@@ -65,6 +66,7 @@ export default {
           :step="0.1"
           @input="changePrice"
           @blur="isEditing = false"
+          @keyup.enter="isEditing = false"
         />
       </template>
     </div>

@@ -166,6 +166,9 @@ export default {
       }
       table.scrollTo(key)
     },
+    autoCompleteClickHanler() {
+      this.selectedJob = null
+    },
   },
 }
 </script>
@@ -189,6 +192,7 @@ export default {
             placeholder="Поиск"
             @complete="searchJob($event)"
             @item-select="findJob"
+            @click="autoCompleteClickHanler"
           />
         </div>
         <div class="body-actions__group">
