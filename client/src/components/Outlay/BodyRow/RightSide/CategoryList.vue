@@ -38,5 +38,7 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 15px;
+  overflow: auto;
+  @include darkScroll;
 }
 </style>

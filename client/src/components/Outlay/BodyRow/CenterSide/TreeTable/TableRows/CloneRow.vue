@@ -25,6 +25,10 @@ export default {
       type: Boolean,
       required: true,
     },
+    selected: {
+      type: Boolean,
+      required: true,
+    },
   },
   emits: ['toggleEdit', 'remove'],
   computed: {
@@ -118,6 +122,8 @@ export default {
       :key="key.id"
       :keyData="key"
       :value="data[key.id]"
+      :isClone="true"
+      :selected="selected"
     />
   </template>
   <td

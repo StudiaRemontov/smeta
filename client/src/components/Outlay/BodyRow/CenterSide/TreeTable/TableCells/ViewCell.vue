@@ -15,6 +15,14 @@ export default {
       type: Boolean,
       default: false,
     },
+    isClone: {
+      type: Boolean,
+      default: false,
+    },
+    selected: {
+      type: Boolean,
+      default: false,
+    },
   },
   computed: {
     ...mapGetters('outlay', ['priceKey', 'quantityKey']),
@@ -43,7 +51,7 @@ export default {
 <template>
   <div
     class="table-cell"
-    :class="{ danger: !isValidQuantity }"
+    :class="{ danger: !isValidQuantity && isClone && selected }"
     :title="viewValue"
   >
     {{ viewValue }}

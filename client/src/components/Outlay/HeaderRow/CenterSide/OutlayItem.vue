@@ -71,6 +71,9 @@ $padding-x: 15px;
 
   &__name {
     position: relative;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
 
     // &::before {
     //   content: '';
@@ -84,13 +87,9 @@ $padding-x: 15px;
     // }
   }
 
-  &__dot {
-  }
-
   &__date {
     position: absolute;
     transform: translateY(-100%);
-    // top: -100%;
     font-size: 11px;
   }
 }

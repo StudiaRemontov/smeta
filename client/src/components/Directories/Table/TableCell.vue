@@ -183,6 +183,7 @@ export default {
 <style lang="scss" scoped>
 .input {
   max-width: 100%;
+  width: 100%;
   outline: none;
   border-radius: 4px;
   border: 1px solid #ced4da;

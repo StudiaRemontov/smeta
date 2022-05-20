@@ -111,7 +111,7 @@ export default {
       'updateNodeChildren',
     ]),
     select() {
-      if (this.showOnlyChecked || this.isCloneEditing) {
+      if (this.isCloneEditing) {
         return
       }
       if (!this.selected) {
@@ -193,6 +193,7 @@ export default {
       v-else
       :node="node"
       :sum="sum"
+      :selected="selected"
       :isEditing="isCloneEditing"
       @toggleEdit="toggleEdit"
       @remove="removeClone"

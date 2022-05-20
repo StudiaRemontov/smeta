@@ -76,6 +76,13 @@ export default {
     async createRow() {
       this.createTableRow(this.directoryId)
     },
+    removeRow(rowIndex) {
+      const values = this.values.filter((_, index) => index !== rowIndex)
+      this.updateValues({
+        id: this.directoryId,
+        values,
+      })
+    },
     async change(index, field, value) {
       try {
         const tableData = JSON.parse(JSON.stringify(this.values))
@@ -93,7 +100,7 @@ export default {
         this.updateDirectory({ id: this.directory._id, data: this.directory })
       }
     },
-    async createKey() {
+    async createKeyHandler() {
       const response = await this.$refs['key-modal'].show({
         title: 'Добавить колонку',
         okButton: 'Добавить',
@@ -179,7 +186,11 @@ export default {
     </Column>
     <Column field="create" class="create-cell">
       <template #header>
-        <Button label="Добавить колонку" @click="createKey" icon="pi pi-plus" />
+        <Button
+          label="Добавить колонку"
+          @click="createKeyHandler"
+          icon="pi pi-plus"
+        />
       </template>
       <template #body="{ index }">
         <Button

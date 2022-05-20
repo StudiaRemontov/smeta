@@ -124,6 +124,9 @@ export default {
   &__category-list {
     flex: 1;
     padding-top: 25px;
+    min-height: 0px;
+    display: flex;
+    flex-direction: column;
   }
 }
 </style>

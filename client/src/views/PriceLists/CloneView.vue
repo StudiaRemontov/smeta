@@ -69,9 +69,27 @@ export default {
     },
     keysToEdit() {
       if (!this.selectedRoot) return []
-      return this.selectedRoot.keys.filter(
-        key => key.type === this.InputType.NUMBER,
-      )
+      const keysWithType = this.selectedColumns.map(key => {
+        const keyWithType = this.selectedRoot.keys.find(k => k.id === key.id)
+        if (keyWithType) {
+          const { type } = keyWithType
+          return {
+            ...key,
+            type,
+          }
+        }
+        return key
+      })
+      return keysWithType.filter(key => {
+        if (key.readonly) {
+          return false
+        }
+        return (
+          key.type === this.InputType.NUMBER ||
+          key.type === this.InputType.QUANTITY ||
+          key.type === this.InputType.PRICE
+        )
+      })
     },
   },
   mounted() {

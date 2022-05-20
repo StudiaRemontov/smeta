@@ -170,7 +170,7 @@ export default {
           architectures.map(async arc => {
             const clone = JSON.parse(JSON.stringify(arc))
             if (!clone.values.length) {
-              return Promise.reject()
+              return
             }
             clone.values = arc.values.map(row => {
               row.data[key.id] = defaultValue

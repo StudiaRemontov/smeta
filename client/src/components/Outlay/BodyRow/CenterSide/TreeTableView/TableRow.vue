@@ -150,7 +150,7 @@ export default {
   }
 
   &.room {
-    background-color: $color-dark;
+    background-color: $color-dark !important;
     color: #fff;
     height: 32px;
     text-align: center;

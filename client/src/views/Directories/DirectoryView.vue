@@ -212,10 +212,15 @@ export default {
       }
     },
     async updateValues(values) {
+      const clone = JSON.parse(JSON.stringify(this.directory))
+      const newDirectory = {
+        ...clone,
+        values,
+      }
       try {
-        await this.updateDirectoryValues({
+        await this.updateById({
           id: this.directory._id,
-          values,
+          data: newDirectory,
         })
       } catch (error) {
         console.log(error)

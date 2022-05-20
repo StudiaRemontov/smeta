@@ -126,7 +126,11 @@ export default {
     :class="{ updated }"
   />
   <InputNumber
-    v-else-if="type === InputType.NUMBER"
+    v-else-if="
+      type === InputType.NUMBER ||
+      type === InputType.PRICE ||
+      type === InputType.QUANTITY
+    "
     v-model="newValue"
     :format="false"
     placeholder="Введите значение"

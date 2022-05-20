@@ -70,7 +70,7 @@ export default {
     </div>
     <div class="room-item__actions" @click.stop>
       <button class="button" @click="viewMode = !viewMode">
-        <ViewListIcon class="icon" />
+        <ViewListIcon class="icon" :class="{ active: showOnlyChecked }" />
       </button>
       <button class="button room-item__button" @click.stop="openContext">
         <i class="pi pi-ellipsis-h icon"></i>
@@ -109,18 +109,16 @@ export default {
   &__actions {
     display: flex;
     align-items: center;
-    gap: 11px;
     border-left: 1px solid v-bind(textColor);
-    padding-left: 15px;
   }
 
   .icon {
     color: v-bind(textColor);
-  }
 
-  // &.active {
-  //   $color: v-bind($textColor);
-  // }
+    &.active {
+      color: #00afec;
+    }
+  }
 }
 
 .button {
@@ -130,6 +128,7 @@ export default {
   cursor: pointer;
   border: none;
   outline: none;
+  padding: 0 7px;
 }
 
 .icon {

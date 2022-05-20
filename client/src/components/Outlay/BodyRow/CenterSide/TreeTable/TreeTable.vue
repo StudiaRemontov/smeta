@@ -3,7 +3,6 @@ import { mapActions, mapGetters, mapMutations } from 'vuex'
 import TableRow from './TableRow.vue'
 import rowColors from '@/mixins/tableRowColors.mixin'
 
-import { filterNodes } from '@/store/modules/outlay.module'
 import emitter from '@/modules/eventBus'
 
 export default {
@@ -47,10 +46,9 @@ export default {
     },
     tableData() {
       if (this.showOnlyChecked) {
-        const clone = JSON.parse(JSON.stringify(this.currentRoomData))
-        return clone
-          .filter(n => filterNodes(n, this.selectedValues))
-          .filter(n => n.children.length > 0)
+        return this.currentRoomData.filter(n =>
+          this.selectedValues.includes(n.key),
+        )
       }
       return this.currentRoomData
     },
@@ -58,7 +56,11 @@ export default {
       return this.tableData
     },
     subCategories() {
-      return this.tableData.map(this.getSubCategories).flat()
+      const subCategories = this.tableData.map(this.getSubCategories).flat()
+      if (this.showOnlyChecked) {
+        return subCategories.filter(n => this.selectedValues.includes(n.key))
+      }
+      return subCategories
     },
     headerStyle() {
       const keysLength = this.tableKeys.length

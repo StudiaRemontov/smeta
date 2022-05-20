@@ -402,6 +402,9 @@ export default {
       try {
         commit('setOutlay')
         const { outlay } = state
+        if (!outlay) {
+          return
+        }
         const data = JSON.parse(JSON.stringify(outlay))
         await idb.saveOutlay(data)
         commit('outlays/updateById', { id: outlay._id, data }, { root: true })

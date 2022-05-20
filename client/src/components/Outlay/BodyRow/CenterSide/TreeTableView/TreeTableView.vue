@@ -27,6 +27,9 @@ export default {
       'selectedRoom',
     ]),
     data() {
+      if (!this.roomsData) {
+        return []
+      }
       const roomsData = Object.entries(this.roomsData)
       if (roomsData.length === 0 || this.selectedRoom) return []
       return roomsData.map(([key, values]) => {
@@ -155,6 +158,7 @@ export default {
       await this.$nextTick()
       const { wrapper } = this.$refs
       if (!wrapper) return
+      wrapper.scrollTo(0, 0)
       const rows = wrapper.querySelectorAll(
         '.table-row.parent, .table-row.room',
       )

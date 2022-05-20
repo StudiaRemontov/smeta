@@ -38,7 +38,7 @@ export default {
         <button class="button" :class="{ rotated: showChildren }">
           <TriangleIcon class="button__icon" />
         </button>
-        <span class="category-item__name">
+        <span class="category-item__name" :title="category.name">
           {{ category.name }}
         </span>
       </div>
@@ -52,7 +52,9 @@ export default {
     >
       <div v-for="job in jobs" :key="job.key" class="category-item">
         <div class="category-item__head">
-          <span class="category-item__name"> {{ job.name }} </span>
+          <span class="category-item__name" :title="job.name">
+            {{ job.name }}
+          </span>
           <span class="category-item__price">
             {{ job.sum.toLocaleString() }}</span
           >
@@ -75,12 +77,16 @@ export default {
     align-items: center;
     gap: 5px;
     cursor: pointer;
+    overflow: hidden;
   }
 
   &__name {
     font-weight: 400;
     font-size: 14px;
     line-height: 17px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
   }
 
   &__price {
