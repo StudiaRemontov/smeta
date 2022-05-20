@@ -166,19 +166,27 @@ export default {
         entries => {
           entries.forEach(e => {
             if (wrapper.scrollTop === 0) {
-              this.currentRoom = this.rooms[0]
-              this.currentCategory = this.rooms[0].jobs[0]
-              this.currentSubCategory =
-                this.subCategories[this.currentRoom.id][0]
-              emitter.$emit('hideRow', this.currentRoom.id, this.currentRoom.id)
-              if (!this.currentCategory) {
+              const room = this.rooms[0]
+              if (!room) {
                 return
               }
+              this.currentRoom = room
+              emitter.$emit('hideRow', this.currentRoom.id, this.currentRoom.id)
+              const category = this.rooms[0].jobs[0]
+              if (!category) {
+                return
+              }
+              this.currentCategory = category
               emitter.$emit(
                 'hideRow',
                 this.currentRoom.id,
                 this.currentCategory.key,
               )
+              const subCategory = this.subCategories[this.currentRoom.id][0]
+              if (!subCategory) {
+                return
+              }
+              this.currentSubCategory = subCategory
               emitter.$emit(
                 'hideRow',
                 this.currentRoom.id,

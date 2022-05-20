@@ -39,6 +39,7 @@ export default {
       'quantityKey',
       'priceKey',
       'showOnlyChecked',
+      'currentRoomData',
     ]),
     data() {
       return this.node.data
@@ -132,6 +133,15 @@ export default {
       this.unselectJob(this.node)
       this.$emit('select-node')
     },
+    getNodeFromTree(node, nodeKey, parents) {
+      const { key, children } = node
+      if (key === nodeKey) {
+        return [...parents, node]
+      }
+      return children
+        .map(c => this.getNodeFromTree(c, nodeKey, [...parents, node]))
+        .flat()
+    },
     async clone() {
       const clone = JSON.parse(JSON.stringify(this.node))
       const newNode = {
@@ -156,7 +166,10 @@ export default {
         ...children.slice(index + 1),
       ]
       this.updateNodeChildren({ node: this.parent, children: newChildren })
-      this.selectJob(newNode)
+      const parents = this.currentRoomData
+        .map(n => this.getNodeFromTree(n, newNode.key, []))
+        .flat()
+      parents.forEach(this.selectJob)
       await this.$nextTick()
       emitter.$emit('cloned', newNode.key)
     },
