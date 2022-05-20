@@ -13,7 +13,7 @@ export default class Key {
     }
     const numberTypes = [InputType.NUMBER, InputType.QUANTITY, InputType.PRICE]
     if (numberTypes.includes(type)) {
-      return 0
+      return 1
     }
 
     return null

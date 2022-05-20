@@ -76,6 +76,29 @@ const mergeTree = (node, nodes) => {
   ]
 }
 
+const setQuantity = (room, data, quantityKey, formulaKey) => {
+  const clone = JSON.parse(JSON.stringify(data))
+  const { options } = room
+  const spaces = methods.getSpaces(options.spaces)
+  const perimeter = methods.getPerimeter(options.width, options.length)
+  const calculatedProperties = {
+    [roomOptions.perimeter]: perimeter,
+    [roomOptions.floorArea]: methods.getFloorArea(
+      options.width,
+      options.length,
+    ),
+    [roomOptions.wallArea]: methods.getWallArea(
+      perimeter,
+      options.height,
+      spaces,
+    ),
+  }
+  clone.forEach(n =>
+    getQuantityByFormula(n, calculatedProperties, quantityKey, formulaKey),
+  )
+  return clone
+}
+
 export const filterNodes = (node, selectedValues) => {
   const { children } = node
   node.children = children.filter(n => selectedValues.includes(n.key))
@@ -174,23 +197,8 @@ export default {
         showOnlySelected,
       }
     },
-    updateRoom(state, payload) {
-      if (!state.outlay || !state.selectedRoom) return
-      state.outlay.rooms = state.outlay.rooms.map(r => {
-        if (r.id === state.selectedRoom.id) {
-          const data = {
-            ...r,
-            ...payload,
-          }
-          state.selectedRoom = data
-          return data
-        }
-        return r
-      })
-    },
     addJob(state, job) {
       if (!state.outlay || !state.room) return
-
       const room = state.outlay.rooms.find(r => r.id === state.room.id)
       const isExists = room.jobs.find(j => j.key === job.key)
       if (isExists) {
@@ -332,32 +340,37 @@ export default {
         jobs: [],
       }
       state.outlay.rooms.push(room)
-      const clone = JSON.parse(JSON.stringify(state.initData))
-      const spaces = methods.getSpaces(options.spaces)
-      const perimeter = methods.getPerimeter(options.width, options.length)
-      const calculatedProperties = {
-        [roomOptions.perimeter]: perimeter,
-        [roomOptions.floorArea]: methods.getFloorArea(
-          options.width,
-          options.length,
-        ),
-        [roomOptions.wallArea]: methods.getWallArea(
-          perimeter,
-          options.height,
-          spaces,
-        ),
-      }
-      clone.forEach(n =>
-        getQuantityByFormula(
-          n,
-          calculatedProperties,
-          state.quantityKey.id,
-          state.formulaKey.id,
-        ),
+      const clone = setQuantity(
+        room,
+        state.initData,
+        state.quantityKey.id,
+        state.formulaKey.id,
       )
       state.roomsData[room.id] = clone
       state.selectedValues[room.id] = []
       commit('setSelectedRoom', room)
+      return await dispatch('saveLocaly')
+    },
+    async updateRoom({ state, dispatch }, payload) {
+      if (!state.outlay || !state.selectedRoom) return
+      state.outlay.rooms = state.outlay.rooms.map(r => {
+        if (r.id === state.selectedRoom.id) {
+          const data = {
+            ...r,
+            ...payload,
+          }
+          state.selectedRoom = data
+          const clone = setQuantity(
+            data,
+            state.roomsData[state.selectedRoom.id],
+            state.quantityKey.id,
+            state.formulaKey.id,
+          )
+          state.roomsData[r.id] = clone
+          return data
+        }
+        return r
+      })
       return await dispatch('saveLocaly')
     },
     async removeRoom({ state, dispatch }, roomId) {

@@ -74,6 +74,8 @@ $padding-x: 15px;
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow: hidden;
+    font-size: 14px;
+    font-weight: 700;
 
     // &::before {
     //   content: '';

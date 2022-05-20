@@ -16,7 +16,7 @@ export default {
     },
     active: Boolean,
   },
-  emits: ['edit', 'remove'],
+  emits: ['edit', 'remove', 'open-menu'],
   data() {
     return {
       items: [
@@ -56,7 +56,7 @@ export default {
   methods: {
     ...mapMutations('outlay', ['setSelectedRoom', 'setShowOnlyChecked']),
     openContext(e) {
-      this.$refs.menu.show(e)
+      this.$emit('open-menu', e, this.room)
     },
   },
 }
@@ -70,7 +70,10 @@ export default {
     </div>
     <div class="room-item__actions" @click.stop>
       <button class="button" @click="viewMode = !viewMode">
-        <ViewListIcon class="icon" :class="{ active: showOnlyChecked }" />
+        <ViewListIcon
+          class="icon"
+          :class="{ active: active && showOnlyChecked }"
+        />
       </button>
       <button class="button room-item__button" @click.stop="openContext">
         <i class="pi pi-ellipsis-h icon"></i>

@@ -1,12 +1,36 @@
 <script>
 import RoomItem from './RoomItem.vue'
 import RoomModal from './Modals/RoomModal.vue'
+import Menu from 'primevue/menu'
 
 import { mapActions, mapGetters, mapMutations } from 'vuex'
 
 export default {
-  components: { RoomItem, RoomModal },
+  components: { RoomItem, RoomModal, Menu },
   emits: ['open-edit'],
+  data() {
+    return {
+      itemToRemove: null,
+      itemToUpdate: null,
+      items: [
+        {
+          label: 'Редактировать',
+          icon: 'pi pi-pencil',
+          command: () => {
+            this.setSelectedRoom(this.itemToUpdate)
+            this.openEditModal()
+          },
+        },
+        {
+          label: 'Удалить',
+          icon: 'pi pi-trash',
+          command: () => {
+            this.remove(this.itemToRemove)
+          },
+        },
+      ],
+    }
+  },
   computed: {
     ...mapGetters('outlay', ['outlay', 'selectedRoom', 'rooms']),
     roomList() {
@@ -17,8 +41,13 @@ export default {
     },
   },
   methods: {
-    ...mapMutations('outlay', ['updateRoom']),
-    ...mapActions('outlay', ['removeRoom']),
+    ...mapMutations('outlay', ['setSelectedRoom']),
+    ...mapActions('outlay', ['removeRoom', 'updateRoom']),
+    openMenu(e, room) {
+      this.itemToRemove = room.id
+      this.itemToUpdate = room
+      this.$refs.menu.toggle(e)
+    },
     async remove(id) {
       try {
         await this.removeRoom(id)
@@ -43,6 +72,7 @@ export default {
 </script>
 
 <template>
+  <Menu ref="menu" :model="items" :popup="true" />
   <RoomModal ref="edit-modal" />
   <div class="room-list">
     <RoomItem
@@ -52,6 +82,7 @@ export default {
       :active="activeRoomId === room.id"
       @edit="openEditModal"
       @remove="removeRoom"
+      @open-menu="openMenu"
     />
   </div>
 </template>

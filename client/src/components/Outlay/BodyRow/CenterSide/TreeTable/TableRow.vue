@@ -111,10 +111,13 @@ export default {
       'unselectJob',
       'updateNodeChildren',
     ]),
-    select() {
+    rowClickHandler() {
       if (this.isCloneEditing) {
         return
       }
+      this.select()
+    },
+    select() {
       if (!this.selected) {
         this.selectJob(this.node)
         return this.$emit('select-node')
@@ -195,7 +198,7 @@ export default {
     v-bind="rowAttrs"
     :class="{ parent: isCategory, selected, striped }"
     :style="[rowStyle, $attrs.style]"
-    @click="select"
+    @click="rowClickHandler"
   >
     <StretchedRow v-if="isCategory" :data="data" :level="level" />
     <template v-else-if="!isClone">
