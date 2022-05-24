@@ -23,6 +23,7 @@ export default {
       type: Boolean,
       default: false,
     },
+    index: Number,
   },
   computed: {
     ...mapGetters('outlay', ['priceKey', 'quantityKey']),
@@ -53,6 +54,7 @@ export default {
     class="table-cell"
     :class="{ danger: !isValidQuantity && isClone && selected }"
     :title="viewValue"
+    :data-cellIndex="index"
   >
     {{ viewValue }}
   </div>

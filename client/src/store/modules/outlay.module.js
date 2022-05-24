@@ -4,7 +4,6 @@ import idb from '../local/idb'
 
 import roomParametersMixin from '../../mixins/roomParameters.mixin'
 
-import { roomOptions } from '../../enum/roomOptions'
 import { InputType } from '../../enum/InputType'
 
 const { methods } = roomParametersMixin
@@ -79,23 +78,8 @@ const mergeTree = (node, nodes) => {
 const setQuantity = (room, data, quantityKey, formulaKey) => {
   const clone = JSON.parse(JSON.stringify(data))
   const { options } = room
-  const spaces = methods.getSpaces(options.spaces)
-  const perimeter = methods.getPerimeter(options.width, options.length)
-  const calculatedProperties = {
-    [roomOptions.perimeter]: perimeter,
-    [roomOptions.floorArea]: methods.getFloorArea(
-      options.width,
-      options.length,
-    ),
-    [roomOptions.wallArea]: methods.getWallArea(
-      perimeter,
-      options.height,
-      spaces,
-    ),
-  }
-  clone.forEach(n =>
-    getQuantityByFormula(n, calculatedProperties, quantityKey, formulaKey),
-  )
+  const { computed } = methods.calculateAllParameters(options)
+  clone.forEach(n => getQuantityByFormula(n, computed, quantityKey, formulaKey))
   return clone
 }
 
@@ -155,6 +139,7 @@ export default {
       Object.assign(state.outlay, newData)
     },
     setSale(state, payload) {
+      if (!state.outlay) return
       const value = parseInt(payload)
       if (isNaN(value) || value < 0) {
         return (state.outlay.sale = 0)
@@ -166,6 +151,7 @@ export default {
     },
     setSelectedRoom(state, payload) {
       state.selectedRoom = payload
+      state.showOnlyChecked = false
     },
     setShowOnlyChecked(state, payload) {
       state.showOnlyChecked = payload
@@ -297,24 +283,11 @@ export default {
         const nodes = room.jobs.map(treeToList).flat()
         const clone = JSON.parse(JSON.stringify(initData))
         const { options } = room
-        const spaces = methods.getSpaces(options.spaces)
-        const perimeter = methods.getPerimeter(options.width, options.length)
-        const calculatedProperties = {
-          [roomOptions.perimeter]: perimeter,
-          [roomOptions.floorArea]: methods.getFloorArea(
-            options.width,
-            options.length,
-          ),
-          [roomOptions.wallArea]: methods.getWallArea(
-            perimeter,
-            options.height,
-            spaces,
-          ),
-        }
+        const { computed } = methods.calculateAllParameters(options)
         clone.forEach(n =>
           getQuantityByFormula(
             n,
-            calculatedProperties,
+            computed,
             state.quantityKey.id,
             state.formulaKey.id,
           ),
@@ -348,6 +321,40 @@ export default {
       )
       state.roomsData[room.id] = clone
       state.selectedValues[room.id] = []
+      commit('setSelectedRoom', room)
+      return await dispatch('saveLocaly')
+    },
+    async cloneRoom(
+      { getters, state, dispatch, commit },
+      { name, options, cloningRoomId },
+    ) {
+      const cloningRoomData = getters.rooms.find(r => r.id === cloningRoomId)
+      const clone = JSON.parse(JSON.stringify(cloningRoomData))
+      const { jobs } = clone
+      const room = {
+        id: Date.now() + '',
+        name,
+        options,
+        jobs,
+      }
+      const { selectedValues, roomsData, outlay, quantityKey, formulaKey } =
+        state
+      outlay.rooms.push(room)
+      const clonedRoomsData = JSON.parse(
+        JSON.stringify(roomsData[cloningRoomId]),
+      )
+      const clonedValues = JSON.parse(
+        JSON.stringify(selectedValues[cloningRoomId]),
+      )
+
+      const cloneData = setQuantity(
+        room,
+        clonedRoomsData,
+        quantityKey.id,
+        formulaKey.id,
+      )
+      state.roomsData[room.id] = cloneData
+      state.selectedValues[room.id] = clonedValues
       commit('setSelectedRoom', room)
       return await dispatch('saveLocaly')
     },

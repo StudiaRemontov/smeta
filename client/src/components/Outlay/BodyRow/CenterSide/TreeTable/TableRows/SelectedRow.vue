@@ -50,13 +50,13 @@ export default {
 </script>
 
 <template>
-  <template v-for="key in keysWithType" :key="key.id">
+  <template v-for="(key, index) in keysWithType" :key="key.id">
     <PriceCell v-if="key.type === InputType.PRICE" v-model="data[key.id]" />
     <QuantityCell
       v-else-if="key.type === InputType.QUANTITY"
       v-model="data[key.id]"
     />
-    <ViewCell v-else :value="data[key.id]" :keyData="key" />
+    <ViewCell v-else :value="data[key.id]" :index="index" :keyData="key" />
   </template>
   <ViewCell :value="sum" :isSum="true" />
   <DefaultActions @clone="$emit('clone')" />

@@ -4,6 +4,8 @@ import ContextMenu from 'primevue/contextmenu'
 
 import { mapGetters, mapMutations } from 'vuex'
 
+import emitter from '@/modules/eventBus'
+
 export default {
   components: {
     ViewListIcon,
@@ -39,7 +41,7 @@ export default {
     }
   },
   computed: {
-    ...mapGetters('outlay', ['showOnlyChecked']),
+    ...mapGetters('outlay', ['showOnlyChecked', 'quantityKey']),
     textColor() {
       return this.active ? '#545454' : '#c8c8c8'
     },
@@ -48,8 +50,7 @@ export default {
         return this.showOnlyChecked && this.active
       },
       set(value) {
-        this.setSelectedRoom(this.room)
-        this.setShowOnlyChecked(value)
+        this.setViewMode(value)
       },
     },
   },
@@ -57,6 +58,35 @@ export default {
     ...mapMutations('outlay', ['setSelectedRoom', 'setShowOnlyChecked']),
     openContext(e) {
       this.$emit('open-menu', e, this.room)
+    },
+    isObjectId(id) {
+      return /^[0-9a-fA-F]{24}$/.test(id)
+    },
+    getInvalidJobs() {
+      const nodes = this.room.jobs.map(this.treeToListOnlyValues).flat()
+      return nodes.filter(n => n.data[this.quantityKey.id] === 0)
+    },
+    treeToListOnlyValues(node) {
+      const { children, key } = node
+      const childs = children.map(this.treeToListOnlyValues).flat()
+
+      if (this.isObjectId(key)) {
+        return childs
+      }
+
+      return [node]
+    },
+    async setViewMode(value) {
+      this.setSelectedRoom(this.room)
+      if (value) {
+        await this.$nextTick()
+        const invalidNodes = this.getInvalidJobs()
+        if (invalidNodes.length > 0) {
+          const invalidNode = invalidNodes[0]
+          return emitter.$emit('scrollTo', invalidNode.key)
+        }
+      }
+      this.setShowOnlyChecked(value)
     },
   },
 }

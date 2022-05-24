@@ -18,7 +18,7 @@ export default {
         const room = this.categories.find(r => r.id === this.selectedRoom.id)
         return room.jobs
       }
-      return this.categories
+      return [...this.categories].reverse()
     },
   },
 }

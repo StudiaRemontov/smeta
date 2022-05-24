@@ -12,7 +12,7 @@ export default {
     ...mapGetters('outlay', {
       selected: 'outlay',
     }),
-    isActive() {
+    isSelected() {
       return this.selected?._id === this.outlay._id
     },
     date() {
@@ -32,9 +32,16 @@ export default {
 </script>
 
 <template>
-  <div class="outlay-item" :class="{ active: isActive }" @click="selectOutlay">
-    <div class="outlay-item__date">от {{ date }}</div>
-    <span class="outlay-item__name"> {{ outlay.name }}</span>
+  <div
+    class="outlay-item"
+    :class="{ selected: isSelected, active: outlay.active }"
+    @click="selectOutlay"
+  >
+    <div v-if="outlay.active" class="outlay-item__dot"></div>
+    <div class="outlay-item__text">
+      <div class="outlay-item__date">от {{ date }}</div>
+      <span class="outlay-item__name"> {{ outlay.name }}</span>
+    </div>
     <button class="button" @click.stop="openMenu">
       <i class="pi pi-ellipsis-h icon"></i>
     </button>
@@ -43,7 +50,6 @@ export default {
 
 <style lang="scss" scoped>
 $dot-size: 7px;
-$padding-x: 15px;
 
 .outlay-item {
   position: relative;
@@ -58,15 +64,29 @@ $padding-x: 15px;
   min-width: 130px;
   max-width: 130px;
   height: 40px;
-  padding: 7px $padding-x;
+  padding: 7px 15px;
+  padding-left: 7px;
 
-  &.active {
+  &.selected {
     color: #28c430;
     border: 1px #28c430 solid;
   }
 
-  &.active .icon {
+  &.selected .icon {
     color: #28c430;
+  }
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  &__dot {
+    width: $dot-size;
+    height: $dot-size;
+    background-color: #28c430;
+    border-radius: 50%;
   }
 
   &__name {
@@ -76,22 +96,9 @@ $padding-x: 15px;
     overflow: hidden;
     font-size: 14px;
     font-weight: 700;
-
-    // &::before {
-    //   content: '';
-    //   position: absolute;
-    //   width: $dot-size;
-    //   height: $dot-size;
-    //   background-color: #28c430;
-    //   border-radius: 50%;
-    //   left: -$dot-size;
-    //   transform: translate(-50%, 50%);
-    // }
   }
 
   &__date {
-    position: absolute;
-    transform: translateY(-100%);
     font-size: 11px;
   }
 }

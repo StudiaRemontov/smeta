@@ -7,25 +7,31 @@ import { mapActions, mapGetters, mapMutations } from 'vuex'
 
 export default {
   components: { RoomItem, RoomModal, Menu },
-  emits: ['open-edit'],
+  emits: ['open-edit', 'clone'],
   data() {
     return {
-      itemToRemove: null,
-      itemToUpdate: null,
+      selectedItem: null,
       items: [
         {
           label: 'Редактировать',
           icon: 'pi pi-pencil',
           command: () => {
-            this.setSelectedRoom(this.itemToUpdate)
+            this.setSelectedRoom(this.selectedItem)
             this.openEditModal()
+          },
+        },
+        {
+          label: 'Клонировать',
+          icon: 'pi pi-clone',
+          command: () => {
+            this.$emit('clone', this.selectedItem.id)
           },
         },
         {
           label: 'Удалить',
           icon: 'pi pi-trash',
           command: () => {
-            this.remove(this.itemToRemove)
+            this.remove(this.selectedItem.id)
           },
         },
       ],
@@ -44,8 +50,7 @@ export default {
     ...mapMutations('outlay', ['setSelectedRoom']),
     ...mapActions('outlay', ['removeRoom', 'updateRoom']),
     openMenu(e, room) {
-      this.itemToRemove = room.id
-      this.itemToUpdate = room
+      this.selectedItem = room
       this.$refs.menu.toggle(e)
     },
     async remove(id) {
@@ -57,7 +62,7 @@ export default {
     },
     async openEditModal() {
       const response = await this.$refs['edit-modal'].show({
-        title: 'Редактировать комнату',
+        title: 'Редактировать помещение',
         okButton: 'Сохранить',
         cancelButton: 'Отмена',
         edit: true,

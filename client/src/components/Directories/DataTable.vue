@@ -118,6 +118,7 @@ export default {
         cancelButton: 'Отмена',
         key: keyToEdit,
       })
+      if (!response) return
       try {
         if (response.remove) {
           return await this.removeKey(id)

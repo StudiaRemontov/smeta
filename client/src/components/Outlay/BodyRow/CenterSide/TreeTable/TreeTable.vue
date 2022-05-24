@@ -92,6 +92,9 @@ export default {
   },
   async mounted() {
     this.initObserver()
+    emitter.$on('scrollTo', key => {
+      this.scrollTo(key)
+    })
   },
   methods: {
     ...mapMutations('outlay', ['selectJob']),
@@ -206,6 +209,9 @@ export default {
         top: row.offsetTop,
         behavior: 'smooth',
       })
+    },
+    scrollToAndSelect(nodeKey) {
+      this.scrollTo(nodeKey)
       this.selectNode(nodeKey)
     },
     selectNode(nodeKey) {

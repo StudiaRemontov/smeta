@@ -118,12 +118,13 @@ export default {
 <template>
   <template v-if="!isEditing">
     <ViewCell
-      v-for="key in keys"
+      v-for="(key, index) in keys"
       :key="key.id"
       :keyData="key"
       :value="data[key.id]"
       :isClone="true"
       :selected="selected"
+      :index="index"
     />
   </template>
   <td

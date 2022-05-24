@@ -23,7 +23,7 @@ export default {
     mainTabs() {
       return [
         {
-          text: 'Все комнаты',
+          text: 'Все помещения',
           handler: () => {
             this.setSelectedRoom(null)
           },
@@ -43,10 +43,10 @@ export default {
   },
   methods: {
     ...mapMutations('outlay', ['setSelectedRoom']),
-    ...mapActions('outlay', ['createRoom']),
+    ...mapActions('outlay', ['createRoom', 'cloneRoom']),
     async openCreateModal() {
       const response = await this.$refs['room-modal'].show({
-        title: 'Создать комнату',
+        title: 'Создать помещение',
         okButton: 'Создать',
         cancelButton: 'Отмена',
       })
@@ -54,6 +54,21 @@ export default {
         return
       }
       this.createRoom(response)
+    },
+    async clone(cloningRoomId) {
+      const response = await this.$refs['room-modal'].show({
+        title: 'Клонировать помещение',
+        okButton: 'Создать',
+        cancelButton: 'Отмена',
+      })
+      if (!response) {
+        return
+      }
+      try {
+        await this.cloneRoom({ ...response, cloningRoomId })
+      } catch (error) {
+        console.log(error)
+      }
     },
   },
 }
@@ -81,7 +96,7 @@ export default {
         <CirclePlusIcon />
         Помещение
       </button>
-      <RoomList />
+      <RoomList @clone="clone" />
     </div>
   </div>
 </template>

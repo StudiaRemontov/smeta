@@ -164,7 +164,7 @@ export default {
       if (!this.selectedRoom) {
         return table.scrollTo(room, key)
       }
-      table.scrollTo(key)
+      table.scrollToAndSelect(key)
     },
     autoCompleteClickHanler() {
       this.selectedJob = null

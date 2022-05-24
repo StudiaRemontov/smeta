@@ -3,8 +3,7 @@ import PopupModal from '@/components/UI/PopupModal.vue'
 import InputNumber from 'primevue/inputnumber'
 import InputText from 'primevue/inputtext'
 
-import mathExp from 'math-expression-evaluator'
-
+import roomParameters from '@/mixins/roomParameters.mixin'
 import { mapGetters } from 'vuex'
 
 const getInitState = () => ({
@@ -13,8 +12,12 @@ const getInitState = () => ({
   cancelButton: undefined,
   resolvePromise: undefined,
   rejectPromise: undefined,
-  formData: {
-    name: '',
+  name: '',
+  length: null,
+  width: null,
+  height: null,
+  spaces: null,
+  formDataBefore: {
     width: null,
     height: null,
     length: null,
@@ -24,41 +27,61 @@ const getInitState = () => ({
 
 export default {
   components: { PopupModal, InputText, InputNumber },
+  mixins: [roomParameters],
   data() {
     return getInitState()
   },
   computed: {
     ...mapGetters('outlay', ['selectedRoom']),
+    calculatedWidth() {
+      return this.calculate(this.width)
+    },
+    calculatedLength() {
+      return this.calculate(this.length)
+    },
+    calculatedHeight() {
+      return this.calculate(this.height)
+    },
+    calculatedSpaces() {
+      return this.calculate(this.spaces)
+    },
     perimeter() {
-      if (!this.formData.width || !this.formData.length) return 0
-      return (this.formData.width + this.formData.length) * 2
+      if (!this.calculatedWidth || !this.calculatedLength) return 0
+      return this.getPerimeter(this.calculatedWidth, this.calculatedLength)
     },
     floorArea() {
-      if (!this.formData.width || !this.formData.length) return 0
-      return this.formData.width * this.formData.length
-    },
-    spacesResult() {
-      if (!this.formData.spaces) return 0
-      try {
-        return mathExp.eval(this.formData.spaces)
-      } catch (error) {
-        return 0
-      }
+      if (!this.calculatedWidth || !this.calculatedLength) return 0
+      return this.getFloorArea(this.calculatedWidth, this.calculatedLength)
     },
     wallArea() {
-      if (!this.perimeter || !this.formData.height) return 0
-      return this.perimeter * this.formData.height - this.spacesResult
+      if (!this.perimeter || !this.calculatedHeight) return 0
+      return this.getWallArea(
+        this.perimeter,
+        this.calculatedHeight,
+        this.calculatedSpaces,
+      )
     },
     isCorrectFields() {
-      return Object.entries(this.formData).every(([key, value]) => {
-        if (key === 'spaces') {
-          return true
-        }
-        if (!value) {
-          return false
-        }
-        return true
-      })
+      if (!this.name) {
+        return false
+      }
+
+      return (
+        this.isCorrectField(this.calculatedWidth) &&
+        this.isCorrectField(this.calculatedLength) &&
+        this.isCorrectField(this.calculatedHeight)
+      )
+    },
+  },
+  watch: {
+    length(_, old) {
+      this.formDataBefore.length = old
+    },
+    height(_, old) {
+      this.formDataBefore.height = old
+    },
+    width(_, old) {
+      this.formDataBefore.width = old
     },
   },
   methods: {
@@ -67,11 +90,11 @@ export default {
       this.okButton = options.okButton
       this.cancelButton = options.cancelButton
       if (options.edit) {
-        this.formData.name = this.selectedRoom.name
-        this.formData.width = this.selectedRoom.options.width
-        this.formData.height = this.selectedRoom.options.height
-        this.formData.length = this.selectedRoom.options.length
-        this.formData.spaces = this.selectedRoom.options.spaces
+        this.name = this.selectedRoom.name
+        this.width = this.selectedRoom.options.width
+        this.height = this.selectedRoom.options.height
+        this.length = this.selectedRoom.options.length
+        this.spaces = this.selectedRoom.options.spaces
       }
       this.$refs.popup.open()
 
@@ -89,12 +112,12 @@ export default {
       this.$refs.popup.close()
 
       const data = {
-        name: this.formData.name,
+        name: this.name,
         options: {
-          width: this.formData.width || 0,
-          height: this.formData.height || 0,
-          length: this.formData.length || 0,
-          spaces: this.formData.spaces || 0,
+          width: this.width || 0,
+          height: this.height || 0,
+          length: this.length || 0,
+          spaces: this.spaces || 0,
         },
       }
       this.resolvePromise(data)
@@ -116,6 +139,32 @@ export default {
     reset() {
       Object.assign(this.$data, getInitState())
     },
+
+    inputHandler(e, key) {
+      const regex = /^[0-9+-/*.,]*$/
+      const isValid = regex.test(this[key])
+      if (!isValid) {
+        return (this[key] = this.formDataBefore[key])
+      }
+      const { data } = e
+      if (data === ',') {
+        this[key] = this[key].replace(',', '.')
+      }
+      const numberRegex = /[-]?\d+(\.\d+)?/g
+      const matches = this[key].match(numberRegex)
+      if (!matches) {
+        return
+      }
+      matches.forEach(n => {
+        const num = +n
+        if (num > 0) {
+          this[key] = this[key].replace(n, num)
+        }
+      })
+    },
+    isCorrectField(field) {
+      return !isNaN(field) && field > 0
+    },
   },
 }
 </script>
@@ -127,29 +176,45 @@ export default {
       <form class="form" @submit.prevent="_confirm">
         <div class="form__group">
           <label class="form__label">Название</label>
-          <InputText
-            v-model="formData.name"
-            placeholder="Название"
-            ref="input"
-          />
+          <InputText v-model="name" placeholder="Название" ref="input" />
         </div>
-        <span>Параметры комнаты</span>
+        <span>Параметры помещения</span>
         <div class="form__grid">
           <div class="form__group">
             <label class="form__label">Длина</label>
-            <InputNumber v-model="formData.length" placeholder="Длина" />
+            <input
+              v-model="length"
+              class="input"
+              type="text"
+              @input="inputHandler($event, 'length')"
+            />
           </div>
           <div class="form__group">
             <label class="form__label">Ширина</label>
-            <InputNumber v-model="formData.width" placeholder="Ширина" />
+            <input
+              v-model="width"
+              class="input"
+              type="text"
+              @input="inputHandler($event, 'width')"
+            />
           </div>
           <div class="form__group">
             <label class="form__label">Высота</label>
-            <InputNumber v-model="formData.height" placeholder="Высота" />
+            <input
+              v-model="height"
+              class="input"
+              type="text"
+              @input="inputHandler($event, 'height')"
+            />
           </div>
           <div class="form__group">
             <label class="form__label">Проемы</label>
-            <InputText v-model="formData.spaces" placeholder="Проемы" />
+            <input
+              v-model="spaces"
+              class="input"
+              type="text"
+              @input="inputHandler($event, 'spaces')"
+            />
           </div>
         </div>
         <span>Вычисляемые свойства</span>

@@ -35,6 +35,11 @@ export default {
         return o
       })
     },
+    async updateField(state, { id, key, value }) {
+      const outlay = state.outlays.find(o => o._id === id)
+      outlay[key] = value
+      await idb.saveOutlay(outlay)
+    },
     removeById(state, id) {
       state.outlays = state.outlays.filter(o => o._id !== id)
     },
@@ -80,6 +85,18 @@ export default {
         }
         commit('removeById', id)
         await idb.removeOutlay(id)
+        return response
+      } catch (error) {
+        return Promise.reject(error)
+      }
+    },
+    async setActive({ commit }, id) {
+      try {
+        const response = await axios.patch(`/outlay/${id}/active`)
+        const { updated } = response.data
+        updated.forEach(o =>
+          commit('updateField', { id: o._id, key: 'active', value: o.active }),
+        )
         return response
       } catch (error) {
         return Promise.reject(error)

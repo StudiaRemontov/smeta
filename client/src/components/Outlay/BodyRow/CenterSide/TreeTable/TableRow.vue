@@ -111,7 +111,13 @@ export default {
       'unselectJob',
       'updateNodeChildren',
     ]),
-    rowClickHandler() {
+    rowClickHandler(e) {
+      const { target } = e
+      const { cellindex } = target.dataset
+      const index = parseInt(cellindex)
+      if (index > 0 || isNaN(index)) {
+        return
+      }
       if (this.isCloneEditing) {
         return
       }

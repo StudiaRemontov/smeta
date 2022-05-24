@@ -26,13 +26,18 @@ export default {
       'roomsData',
       'selectedRoom',
     ]),
+    roomsList() {
+      return [...this.rooms].reverse()
+    },
     data() {
       if (!this.roomsData) {
         return []
       }
+
       const roomsData = Object.entries(this.roomsData)
-      if (roomsData.length === 0 || this.selectedRoom) return []
-      return roomsData.map(([key, values]) => {
+      const reversed = [...roomsData].reverse()
+      if (reversed.length === 0 || this.selectedRoom) return []
+      return reversed.map(([key, values]) => {
         const foundRoom = this.rooms.find(r => r.id === key)
         const clone = JSON.parse(JSON.stringify(values))
         const children = clone.map(node =>
@@ -84,12 +89,12 @@ export default {
       return []
     },
     setCurrentRoom(e, id) {
-      const roomIndex = this.rooms.findIndex(r => r.id === id)
+      const roomIndex = this.roomsList.findIndex(r => r.id === id)
       if (e.isIntersecting) {
         if (roomIndex === 0) {
           return
         }
-        this.currentRoom = this.rooms[roomIndex - 1]
+        this.currentRoom = this.roomsList[roomIndex - 1]
         const roomId = this.currentRoom.id
         const lastCategoryIndex = this.currentRoom.jobs.length - 1
         this.currentCategory = this.currentRoom.jobs[lastCategoryIndex]
@@ -98,7 +103,7 @@ export default {
           this.subCategories[roomId][lastSubCategoryIndex]
         return
       }
-      this.currentRoom = this.rooms[roomIndex]
+      this.currentRoom = this.roomsList[roomIndex]
       return
     },
     setCurrentCategory(e, id) {
@@ -106,7 +111,7 @@ export default {
       const categoryIndex = jobs.findIndex(node => node.key === id)
       if (e.isIntersecting) {
         if (categoryIndex === 0) {
-          const roomIndex = this.rooms.findIndex(
+          const roomIndex = this.roomsList.findIndex(
             r => r.id === this.currentRoom.id,
           )
           if (roomIndex > 0) {
@@ -166,13 +171,13 @@ export default {
         entries => {
           entries.forEach(e => {
             if (wrapper.scrollTop === 0) {
-              const room = this.rooms[0]
+              const room = this.roomsList[0]
               if (!room) {
                 return
               }
               this.currentRoom = room
               emitter.$emit('hideRow', this.currentRoom.id, this.currentRoom.id)
-              const category = this.rooms[0].jobs[0]
+              const category = this.roomsList[0].jobs[0]
               if (!category) {
                 return
               }

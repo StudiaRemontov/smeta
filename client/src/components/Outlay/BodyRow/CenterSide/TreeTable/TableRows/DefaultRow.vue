@@ -26,10 +26,11 @@ export default {
 
 <template>
   <ViewCell
-    v-for="key in keys"
+    v-for="(key, index) in keys"
     :key="key.id"
     :keyData="key"
     :value="node.data[key.id]"
+    :index="index"
   />
   <ViewCell :isSum="true" :value="sum" />
   <DefaultActions @clone="$emit('clone')" />

@@ -11,37 +11,57 @@ export default {
   },
   data() {
     return {
-      items: [
+      selectedItem: null,
+    }
+  },
+  computed: {
+    ...mapGetters('outlays', ['outlays']),
+    selectedOutlay() {
+      return this.outlays.find(o => o._id === this.selectedItem)
+    },
+    items() {
+      return [
+        {
+          label: 'Сделать активной',
+          command: async () => {
+            try {
+              await this.setActive(this.selectedItem)
+            } catch (error) {
+              console.log(error)
+            }
+          },
+          disabled: this.selectedOutlay?.active,
+        },
         {
           label: 'Клонировать',
-          command: () => {},
+          command: () => {
+            console.log('1')
+          },
+          disabled: false,
         },
         {
           label: 'Удалить',
           command: async () => {
             try {
-              await this.remove(this.itemToRemove)
+              await this.remove(this.selectedItem)
             } catch (error) {
               console.log(error)
             } finally {
-              this.itemToRemove = null
+              this.selectedItem = null
             }
           },
+          disabled: false,
         },
-      ],
-      itemToRemove: null,
-    }
-  },
-  computed: {
-    ...mapGetters('outlays', ['outlays']),
+      ]
+    },
     outlayList() {
       return [...this.outlays].reverse()
     },
   },
   methods: {
-    ...mapActions('outlays', ['create', 'remove']),
+    ...mapActions('outlays', ['create', 'remove', 'setActive']),
     openMenu(e, id) {
-      this.itemToRemove = id
+      this.selectedItem = id
       this.$refs.menu.toggle(e)
     },
   },
