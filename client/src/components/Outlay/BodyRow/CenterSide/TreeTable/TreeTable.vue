@@ -17,6 +17,12 @@ export default {
       timeout: null,
       currentCategory: null,
       currentSubCategory: null,
+      currentNodeIndex: 0,
+      focused: true,
+      vcoConfig: {
+        handler: this.outsideClickHandler,
+        events: ['click'],
+      },
     }
   },
   computed: {
@@ -30,10 +36,11 @@ export default {
       'priceKey',
       'roomsData',
       'rooms',
+      'currentNode',
+      'quantityKey',
     ]),
     tableKeys() {
       if (!this.keys) return []
-
       return this.keys.map((k, index) => {
         if (index === 0 && this.currentCategory) {
           return {
@@ -51,6 +58,13 @@ export default {
         )
       }
       return this.currentRoomData
+    },
+    nodes() {
+      const nodes = this.tableData.map(this.treeToListOnlyValues).flat()
+      if (!this.showOnlyChecked) {
+        return nodes
+      }
+      return nodes.filter(n => this.selectedValues.includes(n.key))
     },
     categories() {
       return this.tableData
@@ -72,6 +86,9 @@ export default {
   watch: {
     selectedRoom() {
       this.initObserver()
+      this.currentNodeIndex = 0
+      const currentNode = this.nodes[this.currentNodeIndex]
+      this.setCurrentNode(currentNode)
     },
     showOnlyChecked() {
       this.initObserver()
@@ -92,14 +109,40 @@ export default {
   },
   async mounted() {
     this.initObserver()
+    this.setCurrentNode(this.nodes[this.currentNodeIndex])
     emitter.$on('scrollTo', key => {
       this.scrollTo(key)
+      this.setCurrentNodeByKey(key)
     })
+    emitter.$on('selectNode', this.setCurrentNodeByKey)
+    document.addEventListener('keydown', this.keyHandler)
+  },
+  unmounted() {
+    emitter.$off('scrollTo')
+    emitter.$off('hideRow')
+    emitter.$off('selectNode')
+    document.removeEventListener('keydown', this.keyHandler)
   },
   methods: {
-    ...mapMutations('outlay', ['selectJob']),
+    ...mapMutations('outlay', ['selectJob', 'setCurrentNode']),
     ...mapMutations('outlays', ['updateById']),
     ...mapActions('outlay', ['saveLocaly']),
+    outsideClickHandler() {
+      this.focused = false
+    },
+    isObjectId(id) {
+      return /^[0-9a-fA-F]{24}$/.test(id)
+    },
+    treeToListOnlyValues(node) {
+      const { children, key } = node
+      const childs = children.map(this.treeToListOnlyValues).flat()
+
+      if (this.isObjectId(key)) {
+        return childs
+      }
+
+      return [node]
+    },
     getSubCategories(node) {
       const { children } = node
       if (children && children.length > 0) {
@@ -138,6 +181,7 @@ export default {
       if (!wrapper) {
         return
       }
+      wrapper.scrollTo({ top: 0 })
       const parents = wrapper.querySelectorAll('.parent')
       const observer = new IntersectionObserver(
         entries => {
@@ -196,18 +240,19 @@ export default {
         .map(c => this.getNodeFromTree(c, nodeKey, [...parents, node]))
         .flat()
     },
-    scrollTo(nodeKey) {
-      const { wrapper } = this.$refs
+    scrollTo(nodeKey, smooth = true) {
       if (this.showOnlyChecked) {
         return this.selectNode(nodeKey)
       }
+      const { wrapper } = this.$refs
+      if (!wrapper) return
       const row = wrapper.querySelector(`.table-row[data-id="${nodeKey}"]`)
       if (!row) {
         return
       }
       wrapper.scrollTo({
         top: row.offsetTop,
-        behavior: 'smooth',
+        behavior: smooth ? 'smooth' : 'instant',
       })
     },
     scrollToAndSelect(nodeKey) {
@@ -219,6 +264,57 @@ export default {
         .map(n => this.getNodeFromTree(n, nodeKey, []))
         .flat()
       parents.forEach(this.selectJob)
+    },
+    setCurrentNodeByKey(key) {
+      const index = this.nodes.findIndex(n => n.key === key)
+      if (index < 0) return
+      this.currentNodeIndex = index
+      this.setCurrentNode(this.nodes[index])
+    },
+    keyHandler(e) {
+      if (!this.focused) return
+      const { key } = e
+      const avaliableKeys = ['ArrowUp', 'ArrowDown']
+      if (!this.currentNode) return
+
+      if (key === 'ArrowRight') {
+        return emitter.$emit('editQuantity', this.currentNode.key)
+      }
+      if (key === 'ArrowLeft' || key === 'Enter') {
+        return emitter.$emit('stopEditQuantity', this.currentNode.key)
+      }
+      if (!avaliableKeys.includes(key)) {
+        return
+      }
+      if (key === avaliableKeys[0]) {
+        if (this.currentNodeIndex <= 0) {
+          return (this.currentNodeIndex = 0)
+        }
+        this.currentNodeIndex--
+      }
+      if (key === avaliableKeys[1]) {
+        if (this.currentNodeIndex >= this.nodes.length - 1) {
+          return (this.currentNodeIndex = this.nodes.length - 1)
+        }
+        this.currentNodeIndex++
+      }
+      const { wrapper } = this.$refs
+      const { height } = wrapper.getBoundingClientRect()
+      const currentNode = this.nodes[this.currentNodeIndex]
+      const domNode = wrapper.querySelector(
+        `.table-row[data-id="${currentNode.key}"]`,
+      )
+      const { offsetTop, clientHeight } = domNode
+      if (offsetTop + clientHeight - wrapper.scrollTop >= height) {
+        const top = offsetTop - height + clientHeight
+        wrapper.scrollTo({
+          top,
+        })
+      }
+      if (offsetTop + clientHeight - wrapper.scrollTop < clientHeight) {
+        this.scrollTo(currentNode.key, false)
+      }
+      this.setCurrentNode(currentNode)
     },
   },
 }

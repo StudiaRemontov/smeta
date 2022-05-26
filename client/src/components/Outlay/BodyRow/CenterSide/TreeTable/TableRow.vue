@@ -40,6 +40,7 @@ export default {
       'priceKey',
       'showOnlyChecked',
       'currentRoomData',
+      'currentNode',
     ]),
     data() {
       return this.node.data
@@ -85,11 +86,34 @@ export default {
     selected() {
       return this.selectedValues.includes(this.node.key)
     },
+    current() {
+      return this.currentNode?.key === this.node.key
+    },
   },
   mounted() {
     emitter.$on('hideRow', key => {
       if (key === this.node.key) {
         this.rowIsVisible = false
+      }
+    })
+    emitter.$on('editQuantity', key => {
+      const { selectedRow } = this.$refs
+      if (this.node.key === key) {
+        if (this.isClone) {
+          return (this.isCloneEditing = true)
+        }
+        if (!selectedRow) return
+        selectedRow.setQuantityVisability(true)
+      }
+    })
+    emitter.$on('stopEditQuantity', key => {
+      const { selectedRow } = this.$refs
+      if (this.node.key === key) {
+        if (this.isClone) {
+          return (this.isCloneEditing = false)
+        }
+        if (!selectedRow) return
+        selectedRow.setQuantityVisability(false)
       }
     })
     if (!this.isClone) {
@@ -104,12 +128,15 @@ export default {
   unmounted() {
     emitter.$off('cloned')
     emitter.$off('hideRow')
+    emitter.$off('editQuantity')
+    emitter.$off('stopEditQuantity')
   },
   methods: {
     ...mapMutations('outlay', [
       'selectJob',
       'unselectJob',
       'updateNodeChildren',
+      'setCurrentNode',
     ]),
     rowClickHandler(e) {
       const { target } = e
@@ -122,6 +149,7 @@ export default {
         return
       }
       this.select()
+      emitter.$emit('selectNode', this.node.key)
     },
     select() {
       if (!this.selected) {
@@ -202,14 +230,20 @@ export default {
     v-show="rowIsVisible"
     class="table-row"
     v-bind="rowAttrs"
-    :class="{ parent: isCategory, selected, striped }"
+    :class="{ parent: isCategory, selected, striped, current }"
     :style="[rowStyle, $attrs.style]"
     @click="rowClickHandler"
   >
     <StretchedRow v-if="isCategory" :data="data" :level="level" />
     <template v-else-if="!isClone">
       <DefaultRow v-if="!selected" :node="node" :sum="sum" @clone="clone" />
-      <SelectedRow v-else :node="node" :sum="sum" @clone="clone" />
+      <SelectedRow
+        v-else
+        ref="selectedRow"
+        :node="node"
+        :sum="sum"
+        @clone="clone"
+      />
     </template>
     <CloneRow
       v-else
@@ -244,6 +278,11 @@ export default {
 
   &.parent &__cell {
     color: #fff;
+  }
+
+  &.current {
+    z-index: 2;
+    border: 2px black solid;
   }
 }
 

@@ -37,10 +37,14 @@ export default {
     :class="{ selected: isSelected, active: outlay.active }"
     @click="selectOutlay"
   >
-    <div v-if="outlay.active" class="outlay-item__dot"></div>
+    <div class="outlay-item__dot-wrapper">
+      <div v-if="outlay.active" class="outlay-item__dot"></div>
+    </div>
     <div class="outlay-item__text">
       <div class="outlay-item__date">от {{ date }}</div>
-      <span class="outlay-item__name"> {{ outlay.name }}</span>
+      <span class="outlay-item__name" :title="outlay.name">
+        {{ outlay.name }}</span
+      >
     </div>
     <button class="button" @click.stop="openMenu">
       <i class="pi pi-ellipsis-h icon"></i>
@@ -72,6 +76,10 @@ $dot-size: 7px;
     border: 1px #28c430 solid;
   }
 
+  .icon {
+    color: #808080;
+  }
+
   &.selected .icon {
     color: #28c430;
   }
@@ -80,13 +88,19 @@ $dot-size: 7px;
     display: flex;
     flex-direction: column;
     position: relative;
+    overflow: hidden;
   }
 
   &__dot {
-    width: $dot-size;
-    height: $dot-size;
+    width: 100%;
+    height: 100%;
     background-color: #28c430;
     border-radius: 50%;
+
+    &-wrapper {
+      width: $dot-size;
+      height: $dot-size;
+    }
   }
 
   &__name {
@@ -94,12 +108,14 @@ $dot-size: 7px;
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow: hidden;
-    font-size: 14px;
-    font-weight: 700;
+    font-weight: 400;
+    line-height: 15px;
+    color: #808080;
   }
 
   &__date {
     font-size: 11px;
+    color: #808080;
   }
 }
 </style>

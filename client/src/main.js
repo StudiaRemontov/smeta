@@ -13,6 +13,8 @@ import 'primeicons/primeicons.css'
 //global components
 import AppButton from '@/components/UI/AppButton.vue'
 import AppInput from '@/components/UI/AppInput.vue'
+//plugins
+import vClickOutside from 'click-outside-vue3'
 
 const app = createApp(App)
 
@@ -20,6 +22,7 @@ const app = createApp(App)
 app.component('AppButton', AppButton)
 app.component('AppInput', AppInput)
 
+app.use(vClickOutside)
 app.use(router)
 app.use(store)
 app.use(PrimeVue)

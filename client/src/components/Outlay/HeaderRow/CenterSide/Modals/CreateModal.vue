@@ -49,7 +49,10 @@ export default {
         if (!foundEdition) return false
         return foundEdition.active === true
       })
-
+      if (!activeEdition) {
+        console.error('В данном прайс листе нету активной редакции')
+        return
+      }
       const data = {
         name: this.name,
         edition: activeEdition,

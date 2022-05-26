@@ -77,6 +77,13 @@ export default {
 <template>
   <RoomModal ref="room-modal" />
   <div class="tab-list">
+    <div class="rooms">
+      <button class="button create" @click="openCreateModal">
+        <CirclePlusIcon />
+        Помещение
+      </button>
+      <RoomList @clone="clone" />
+    </div>
     <div class="main-tabs">
       <button
         v-for="tab in mainTabs"
@@ -91,13 +98,6 @@ export default {
         </span>
       </button>
     </div>
-    <div class="rooms">
-      <button class="button create" @click="openCreateModal">
-        <CirclePlusIcon />
-        Помещение
-      </button>
-      <RoomList @clone="clone" />
-    </div>
   </div>
 </template>
 
@@ -109,16 +109,18 @@ export default {
   background: $color-light;
   box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
   border-radius: 10px;
-  padding: 27px 13px;
+  padding: 25px 13px;
   min-height: 0px;
+  gap: 25px;
 }
 
 .main-tabs {
   display: flex;
   flex-direction: column;
   gap: 15px;
-  padding: 0 12px 14px;
-  border-bottom: 1px solid #a7a7a7;
+  padding: 25px 12px;
+  border-top: 1px solid #a7a7a7;
+  height: 110px;
 }
 
 .main-tab {
@@ -147,6 +149,8 @@ export default {
   flex-direction: column;
   align-items: center;
   min-height: 0px;
+  flex: 1;
+  gap: 25px;
 }
 
 .create {
@@ -158,6 +162,5 @@ export default {
   align-items: center;
   gap: 6px;
   color: $color-light;
-  margin: 15px 0;
 }
 </style>

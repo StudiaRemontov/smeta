@@ -42,6 +42,18 @@ export default {
   methods: {
     ...mapMutations('outlay', ['setSale']),
     ...mapActions('outlay', ['saveLocaly']),
+    inputSale(e) {
+      const { target } = e
+      const { valueAsNumber } = target
+      if (valueAsNumber < 0) {
+        target.value = 0
+        return
+      }
+      if (valueAsNumber > 20) {
+        target.value = 20
+      }
+      target.value = this.saleValue
+    },
     changeSale() {
       if (this.timeout) {
         clearTimeout(this.timeout)
@@ -68,7 +80,9 @@ export default {
         type="number"
         :max="20"
         :min="0"
+        @input="inputSale"
         @change="changeSale"
+        @keydown.stop
       />
     </div>
     <span>
@@ -83,7 +97,7 @@ export default {
 <style lang="scss" scoped>
 .results {
   height: 121px;
-  padding: 15px 10px;
+  padding: 15px 12px;
   border-top: 1px solid #a7a7a7;
   display: flex;
   flex-direction: column;

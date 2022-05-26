@@ -39,7 +39,10 @@ export default {
   <div class="center">
     <div class="center__info">
       <div class="center__info-wrapper">
-        <span class="center__info-id"> 423423432 </span>
+        <div class="center__info-text">
+          <span class="center__info-id"> 423423432 </span>
+          <span class="center__info-name">Сергей Алексеевич</span>
+        </div>
         <button class="button" @click="showInfo">
           <InfoCircleFill />
         </button>
@@ -64,25 +67,38 @@ export default {
   &__info {
     background-color: $color-light;
     border-radius: 0px 0px 10px 10px;
-    display: flex;
-    align-content: center;
-    justify-content: center;
     max-width: 212px;
     width: 100%;
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+    padding: 5px;
 
     &-wrapper {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
+      justify-content: space-between;
       gap: 4px;
       overflow: hidden;
-      padding: 0 20px;
+    }
+
+    &-text {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    &-name {
+      font-weight: 400;
+      font-size: 14px;
+      color: #000;
+      line-height: 17px;
     }
 
     &-id {
       font-weight: 400;
-      font-size: 25px;
-      line-height: 30px;
+      font-size: 22px;
+      line-height: 27px;
       color: #000000;
       text-overflow: ellipsis;
       overflow: hidden;

@@ -6,6 +6,8 @@ import { mapGetters, mapMutations } from 'vuex'
 
 import emitter from '@/modules/eventBus'
 
+import { getAllValues } from '@/helpers/treeMethods'
+
 export default {
   components: {
     ViewListIcon,
@@ -59,22 +61,9 @@ export default {
     openContext(e) {
       this.$emit('open-menu', e, this.room)
     },
-    isObjectId(id) {
-      return /^[0-9a-fA-F]{24}$/.test(id)
-    },
     getInvalidJobs() {
-      const nodes = this.room.jobs.map(this.treeToListOnlyValues).flat()
+      const nodes = this.room.jobs.map(getAllValues).flat()
       return nodes.filter(n => n.data[this.quantityKey.id] === 0)
-    },
-    treeToListOnlyValues(node) {
-      const { children, key } = node
-      const childs = children.map(this.treeToListOnlyValues).flat()
-
-      if (this.isObjectId(key)) {
-        return childs
-      }
-
-      return [node]
     },
     async setViewMode(value) {
       this.setSelectedRoom(this.room)

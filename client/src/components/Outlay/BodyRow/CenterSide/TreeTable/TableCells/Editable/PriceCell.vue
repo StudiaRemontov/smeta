@@ -1,5 +1,8 @@
 <script>
+import InputNumber from '@/components/UI/InputNumber.vue'
+
 export default {
+  components: { InputNumber },
   props: {
     modelValue: {
       required: true,
@@ -18,7 +21,8 @@ export default {
         return this.modelValue
       },
       set(value) {
-        this.$emit('update:modelValue', value)
+        const fixed = +value.toFixed(2)
+        this.$emit('update:modelValue', fixed)
       },
     },
   },
@@ -43,21 +47,8 @@ export default {
 
 <template>
   <div class="price-cell">
-    <input
-      v-model="newValue"
-      class="input"
-      type="number"
-      :min="1"
-      @input="changePrice"
-    />
-    <input
-      v-model="coef"
-      class="input"
-      type="number"
-      :min="1"
-      :step="0.1"
-      @input="inputCoef"
-    />
+    <InputNumber v-model="newValue" class="input" @input="changePrice" />
+    <InputNumber v-model="coef" class="input" @input="inputCoef" />
   </div>
 </template>
 

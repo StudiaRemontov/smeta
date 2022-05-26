@@ -1,6 +1,9 @@
 <script>
 import { mapActions, mapGetters, mapMutations } from 'vuex'
+
 import ConfirmModal from '@/components/PriceLists/Clone/ConfirmClone.vue'
+
+import { isObjectId } from '@/helpers/isObjectId'
 
 export default {
   components: { ConfirmModal },
@@ -35,7 +38,7 @@ export default {
     ...mapActions('edition', ['remove', 'setActive']),
     isSameNode(node, directory) {
       const { children, key } = node
-      const isDirectory = this.isObjectId(key)
+      const isDirectory = isObjectId(key)
       if (isDirectory) {
         const directory = this.clonedDirectories.find(d => d._id === node.key)
         if (!directory) {
@@ -45,9 +48,6 @@ export default {
       }
       const { values } = directory
       return !!values.find(v => v.id === key)
-    },
-    isObjectId(id) {
-      return /^[0-9a-fA-F]{24}$/.test(id)
     },
     async activeEdition() {
       if (this.isActive) {

@@ -1,7 +1,7 @@
 <script>
 import PopupModal from '@/components/UI/PopupModal.vue'
 import InputNumber from 'primevue/inputnumber'
-import InputText from 'primevue/inputtext'
+import Dropdown from 'primevue/dropdown'
 
 import roomParameters from '@/mixins/roomParameters.mixin'
 import { mapGetters } from 'vuex'
@@ -23,10 +23,24 @@ const getInitState = () => ({
     length: null,
     spaces: null,
   },
+  roomTypes: [
+    {
+      label: 'Ванна',
+    },
+    {
+      label: 'Комната',
+    },
+    {
+      label: 'Кухня',
+    },
+    {
+      label: 'Гостинная',
+    },
+  ],
 })
 
 export default {
-  components: { PopupModal, InputText, InputNumber },
+  components: { PopupModal, InputNumber, Dropdown },
   mixins: [roomParameters],
   data() {
     return getInitState()
@@ -99,7 +113,11 @@ export default {
       this.$refs.popup.open()
 
       await this.$nextTick()
-      this.$refs.input.$el.focus()
+      const { input } = this.$refs
+      const inputEl = input.$el.querySelector('input')
+      if (inputEl) {
+        inputEl.focus()
+      }
       return new Promise((res, rej) => {
         this.resolvePromise = res
         this.rejectPromise = rej
@@ -139,7 +157,6 @@ export default {
     reset() {
       Object.assign(this.$data, getInitState())
     },
-
     inputHandler(e, key) {
       const regex = /^[0-9+-/*.,]*$/
       const isValid = regex.test(this[key])
@@ -176,7 +193,14 @@ export default {
       <form class="form" @submit.prevent="_confirm">
         <div class="form__group">
           <label class="form__label">Название</label>
-          <InputText v-model="name" placeholder="Название" ref="input" />
+          <Dropdown
+            v-model.trim="name"
+            :options="roomTypes"
+            :editable="true"
+            optionLabel="label"
+            optionValue="label"
+            ref="input"
+          />
         </div>
         <span>Параметры помещения</span>
         <div class="form__grid">

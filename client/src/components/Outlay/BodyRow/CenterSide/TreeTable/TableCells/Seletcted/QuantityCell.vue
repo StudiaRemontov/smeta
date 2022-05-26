@@ -1,7 +1,10 @@
 <script>
 import { formatNumber } from '@/helpers/formatNumber'
 
+import InputNumber from '@/components/UI/InputNumber.vue'
+
 export default {
+  components: { InputNumber },
   props: {
     modelValue: {
       required: true,
@@ -19,6 +22,9 @@ export default {
         return this.modelValue
       },
       set(value) {
+        if (value < 0) {
+          return this.$emit('update:modelValue', 0)
+        }
         this.$emit('update:modelValue', value)
       },
     },
@@ -30,14 +36,21 @@ export default {
     },
   },
   methods: {
-    async toggleEditMode() {
-      this.isEditing = !this.isEditing
+    toggleEditMode() {
       if (this.isEditing) {
-        await this.$nextTick()
-        const { input } = this.$refs
-        input.focus()
-        input.select()
+        return this.closeEditMode()
       }
+      this.openEditMode()
+    },
+    async openEditMode() {
+      this.isEditing = true
+      await this.$nextTick()
+      const { input } = this.$refs
+      input.$el.focus()
+      input.$el.select()
+    },
+    closeEditMode() {
+      this.isEditing = false
     },
   },
 }
@@ -52,15 +65,14 @@ export default {
     <span v-if="!isEditing">
       {{ viewValue }}
     </span>
-    <input
+    <InputNumber
       v-else
       v-model="newValue"
       class="input"
       ref="input"
-      type="number"
-      :min="1"
       @blur="isEditing = false"
       @keyup.enter="isEditing = false"
+      @keydown.stop
     />
   </div>
 </template>

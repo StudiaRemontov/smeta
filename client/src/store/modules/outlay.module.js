@@ -8,7 +8,7 @@ import { InputType } from '../../enum/InputType'
 
 const { methods } = roomParametersMixin
 
-const treeToList = node => {
+export const treeToList = node => {
   const { children } = node
   if (children && children.length > 0) {
     if (children[0].children.length === 0) {
@@ -109,9 +109,7 @@ export default {
     priceKey: null,
     formulaKey: null,
     striped: false,
-    activeData: null,
-    nodeList: null,
-    roots: null,
+    currentNode: null,
   },
   mutations: {
     setOutlay(state) {
@@ -152,54 +150,18 @@ export default {
     setSelectedRoom(state, payload) {
       state.selectedRoom = payload
       state.showOnlyChecked = false
+      // if(payload) {
+      //   state.currentNode =
+      // }
     },
     setShowOnlyChecked(state, payload) {
       state.showOnlyChecked = payload
     },
-    setActiveData(state, payload) {
-      state.activeData = payload
-    },
-    setRoots(state, payload) {
-      state.roots = payload
-    },
-    setNodeList(state, payload) {
-      state.nodeList = payload
-    },
-    createRoom(state, { name, options }) {
-      if (!state.outlay) return
-      const room = {
-        id: Date.now() + '',
-        name,
-        options,
-        jobs: [],
-      }
-      state.outlay.rooms.push(room)
-      state.selectedRoom = room
-    },
-    selectRoom(state, { id, showOnlySelected = false }) {
-      if (!state.outlay) return
-      state.room = {
-        id,
-        showOnlySelected,
-      }
-    },
-    addJob(state, job) {
-      if (!state.outlay || !state.room) return
-      const room = state.outlay.rooms.find(r => r.id === state.room.id)
-      const isExists = room.jobs.find(j => j.key === job.key)
-      if (isExists) {
-        return
-      }
-      room.jobs.push(job)
+    setCurrentNode(state, payload) {
+      state.currentNode = payload
     },
     setStriped(state, payload) {
       state.striped = payload
-    },
-    removeJob(state, job) {
-      if (!state.outlay || !state.room) return
-
-      const room = state.outlay.rooms.find(r => r.id === state.room)
-      room.jobs = room.jobs.filter(r => r.key !== job.key)
     },
     selectJob(state, job) {
       if (!state.selectedRoom) return
@@ -216,23 +178,6 @@ export default {
       state.selectedValues[state.selectedRoom.id] = selectedValues.filter(
         key => key !== job.key,
       )
-    },
-    pushNodeAfter(state, { node, index }) {
-      if (!state.selectedRoom) return
-
-      const nodeList = state.roomsData[state.selectedRoom.id]
-
-      if (!nodeList) return
-      const newArr = [
-        ...nodeList.slice(0, index),
-        {
-          ...node,
-          key: Date.now() + '',
-        },
-        ...nodeList.slice(index),
-      ]
-
-      state.roomsData[state.selectedRoom.id] = newArr
     },
     updateNodeChildren(state, { node, children }) {
       state.roomsData[state.selectedRoom.id].forEach(root => {
@@ -306,6 +251,21 @@ export default {
     },
     async createRoom({ commit, state, dispatch }, { name, options }) {
       if (!state.outlay) return
+      const nameRegex = new RegExp(`^${name}[\\s][\\d]*$|^${name}$`, 'gmi')
+      const roomsWithSameName = state.outlay.rooms.filter(r =>
+        r.name.match(nameRegex),
+      )
+      if (roomsWithSameName.length > 0) {
+        const maxNum = roomsWithSameName.reduce((acc, r) => {
+          const numInName = r.name.split(' ')[1] || 0
+          const num = +numInName
+          if (num > acc) {
+            return num
+          }
+          return acc
+        }, 0)
+        name = `${name} ${maxNum + 1}`
+      }
       const room = {
         id: Date.now() + '',
         name,
@@ -358,7 +318,7 @@ export default {
       commit('setSelectedRoom', room)
       return await dispatch('saveLocaly')
     },
-    async updateRoom({ state, dispatch }, payload) {
+    async updateRoom({ state, dispatch, commit }, payload) {
       if (!state.outlay || !state.selectedRoom) return
       state.outlay.rooms = state.outlay.rooms.map(r => {
         if (r.id === state.selectedRoom.id) {
@@ -366,7 +326,7 @@ export default {
             ...r,
             ...payload,
           }
-          state.selectedRoom = data
+          commit('setSelectedRoom', data)
           const clone = setQuantity(
             data,
             state.roomsData[state.selectedRoom.id],
@@ -380,7 +340,7 @@ export default {
       })
       return await dispatch('saveLocaly')
     },
-    async removeRoom({ state, dispatch }, roomId) {
+    async removeRoom({ state, commit, dispatch }, roomId) {
       if (!state.outlay) return
       state.outlay.rooms = state.outlay.rooms.filter(r => r.id !== roomId)
       if (state.room === roomId) {
@@ -388,7 +348,7 @@ export default {
       }
       delete state.roomsData[roomId]
       delete state.selectedValues[roomId]
-      state.selectedRoom = null
+      commit('setSelectedRoom', null)
       return await dispatch('saveLocaly')
     },
     async create({ rootGetters }, data) {
@@ -467,8 +427,6 @@ export default {
     priceKey: s => s.priceKey,
     striped: s => s.striped,
     sale: s => s.outlay.sale,
-    activeData: s => s.activeData,
-    showOnlySelected: s => s.room?.showOnlySelected,
-    nodeList: s => s.nodeList,
+    currentNode: s => s.currentNode,
   },
 }

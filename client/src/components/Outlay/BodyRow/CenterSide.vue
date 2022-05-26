@@ -5,7 +5,10 @@ import MultiSelect from 'primevue/multiselect'
 
 import TreeTable from './CenterSide/TreeTable/TreeTable.vue'
 import TreeTableView from './CenterSide/TreeTableView/TreeTableView.vue'
-import ParameterList from './CenterSide/ParameterList.vue'
+
+import { isObjectId } from '@/helpers/isObjectId'
+
+import { uniqBy } from 'lodash'
 
 import { mapGetters, mapMutations } from 'vuex'
 
@@ -15,7 +18,6 @@ export default {
     InputSwitch,
     TreeTable,
     TreeTableView,
-    ParameterList,
     MultiSelect,
   },
   data() {
@@ -61,36 +63,18 @@ export default {
     },
     jobs() {
       if (!this.selectedRoom) {
-        const rooms = this.rooms.map(r => ({
+        const reversed = [...this.rooms].reverse()
+        const rooms = reversed.map(r => ({
           key: r.id,
           data: {
             [this.keys[0].id]: r.name,
           },
+          name: r.name,
           children: this.roomsData[r.id],
         }))
-
-        return rooms.map(r => {
-          const values = r.children
-            .map(r => this.treeToListOnlyValues(r, []))
-            .flat()
-          const filtered = values.filter(v =>
-            this.selectedValues[r.key].includes(v.key),
-          )
-          const items = filtered.map(v => ({ ...v, room: r.key }))
-
-          return {
-            name: r.data[this.keys[0].id],
-            items,
-          }
-        })
+        return rooms.map(r => this.getGroupsWithRoom(r, null, r.key)).flat()
       }
-      const parents = this.roots.filter(r => !r.parent)
-      return parents.map(p => {
-        return {
-          name: p.data[this.keys[0].id],
-          items: p.children.map(p => this.treeToListOnlyValues(p, [])).flat(),
-        }
-      })
+      return this.roots.map(r => this.getGroups(r, null)).flat()
     },
   },
   watch: {
@@ -123,12 +107,9 @@ export default {
     showInfo() {
       this.$refs['info-modal'].show()
     },
-    isObjectId(id) {
-      return /^[0-9a-fA-F]{24}$/.test(id)
-    },
     treeToListOnlyValues(node, parents = []) {
       const { children, key } = node
-      if (this.isObjectId(key)) {
+      if (isObjectId(key)) {
         parents.push(node.data[this.keys[0].id])
         return children.map(c => this.treeToListOnlyValues(c, parents)).flat()
       }
@@ -142,24 +123,140 @@ export default {
         },
       ]
     },
-    searchJob(e) {
+    getGroupsWithRoom(node, parent = null, roomId) {
+      const { children, key, data } = node
+      if (children && children.length > 0) {
+        node.parent = parent
+        const returnData = {
+          ...node,
+          name: data[this.keys[0].id],
+          items: [],
+          roomId,
+        }
+
+        const childrenGroups = node.children
+          .map(c => this.getGroupsWithRoom(c, key, roomId))
+          .flat()
+        const selectedGroups = childrenGroups.filter(g =>
+          this.selectedValues[roomId].includes(g.key),
+        )
+        if (isObjectId(children[0].key)) {
+          return [
+            {
+              ...returnData,
+            },
+            ...selectedGroups,
+          ]
+        }
+        const selectedItems = node.children.filter(n =>
+          this.selectedValues[roomId].includes(n.key),
+        )
+        return [
+          {
+            ...returnData,
+            items: selectedItems.map(c => ({
+              ...c,
+              name: c.data[this.keys[0].id],
+              roomId,
+            })),
+          },
+          ...selectedGroups,
+        ]
+      }
+      return []
+    },
+    getGroups(node, parent) {
+      const { children, key, data } = node
+      if (children && children.length > 0) {
+        node.parent = parent
+        const returnData = {
+          ...node,
+          name: data[this.keys[0].id],
+          items: [],
+        }
+
+        const childrenGroups = node.children
+          .map(c => this.getGroups(c, key))
+          .flat()
+
+        if (isObjectId(children[0].key)) {
+          return [
+            {
+              ...returnData,
+            },
+            ...childrenGroups,
+          ]
+        }
+        return [
+          {
+            ...returnData,
+            items: node.children.map(c => ({
+              ...c,
+              name: c.data[this.keys[0].id],
+            })),
+          },
+          ...childrenGroups,
+        ]
+      }
+      return []
+    },
+    getParentsOfNode(parentId) {
+      const parent = this.jobs.find(j => j.key === parentId)
+      if (!parent) {
+        return []
+      }
+      if (parent.parent) {
+        const parentOfParent = this.getParentsOfNode(parent.parent)
+        return [parentOfParent, parent]
+      }
+      return [parent]
+    },
+    getParentsOfRoom(roomId, parentId) {
+      const parent = this.jobs.find(
+        j => j.key === parentId && j.roomId === roomId,
+      )
+      if (parent.parent) {
+        const parentOfParent = this.getParentsOfRoom(roomId, parent.parent)
+        return [parentOfParent, parent]
+      }
+      return [parent]
+    },
+    async searchJob(e) {
       const query = e.query
       const filteredJobs = []
-
       for (const category of this.jobs) {
         const filteredItems = category.items.filter(j =>
           j.name.toLowerCase().includes(query.toLowerCase()),
         )
         if (filteredItems && filteredItems.length) {
+          const parents = this.selectedRoom
+            ? this.getParentsOfNode(category.parent)
+            : this.getParentsOfRoom(category.roomId, category.parent).flat()
+          parents.forEach(p => {
+            filteredJobs.push(p)
+          })
+
           filteredJobs.push({ ...category, items: filteredItems })
         }
       }
+      if (this.selectedRoom) {
+        return (this.filteredJobs = uniqBy(filteredJobs, 'key'))
+      }
 
-      this.filteredJobs = filteredJobs
+      const groupedByRoom = filteredJobs.reduce((acc, item) => {
+        acc[item.roomId] = acc[item.roomId] || []
+        acc[item.roomId].push(item)
+        return acc
+      }, {})
+
+      this.filteredJobs = Object.values(groupedByRoom).reduce((acc, item) => {
+        const uniqueJobs = uniqBy(item, 'key')
+        return [...acc, ...uniqueJobs]
+      }, [])
     },
     findJob(e) {
-      const key = e.value.value.key
-      const room = e.value.room
+      const key = e.value.key
+      const room = e.value.roomId
       const { table } = this.$refs
       if (!this.selectedRoom) {
         return table.scrollTo(room, key)
@@ -169,13 +266,15 @@ export default {
     autoCompleteClickHanler() {
       this.selectedJob = null
     },
+    autocompleteInput() {
+      this.$refs.autocomplete.hideOverlay()
+    },
   },
 }
 </script>
 
 <template>
   <div class="center">
-    <ParameterList v-if="selectedRoom" />
     <div v-if="outlay" class="center__body">
       <div class="body-actions">
         <div class="search-wrapper">
@@ -190,6 +289,8 @@ export default {
             :scrollHeight="scrollHeight"
             :suggestions="filteredJobs"
             placeholder="Поиск"
+            :delay="300"
+            @input="autocompleteInput"
             @complete="searchJob($event)"
             @item-select="findJob"
             @click="autoCompleteClickHanler"
@@ -197,6 +298,7 @@ export default {
         </div>
         <div class="body-actions__group">
           <MultiSelect
+            v-if="selectedRoom"
             v-model="selectedFastJobs"
             class="multiselect"
             placeholder="Быстрые работы"
@@ -246,7 +348,7 @@ export default {
 }
 
 .search-wrapper {
-  min-width: 300px;
+  min-width: 150px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -262,12 +364,10 @@ export default {
 }
 
 ::v-deep(.multiselect) {
-  max-width: 25%;
   min-width: 150px;
 }
 
 .switch-wrapper {
-  width: 150px;
   display: flex;
   align-items: center;
   gap: 5px;

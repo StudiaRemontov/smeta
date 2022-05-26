@@ -3,11 +3,17 @@ import { mapGetters, mapState } from 'vuex'
 
 import CategoryList from './RightSide/CategoryList.vue'
 import ResultsForm from './RightSide/ResultsForm.vue'
+import ParameterList from './RightSide/ParameterList.vue'
+import OutlayBlock from '@/components/Layout/OutlayBlock.vue'
+
+import { isObjectId } from '@/helpers/isObjectId'
 
 export default {
   components: {
     CategoryList,
     ResultsForm,
+    ParameterList,
+    OutlayBlock,
   },
   computed: {
     ...mapState('outlay', ['selectedValues']),
@@ -36,14 +42,11 @@ export default {
     },
   },
   methods: {
-    isObjectId(id) {
-      return /^[0-9a-fA-F]{24}$/.test(id)
-    },
     treeToListOnlyValues(node) {
       const { children, key } = node
       const childs = children.map(this.treeToListOnlyValues).flat()
 
-      if (this.isObjectId(key)) {
+      if (isObjectId(key)) {
         return childs
       }
 
@@ -104,29 +107,27 @@ export default {
 
 <template>
   <div class="wrapper">
-    <div class="wrapper__category-list">
+    <ParameterList class="wrapper__parameters" />
+    <OutlayBlock class="wrapper__results">
       <CategoryList :categories="data" />
-    </div>
-    <ResultsForm :data="data" />
+      <ResultsForm :data="data" />
+    </OutlayBlock>
   </div>
 </template>
 
 <style lang="scss" scoped>
 .wrapper {
-  background-color: $color-light;
-  border-radius: 10px;
-  padding: 0px 13px;
   height: 100%;
   display: flex;
   flex-direction: column;
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+  gap: 15px;
 
-  &__category-list {
+  &__results {
     flex: 1;
-    padding-top: 25px;
     min-height: 0px;
     display: flex;
     flex-direction: column;
+    padding: 13px;
   }
 }
 </style>

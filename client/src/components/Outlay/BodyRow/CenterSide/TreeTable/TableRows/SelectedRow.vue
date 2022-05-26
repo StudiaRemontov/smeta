@@ -46,6 +46,16 @@ export default {
       return this.key.type
     },
   },
+  methods: {
+    setQuantityVisability(value) {
+      const { quantity } = this.$refs
+      if (!quantity) return
+      if (value) {
+        return quantity[0].openEditMode()
+      }
+      quantity[0]?.closeEditMode()
+    },
+  },
 }
 </script>
 
@@ -55,6 +65,7 @@ export default {
     <QuantityCell
       v-else-if="key.type === InputType.QUANTITY"
       v-model="data[key.id]"
+      ref="quantity"
     />
     <ViewCell v-else :value="data[key.id]" :index="index" :keyData="key" />
   </template>

@@ -35,10 +35,12 @@ export default {
 
 <style lang="scss" scoped>
 .category-list {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 15px;
   overflow: auto;
   @include darkScroll;
+  padding: 12px;
 }
 </style>

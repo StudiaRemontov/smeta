@@ -12,6 +12,8 @@ import { merge, mergeWith, isArray } from 'lodash'
 import priceList from '@/mixins/priceList.mixin'
 import keyTypes from '@/mixins/keyTypes.mixin'
 import expandAllMixin from '@/mixins/expandAll.mixin'
+import { isObjectId } from '@/helpers/isObjectId'
+
 import { difference, differenceWith, isEqual } from 'lodash'
 
 export default {
@@ -63,7 +65,7 @@ export default {
         return []
       }
       const selected = Object.keys(this.selectedValues).filter(
-        v => !this.isObjectId(v),
+        v => !isObjectId(v),
       )
       return this.listOfTreeValues.filter(v => selected.includes(v.key))
     },
@@ -149,9 +151,6 @@ export default {
     this.newKeys = [...fullNewest]
   },
   methods: {
-    isObjectId(id) {
-      return /^[0-9a-fA-F]{24}$/.test(id)
-    },
     getKeys(node) {
       if (node?.key) {
         return [node.key]
@@ -176,14 +175,14 @@ export default {
     treeToListOnlyValues(node) {
       const { children, key } = node
       const childs = children.map(this.treeToListOnlyValues).flat()
-      if (this.isObjectId(key)) {
+      if (isObjectId(key)) {
         return childs
       }
       return [...childs, node]
     },
     getFullDifference(node, keys) {
       const { children, key } = node
-      const isDirectory = this.isObjectId(key)
+      const isDirectory = isObjectId(key)
       let differences = []
       if (isDirectory && keys.includes(node.key)) {
         differences = [...this.treeToList(node, [])]
@@ -292,7 +291,7 @@ export default {
       if (!this.isMassiveChangeMode || !this.selectedKey) {
         return
       }
-      const isParent = this.isObjectId(node.key)
+      const isParent = isObjectId(node.key)
       if (!isParent) {
         const increaseValue = (node.data[this.selectedKey] / 100) * this.percent
         node.data[this.selectedKey] = +(
@@ -316,7 +315,7 @@ export default {
         return
       }
 
-      const isParent = this.isObjectId(node.key)
+      const isParent = isObjectId(node.key)
       if (!isParent) {
         const itemBefore = this.listOfTreeValuesInit.find(
           v => v.key === node.key,

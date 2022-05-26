@@ -35,5 +35,6 @@ export default {
   display: grid;
   grid-template-rows: 60px 1fr;
   gap: 15px;
+  font-family: $outlay-font-family;
 }
 </style>

@@ -4,11 +4,12 @@ import CloneActions from '../TableCells/CloneActions.vue'
 import ViewCell from '../TableCells/ViewCell.vue'
 import PriceCell from '../TableCells/Editable/PriceCell.vue'
 import SelectCell from '../TableCells/Editable/SelectCell.vue'
+import InputNumber from '@/components/UI/InputNumber.vue'
 
 import keyTypes from '@/mixins/keyTypes.mixin'
 
 export default {
-  components: { CloneActions, ViewCell, PriceCell, SelectCell },
+  components: { CloneActions, ViewCell, PriceCell, SelectCell, InputNumber },
   mixins: [keyTypes],
   props: {
     node: {
@@ -94,6 +95,12 @@ export default {
       }, {})
     },
   },
+  watch: {
+    isEditing(value) {
+      if (!value) return
+      this.focusFirstCell()
+    },
+  },
   methods: {
     getValueOfCell(dirId, root, rowId, keys) {
       const directory = this.directories.find(d => d._id === dirId)
@@ -110,6 +117,16 @@ export default {
         return row.data[key.id]
       })
       return vals
+    },
+    async focusFirstCell() {
+      await this.$nextTick()
+      const { cell } = this.$refs
+      if (cell && cell.length > 0) {
+        const firstCell = cell[0]
+        const formElement = firstCell.querySelector('input, select')
+        if (!formElement) return
+        formElement.focus()
+      }
     },
   },
 }
@@ -130,6 +147,7 @@ export default {
   <td
     v-else
     v-for="key in keysWithType"
+    ref="cell"
     :key="key.id"
     class="table-cell"
     @click.stop
@@ -140,13 +158,12 @@ export default {
       class="input"
       type="text"
     />
-    <input
+    <InputNumber
       v-else-if="
         key.type === InputType.NUMBER || key.type === InputType.QUANTITY
       "
       v-model="data[key.id]"
       class="input"
-      type="number"
     />
     <PriceCell
       v-else-if="key.type === InputType.PRICE"

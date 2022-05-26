@@ -67,6 +67,8 @@ export default {
       try {
         const outlay = {
           ...payload,
+          sale: 0,
+          active: false,
           rooms: [],
         }
         const response = await axios.post('/outlay', outlay)

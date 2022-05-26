@@ -29,6 +29,7 @@ export default {
     height: 15px;
     text-align: center;
     transform: translateY(-50%);
+    font-family: $base-font-family;
   }
 }
 </style>

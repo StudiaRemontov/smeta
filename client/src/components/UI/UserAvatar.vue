@@ -23,6 +23,7 @@ export default {}
     font-size: 13px;
     line-height: 16px;
     margin: auto;
+    font-family: $base-font-family;
   }
 }
 </style>
