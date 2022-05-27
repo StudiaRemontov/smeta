@@ -55,10 +55,10 @@ export default {
       this.newValue = number
     },
     increaseValue() {
-      this.newValue += this.step
+      this.newValue = this.newValue + this.step
     },
     decreaseValue() {
-      this.newValue -= this.step
+      this.newValue = this.newValue - this.step
     },
     checkKey(e) {
       const regex = /^[0-9.,]*$/

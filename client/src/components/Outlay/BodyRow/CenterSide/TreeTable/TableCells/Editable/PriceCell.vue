@@ -47,8 +47,17 @@ export default {
 
 <template>
   <div class="price-cell">
-    <InputNumber v-model="newValue" class="input" @input="changePrice" />
-    <InputNumber v-model="coef" class="input" @input="inputCoef" />
+    <InputNumber
+      v-model="newValue"
+      class="price"
+      @update:modelValue="changePrice"
+    />
+    <InputNumber
+      v-model="coef"
+      class="coef"
+      :step="0.1"
+      @update:modelValue="inputCoef"
+    />
   </div>
 </template>
 
@@ -60,6 +69,10 @@ export default {
 }
 
 .input {
+  width: 60px;
+}
+
+.coef {
   width: 30px;
 }
 </style>

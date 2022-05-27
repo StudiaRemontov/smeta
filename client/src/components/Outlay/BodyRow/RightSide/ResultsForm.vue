@@ -82,7 +82,6 @@ export default {
         :min="0"
         @input="inputSale"
         @change="changeSale"
-        @keydown.stop
       />
     </div>
     <span>

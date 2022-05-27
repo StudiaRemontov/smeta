@@ -26,15 +26,15 @@ const roomSchema = new mongoose.Schema(
     jobs: [jobsSchema],
     options: {
       width: {
-        type: Number,
+        type: String,
         required: true,
       },
       height: {
-        type: Number,
+        type: String,
         required: true,
       },
       length: {
-        type: Number,
+        type: String,
         required: true,
       },
       spaces: {

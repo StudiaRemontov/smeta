@@ -151,6 +151,7 @@ export default {
     :key="key.id"
     class="table-cell"
     @click.stop
+    @keydown.enter="$emit('toggleEdit')"
   >
     <input
       v-if="key.type === InputType.STRING"

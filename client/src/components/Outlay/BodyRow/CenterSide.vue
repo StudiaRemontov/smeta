@@ -361,6 +361,8 @@ export default {
   .p-autocomplete-input {
     width: 100%;
   }
+
+  -webkit-font-smoothing: subpixel-antialiased;
 }
 
 ::v-deep(.multiselect) {

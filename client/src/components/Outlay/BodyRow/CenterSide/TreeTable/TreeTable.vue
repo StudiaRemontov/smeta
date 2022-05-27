@@ -18,11 +18,6 @@ export default {
       currentCategory: null,
       currentSubCategory: null,
       currentNodeIndex: 0,
-      focused: true,
-      vcoConfig: {
-        handler: this.outsideClickHandler,
-        events: ['click'],
-      },
     }
   },
   computed: {
@@ -127,9 +122,6 @@ export default {
     ...mapMutations('outlay', ['selectJob', 'setCurrentNode']),
     ...mapMutations('outlays', ['updateById']),
     ...mapActions('outlay', ['saveLocaly']),
-    outsideClickHandler() {
-      this.focused = false
-    },
     isObjectId(id) {
       return /^[0-9a-fA-F]{24}$/.test(id)
     },
@@ -264,6 +256,7 @@ export default {
         .map(n => this.getNodeFromTree(n, nodeKey, []))
         .flat()
       parents.forEach(this.selectJob)
+      this.setCurrentNodeByKey(nodeKey)
     },
     setCurrentNodeByKey(key) {
       const index = this.nodes.findIndex(n => n.key === key)
@@ -272,17 +265,30 @@ export default {
       this.setCurrentNode(this.nodes[index])
     },
     keyHandler(e) {
-      if (!this.focused) return
       const { key } = e
-      const avaliableKeys = ['ArrowUp', 'ArrowDown']
+      const path = e.composedPath()
+      const controlledElementTags = ['INPUT', 'TEXTAREA', 'SELECT']
+      const isBubblesFromController = path.find(e =>
+        controlledElementTags.includes(e.tagName),
+      )
+      if (isBubblesFromController) {
+        return
+      }
+      if (key !== 'F12') {
+        e.preventDefault()
+      }
+      const isAnyModalOppened = document.querySelector('.popup-modal')
+      if (isAnyModalOppened) {
+        return
+      }
       if (!this.currentNode) return
-
       if (key === 'ArrowRight') {
         return emitter.$emit('editQuantity', this.currentNode.key)
       }
       if (key === 'ArrowLeft' || key === 'Enter') {
         return emitter.$emit('stopEditQuantity', this.currentNode.key)
       }
+      const avaliableKeys = ['ArrowUp', 'ArrowDown']
       if (!avaliableKeys.includes(key)) {
         return
       }

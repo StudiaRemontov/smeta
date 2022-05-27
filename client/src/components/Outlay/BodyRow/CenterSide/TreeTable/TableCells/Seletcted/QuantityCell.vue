@@ -72,7 +72,6 @@ export default {
       ref="input"
       @blur="isEditing = false"
       @keyup.enter="isEditing = false"
-      @keydown.stop
     />
   </div>
 </template>
