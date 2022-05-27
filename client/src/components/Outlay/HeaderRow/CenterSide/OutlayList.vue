@@ -34,8 +34,22 @@ export default {
         },
         {
           label: 'Клонировать',
-          command: () => {
-            console.log('1')
+          command: async () => {
+            const outlay = this.outlays.find(o => o._id === this.selectedItem)
+            const clone = JSON.parse(JSON.stringify(outlay))
+            const data = {
+              ...clone,
+              active: false,
+              date: undefined,
+              _id: undefined,
+            }
+            console.log(data)
+
+            try {
+              await this.create(data)
+            } catch (error) {
+              console.log(error)
+            }
           },
           disabled: false,
         },

@@ -5,7 +5,6 @@ import TableGridRow from './TableRow.vue'
 import tableRowColors from '@/mixins/tableRowColors.mixin'
 
 import { filterNodes } from '@/store/modules/outlay.module'
-import emitter from '@/modules/eventBus'
 
 export default {
   components: { TableGridRow },
@@ -16,6 +15,7 @@ export default {
       currentCategory: null,
       currentSubCategory: null,
       subCategories: [],
+      fixedCategories: {},
     }
   },
   computed: {
@@ -33,16 +33,15 @@ export default {
       if (!this.roomsData) {
         return []
       }
-
       const roomsData = Object.entries(this.roomsData)
       const reversed = [...roomsData].reverse()
       if (reversed.length === 0 || this.selectedRoom) return []
       return reversed.map(([key, values]) => {
-        const foundRoom = this.rooms.find(r => r.id === key)
+        const foundRoom = this.rooms.find(acc => acc.id === key)
         const clone = JSON.parse(JSON.stringify(values))
-        const children = clone.map(node =>
-          filterNodes(node, this.selectedValues[key]),
-        )
+        const children = clone
+          .map(node => filterNodes(node, this.selectedValues[key]))
+          .flat()
 
         if (!foundRoom) return {}
         return {
@@ -62,6 +61,30 @@ export default {
         gridTemplateColumns: `4fr repeat(${keysLength}, minmax(100px, 1fr))`,
       }
     },
+    nodes() {
+      return this.data.map(n => this.treeToList(n, [])).flat()
+    },
+    groupedCategories() {
+      return this.nodes.reduce((acc, node) => {
+        acc[node.level] = acc[node.level] || []
+        acc[node.level].push(node)
+        return acc
+      }, {})
+    },
+    treeDepth() {
+      return Object.keys(this.groupedCategories).length
+    },
+    fixedView() {
+      return Object.values(this.fixedCategories).map(v => {
+        if (!v) {
+          return {}
+        }
+        return {
+          key: v.key,
+          name: v.data[this.keys[0].id],
+        }
+      })
+    },
   },
   watch: {
     roomsData: {
@@ -72,6 +95,20 @@ export default {
     },
   },
   methods: {
+    treeToList(node, list) {
+      const { children } = node
+      if (children && children.length > 0) {
+        if (children[0].children.length === 0) {
+          return [node]
+        }
+        return [
+          ...list,
+          node,
+          ...node.children.map(c => this.treeToList(c, list)).flat(),
+        ]
+      }
+      return list
+    },
     setLevels(node, level = 0) {
       const { children } = node
 
@@ -89,7 +126,7 @@ export default {
       return []
     },
     setCurrentRoom(e, id) {
-      const roomIndex = this.roomsList.findIndex(r => r.id === id)
+      const roomIndex = this.roomsList.findIndex(acc => acc.id === id)
       if (e.isIntersecting) {
         if (roomIndex === 0) {
           return
@@ -112,7 +149,7 @@ export default {
       if (e.isIntersecting) {
         if (categoryIndex === 0) {
           const roomIndex = this.roomsList.findIndex(
-            r => r.id === this.currentRoom.id,
+            acc => acc.id === this.currentRoom.id,
           )
           if (roomIndex > 0) {
             return
@@ -151,6 +188,36 @@ export default {
         behavior: 'smooth',
       })
     },
+    setFixedCategory(level, categoryKey) {
+      if (level > 0) {
+        if (this.fixedCategories[level - 1]) {
+          const category = this.fixedCategories[level - 1].children.find(
+            n => n.key === categoryKey,
+          )
+          this.fixedCategories[level] = category
+        }
+      } else {
+        const category = this.groupedCategories[level].find(
+          n => n.key === categoryKey,
+        )
+        this.fixedCategories[level] = category
+      }
+      for (const key in this.fixedCategories) {
+        if (+key > level) {
+          delete this.fixedCategories[key]
+        }
+      }
+    },
+    getLastNodes(node) {
+      const { children } = node
+      if (children.length > 0 && children[0].children.length > 0) {
+        return [
+          children[children.length - 1],
+          ...this.getLastNodes(children[children.length - 1]),
+        ]
+      }
+      return []
+    },
     async initObserver() {
       const nodesWithLevel = this.data.map(d => this.setLevels(d, 0))
       this.subCategories = nodesWithLevel.reduce((acc, n) => {
@@ -171,32 +238,6 @@ export default {
         entries => {
           entries.forEach(e => {
             if (wrapper.scrollTop === 0) {
-              const room = this.roomsList[0]
-              if (!room) {
-                return
-              }
-              this.currentRoom = room
-              emitter.$emit('hideRow', this.currentRoom.id, this.currentRoom.id)
-              const category = this.roomsList[0].jobs[0]
-              if (!category) {
-                return
-              }
-              this.currentCategory = category
-              emitter.$emit(
-                'hideRow',
-                this.currentRoom.id,
-                this.currentCategory.key,
-              )
-              const subCategory = this.subCategories[this.currentRoom.id][0]
-              if (!subCategory) {
-                return
-              }
-              this.currentSubCategory = subCategory
-              emitter.$emit(
-                'hideRow',
-                this.currentRoom.id,
-                this.currentSubCategory.key,
-              )
               return
             }
             const { top, height } = wrapper.getBoundingClientRect()
@@ -205,15 +246,29 @@ export default {
             }
             const id = e.target.dataset?.id
             const level = +e.target.dataset?.level
-            if (level === 0) {
-              return this.setCurrentRoom(e, id)
+            const index = this.groupedCategories[level].findIndex(
+              n => n.key === id,
+            )
+            if (index < 0) {
+              return
             }
-            if (level === 1) {
-              return this.setCurrentCategory(e, id)
+            if (e.isIntersecting) {
+              if (index > 0) {
+                const category = this.groupedCategories[level][index - 1]
+                this.setFixedCategory(level, category.key)
+                const subCategories = this.getLastNodes(category).flat()
+                subCategories.forEach(c =>
+                  this.setFixedCategory(c.level, c.key),
+                )
+              } else {
+                delete this.fixedCategories[level]
+                return
+              }
+
+              return
             }
-            if (level > 1) {
-              return this.setSubCategories(e, id)
-            }
+            const category = this.groupedCategories[level][index]
+            return this.setFixedCategory(level, category.key)
           })
         },
         {
@@ -221,8 +276,8 @@ export default {
           threshold: 1,
         },
       )
-      rows.forEach(r => {
-        observer.observe(r)
+      rows.forEach(acc => {
+        observer.observe(acc)
       })
     },
   },
@@ -231,42 +286,24 @@ export default {
 
 <template>
   <div class="tree-table">
-    <div v-if="currentRoom" class="room">
-      {{ currentRoom.name }}
-    </div>
     <div class="table-grid">
-      <div
-        v-if="currentCategory"
-        class="table-grid__header"
-        :style="[headerStyle, `backgroundColor: ${colors[0]}`]"
-      >
+      <transition-group name="list" tag="div" class="table-grid__categories">
         <div
-          v-for="(key, index) in keys"
-          :key="key.id"
-          class="table-grid__cell"
+          v-for="(category, index) in fixedView"
+          :key="category?.key"
+          class="table-grid__row"
+          :class="{ room: !index }"
+          :style="`background-color: ${colors[index - 1]}`"
         >
-          <span
-            v-if="index === 0 && currentCategory"
-            :title="currentCategory.data[keys[0].id]"
-          >
-            {{ currentCategory.data[keys[0].id] }}
-          </span>
-          <span v-else :title="key.name">
-            {{ key.name }}
+          <div v-if="index" class="table-grid__cell">
+            {{ category?.name }}
+          </div>
+          <span v-else>
+            {{ category?.name }}
           </span>
         </div>
-        <div class="table-grid__cell" title="Сумма">Сумма</div>
-      </div>
-      <div
-        v-if="currentSubCategory"
-        class="table-grid__header"
-        :style="[headerStyle, `backgroundColor: ${colors[1]}`]"
-      >
-        <div class="table-grid__cell">
-          {{ currentSubCategory.data[keys[0].id] }}
-        </div>
-      </div>
-      <div class="table-grid__body" ref="wrapper">
+      </transition-group>
+      <div class="table-grid__body" ref="wrapper" @scroll="test">
         <TableGridRow
           v-for="(node, index) in data"
           :key="node.key"
@@ -291,7 +328,6 @@ export default {
 
 .room {
   background-color: $color-dark;
-  color: #fff;
   height: 32px;
   padding: 8px;
   text-align: center;
@@ -302,6 +338,14 @@ export default {
   display: flex;
   flex-direction: column;
   min-height: 0px;
+  position: relative;
+
+  &__categories {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    height: calc(32px * v-bind(treeDepth));
+  }
 
   &__header &__cell {
     color: $color-light;
@@ -310,6 +354,9 @@ export default {
   &__header,
   &__row {
     display: grid;
+    color: #fff;
+    left: 0;
+    right: 0;
   }
 
   &__body {
@@ -322,5 +369,21 @@ export default {
   &__cell {
     @include table-cell;
   }
+}
+
+.list-move,
+.list-enter-active,
+.list-leave-active {
+  transition: all 0.1s ease;
+}
+
+.list-enter-from,
+.list-leave-to {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+.list-leave-active {
+  position: absolute;
 }
 </style>

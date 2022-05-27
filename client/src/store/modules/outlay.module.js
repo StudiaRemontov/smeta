@@ -88,8 +88,9 @@ export const filterNodes = (node, selectedValues) => {
   node.children = children.filter(n => selectedValues.includes(n.key))
   if (node.children.length > 0) {
     node.children.map(c => filterNodes(c, selectedValues))
+    return node
   }
-  return node
+  return []
 }
 
 export default {

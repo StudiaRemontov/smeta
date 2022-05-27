@@ -65,13 +65,7 @@ export default {
     },
     async create({ commit, dispatch }, payload) {
       try {
-        const outlay = {
-          ...payload,
-          sale: 0,
-          active: false,
-          rooms: [],
-        }
-        const response = await axios.post('/outlay', outlay)
+        const response = await axios.post('/outlay', payload)
         commit('pushOutlay', response.data)
         dispatch('outlay/setOutlay', response.data, { root: true })
         return response
