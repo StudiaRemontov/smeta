@@ -1,13 +1,14 @@
 <script>
 import { mapGetters } from 'vuex'
 
-import TableGridRow from './TableRow.vue'
+import TableGroup from './TableGroup.vue'
+
 import tableRowColors from '@/mixins/tableRowColors.mixin'
 
 import { filterNodes } from '@/store/modules/outlay.module'
 
 export default {
-  components: { TableGridRow },
+  components: { TableGroup },
   mixins: [tableRowColors],
   data() {
     return {
@@ -183,8 +184,10 @@ export default {
       const row = wrapper.querySelector(
         `.table-row[data-room="${roomId}"][data-id="${nodeKey}"]`,
       )
+      const level = +row.dataset.level
+      const offsetTop = 32 * (level - 1)
       wrapper.scrollTo({
-        top: row.offsetTop,
+        top: row.offsetTop - offsetTop,
         behavior: 'smooth',
       })
     },
@@ -287,31 +290,13 @@ export default {
 <template>
   <div class="tree-table">
     <div class="table-grid">
-      <transition-group name="list" tag="div" class="table-grid__categories">
-        <div
-          v-for="(category, index) in fixedView"
-          :key="category?.key"
-          class="table-grid__row"
-          :class="{ room: !index }"
-          :style="`background-color: ${colors[index - 1]}`"
-        >
-          <div v-if="index" class="table-grid__cell">
-            {{ category?.name }}
-          </div>
-          <span v-else>
-            {{ category?.name }}
-          </span>
-        </div>
-      </transition-group>
-      <div class="table-grid__body" ref="wrapper" @scroll="test">
-        <TableGridRow
-          v-for="(node, index) in data"
+      <div class="table-grid__body" ref="wrapper">
+        <TableGroup
+          v-for="node in data"
           :key="node.key"
           :node="node"
-          :style="headerStyle"
           :room="node.key"
           :level="0"
-          :index="index"
           isRoom
         />
       </div>
