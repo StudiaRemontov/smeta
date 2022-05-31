@@ -19,8 +19,8 @@ export default {
 
 <template>
   <transition name="fade">
-    <div class="popup-modal" v-if="isVisible" @click="close">
-      <div class="popup-modal__window" @click.stop>
+    <div class="popup-modal" v-if="isVisible" @mousedown="close">
+      <div class="popup-modal__window" @mousedown.stop>
         <slot></slot>
       </div>
     </div>
@@ -38,7 +38,7 @@ export default {
   padding: 5px;
   display: flex;
   align-items: center;
-  z-index: 3;
+  z-index: 11;
 
   &__window {
     background: #fff;

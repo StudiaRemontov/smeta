@@ -65,6 +65,7 @@ export default {
 .price-cell {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
 }
 

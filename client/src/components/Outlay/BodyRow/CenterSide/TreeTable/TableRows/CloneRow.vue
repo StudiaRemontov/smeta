@@ -187,6 +187,10 @@ export default {
 <style lang="scss" scoped>
 .table-cell {
   @include table-cell;
+
+  &:not(:first-child) .input {
+    text-align: center;
+  }
 }
 
 .input {

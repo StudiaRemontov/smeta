@@ -28,19 +28,21 @@
   }
 
   &.selected:not(&.parent) {
-    background-color: #b7f0ba;
+    background-color: #E0FFC0;
   }
 }
 
 @mixin table-cell {
   padding: 8px;
-  text-align: left;
   overflow: hidden;
   text-overflow: ellipsis;
   &:not(&--actions) {
     min-width: 100px;
   }
 
+  &:not(:first-child) {
+    text-align: center;
+  }
 }
 
 @mixin modal {

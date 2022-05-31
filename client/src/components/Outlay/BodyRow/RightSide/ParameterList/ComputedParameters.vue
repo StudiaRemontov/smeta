@@ -8,7 +8,7 @@ export default {
   },
   mixins: [roomParameters],
   props: {
-    parameters: {
+    parametersData: {
       type: Object,
       default() {
         return {}
@@ -20,9 +20,18 @@ export default {
 
 <template>
   <div class="computed-parameters">
-    <ParameterItem name="S пола" :value="parameters[roomOptions.floorArea]" />
-    <ParameterItem name="S стен" :value="parameters[roomOptions.wallArea]" />
-    <ParameterItem name="Периметр" :value="parameters[roomOptions.perimeter]" />
+    <ParameterItem
+      name="S пола"
+      :value="parametersData[roomOptions.floorArea]"
+    />
+    <ParameterItem
+      name="S стен"
+      :value="parametersData[roomOptions.wallArea]"
+    />
+    <ParameterItem
+      name="Периметр"
+      :value="parametersData[roomOptions.perimeter]"
+    />
   </div>
 </template>
 

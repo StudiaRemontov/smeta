@@ -33,7 +33,7 @@ export default {
 
 <template>
   <span class="title"> Итоговые параметры </span>
-  <ComputedParameters :parameters="totalComputedParameters" />
+  <ComputedParameters :parametersData="totalComputedParameters" />
 </template>
 
 <style lang="scss" scoped>

@@ -19,7 +19,7 @@ export default {
     RoomModal,
   },
   computed: {
-    ...mapGetters('outlay', ['selectedRoom']),
+    ...mapGetters('outlay', ['selectedRoom', 'showResults']),
     mainTabs() {
       return [
         {
@@ -28,21 +28,21 @@ export default {
             this.setSelectedRoom(null)
           },
           icon: 'RoomsIcon',
-          active: !this.selectedRoom,
+          active: !this.selectedRoom && !this.showResults,
         },
         {
           text: 'Сводная',
-          handler() {
-            console.log(1)
+          handler: () => {
+            this.setShowResults(true)
           },
           icon: 'DocumentIcon',
-          active: false,
+          active: this.showResults,
         },
       ]
     },
   },
   methods: {
-    ...mapMutations('outlay', ['setSelectedRoom']),
+    ...mapMutations('outlay', ['setSelectedRoom', 'setShowResults']),
     ...mapActions('outlay', ['createRoom', 'cloneRoom']),
     async openCreateModal() {
       const response = await this.$refs['room-modal'].show({

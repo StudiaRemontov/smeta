@@ -28,7 +28,6 @@ export default {
   data() {
     return {
       isCloneEditing: false,
-      rowIsVisible: true,
     }
   },
   computed: {
@@ -68,15 +67,20 @@ export default {
       }
       return {
         'data-id': this.node.key,
+        'data-level': this.level,
       }
     },
     rowStyle() {
+      const keysLength = this.keys.length
       if (this.isCategory) {
         return {
           backgroundColor: this.colors[this.level],
+          gridTemplateColumns: `4fr repeat(${keysLength}, minmax(100px, 1fr)) 50px`,
         }
       }
-      return {}
+      return {
+        gridTemplateColumns: `4fr repeat(${keysLength}, minmax(100px, 1fr)) 50px`,
+      }
     },
     sum() {
       const quantity = this.data[this.quantityKey.id]
@@ -91,11 +95,6 @@ export default {
     },
   },
   mounted() {
-    emitter.$on('hideRow', key => {
-      if (key === this.node.key) {
-        this.rowIsVisible = false
-      }
-    })
     emitter.$on('editQuantity', key => {
       const { selectedRow } = this.$refs
       if (this.node.key === key) {
@@ -136,7 +135,6 @@ export default {
       'selectJob',
       'unselectJob',
       'updateNodeChildren',
-      'setCurrentNode',
     ]),
     rowClickHandler(e) {
       const { target } = e
@@ -227,7 +225,6 @@ export default {
 
 <template>
   <div
-    v-show="rowIsVisible"
     class="table-row"
     v-bind="rowAttrs"
     :class="{ parent: isCategory, selected, striped, current }"
@@ -273,6 +270,7 @@ export default {
 .table-row {
   display: grid;
   align-items: center;
+  background-color: #fff;
 
   @include table-row;
 

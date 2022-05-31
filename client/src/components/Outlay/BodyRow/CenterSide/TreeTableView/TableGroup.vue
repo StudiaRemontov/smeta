@@ -1,12 +1,20 @@
 <script>
-import { mapGetters } from 'vuex'
-import TableRow from './Updated/TableRow.vue'
+import { mapGetters, mapMutations } from 'vuex'
+import JobList from './JobList.vue'
+import HeaderCells from './HeaderCells.vue'
+
+import { isObjectId } from '@/helpers/isObjectId'
+import { formatNumber } from '@/helpers/formatNumber'
+
+import tableRowColors from '@/mixins/tableRowColors.mixin'
 
 export default {
   name: 'TableGroup',
   components: {
-    TableRow,
+    JobList,
+    HeaderCells,
   },
+  mixins: [tableRowColors],
   props: {
     node: {
       type: Object,
@@ -18,7 +26,13 @@ export default {
     isRoom: Boolean,
   },
   computed: {
-    ...mapGetters('outlay', ['keys']),
+    ...mapGetters('outlay', [
+      'keys',
+      'quantityKey',
+      'priceKey',
+      'selectedValues',
+      'selectedRoom',
+    ]),
     data() {
       return this.node.data
     },
@@ -31,11 +45,83 @@ export default {
     isCategory() {
       return this.children.length > 0
     },
+    categories() {
+      return this.children.filter(c => {
+        const { children } = c
+        return children && children.length > 0
+      })
+    },
+    sum() {
+      const allNodes = this.node.children.map(this.treeToListOnlyValues).flat()
+      if (this.selectedRoom) {
+        const selected = allNodes.filter(n =>
+          this.selectedValues.includes(n.key),
+        )
+        const sum = selected.reduce((acc, node) => {
+          const { data } = node
+          const price = data[this.priceKey.id] * data[this.quantityKey.id]
+          return acc + price
+        }, 0)
+        return formatNumber(sum)
+      }
+      const sum = allNodes.reduce((acc, node) => {
+        const { data } = node
+        const price = data[this.priceKey.id] * data[this.quantityKey.id]
+        return acc + price
+      }, 0)
+      return formatNumber(sum)
+    },
     result() {
-      const sum = 0
-      return `Итого по ${this.isRoom ? 'помещению' : 'разделу'} (${
-        this.title
-      }) ${sum}`
+      return `Итого по ${this.isRoom ? 'помещению' : 'разделу'} (${this.title})`
+    },
+    resultsRowStyle() {
+      const keysLength = this.keys.length
+      return {
+        gridTemplateColumns: `${4 + keysLength - 1}fr minmax(100px, 1fr)`,
+      }
+    },
+    categoryRowStyle() {
+      const keysLength = this.keys.length
+      return {
+        gridTemplateColumns: `4fr repeat(${keysLength}, minmax(100px, 1fr)) ${
+          this.selectedRoom ? '50px' : ''
+        }`,
+      }
+    },
+    selected() {
+      return this.selectedValues.includes(this.node.key)
+    },
+  },
+  methods: {
+    ...mapMutations('outlay', ['selectJob', 'unselectJob']),
+    treeToListOnlyValues(node) {
+      const { children, key } = node
+      const childs = children.map(this.treeToListOnlyValues).flat()
+
+      if (isObjectId(key)) {
+        return childs
+      }
+
+      return [node]
+    },
+    select() {
+      if (!this.selected) {
+        this.selectJob(this.node)
+        return this.$emit('select-node')
+      }
+
+      if (this.isCategory) {
+        const hasSelectedValues = !!this.node.children.find(n =>
+          this.selectedValues.includes(n.key),
+        )
+
+        if (!hasSelectedValues) {
+          this.unselectJob(this.node)
+        }
+        return this.$emit('select-node')
+      }
+      this.unselectJob(this.node)
+      this.$emit('select-node')
     },
   },
 }
@@ -43,7 +129,12 @@ export default {
 
 <template>
   <div class="table-group">
-    <div class="title-row">{{ title }}</div>
+    <div v-if="isRoom" class="title-row">
+      {{ title }}
+    </div>
+    <div v-else class="table-row table-row--category" :style="categoryRowStyle">
+      <HeaderCells :title="title" />
+    </div>
     <template v-if="isRoom && children.length > 0">
       <TableGroup
         v-for="category in children"
@@ -54,16 +145,31 @@ export default {
       />
     </template>
     <template v-else>
-      <TableRow
-        v-for="node in children"
-        :key="node.key"
-        :node="node"
-        :level="level + 1"
-        :room="room"
-      />
+      <template v-if="categories.length > 0">
+        <JobList
+          v-for="child in children"
+          :key="child.key"
+          :node="child"
+          :level="level + 1"
+          :room="room"
+          @select-node="select"
+        />
+      </template>
+      <template v-else>
+        <JobList
+          :node="node"
+          :level="level + 1"
+          :room="room"
+          :hasTitle="false"
+          @select-node="select"
+        />
+      </template>
     </template>
-    <div class="results-row">
-      {{ result }}
+    <div class="results-row" :style="resultsRowStyle">
+      <div class="table-cell table-cell--results">
+        {{ result }}
+      </div>
+      <div class="table-cell" :title="sum">{{ sum }}</div>
     </div>
   </div>
 </template>
@@ -73,23 +179,55 @@ export default {
   position: relative;
 }
 
-.title-row,
-.results-row {
-  @include table-cell;
+.table-row {
+  display: grid;
+  background-color: #fff;
+  font-weight: 700;
   position: sticky;
   top: calc(32px * v-bind(level));
-  font-weight: 700;
-  border-bottom: 1px solid rgb(121, 121, 121);
+  height: 32px;
+
+  &--category {
+    background-color: $table-category-color;
+    font-weight: 400;
+    color: #ffffff;
+    z-index: calc(10 - v-bind(level));
+  }
+
+  &--results {
+    @include table-cell;
+    font-weight: 700;
+  }
 }
 
 .title-row {
+  position: sticky;
+  top: calc(32px * v-bind(level));
+  z-index: calc(10 - v-bind(level));
+  padding: 8px;
+  height: 32px;
   text-align: center;
-  background-color: #ccc;
-  z-index: calc(100 - v-bind(level));
+  color: #fff;
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 19px;
+  background-color: $table-color-room;
 }
 
 .results-row {
   text-align: right;
   background-color: rgb(232, 232, 232);
+  display: grid;
+  padding: 0;
+  font-weight: 700;
+}
+
+.table-cell {
+  @include table-cell;
+  text-align: left;
+
+  &--results {
+    text-align: right;
+  }
 }
 </style>

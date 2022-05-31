@@ -2,6 +2,7 @@
 import TriangleIcon from '@/components/UI/Icons/TriangleIcon.vue'
 
 import { formatNumber } from '@/helpers/formatNumber'
+import { isObjectId } from '@/helpers/isObjectId'
 
 export default {
   name: 'CategoryItem',
@@ -22,7 +23,13 @@ export default {
       return formatNumber(this.category.sum)
     },
     jobs() {
-      return this.category.jobs.map(j => ({
+      const list = this.category.jobs.filter(j => {
+        const { id } = j
+
+        return isObjectId(id)
+      })
+
+      return list.map(j => ({
         ...j,
         sum: formatNumber(j.sum),
       }))
@@ -35,7 +42,10 @@ export default {
   <div class="category-item">
     <div class="category-item__head">
       <div class="category-item__text" @click="showChildren = !showChildren">
-        <button class="button" :class="{ rotated: showChildren }">
+        <button
+          class="button"
+          :class="{ rotated: showChildren, hidden: jobs.length === 0 }"
+        >
           <TriangleIcon class="button__icon" />
         </button>
         <span class="category-item__name" :title="category.name">
@@ -107,6 +117,10 @@ export default {
 
   &.rotated {
     transform: rotate(90deg);
+  }
+
+  &.hidden {
+    opacity: 0;
   }
 }
 </style>

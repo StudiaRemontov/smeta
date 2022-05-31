@@ -41,7 +41,7 @@ export default {
   </span>
   <div class="groups">
     <RoomParameters :parameters="allParameters.options" />
-    <ComputedParameters :parameters="allParameters.computed" />
+    <ComputedParameters :parametersData="allParameters.computed" />
   </div>
 </template>
 

@@ -5,6 +5,7 @@ import MultiSelect from 'primevue/multiselect'
 
 import TreeTable from './CenterSide/TreeTable/TreeTable.vue'
 import TreeTableView from './CenterSide/TreeTableView/TreeTableView.vue'
+import ResultsTable from './CenterSide/Results/ResultsTable.vue'
 
 import { isObjectId } from '@/helpers/isObjectId'
 
@@ -19,6 +20,7 @@ export default {
     TreeTable,
     TreeTableView,
     MultiSelect,
+    ResultsTable,
   },
   data() {
     return {
@@ -49,6 +51,7 @@ export default {
       'keys',
       'rooms',
       'selectedValues',
+      'showResults',
     ]),
     striped: {
       get() {
@@ -103,25 +106,6 @@ export default {
       const { autocomplete } = this.$refs
       const { top } = autocomplete.$el.getBoundingClientRect()
       this.screenHeight = window.innerHeight - top
-    },
-    showInfo() {
-      this.$refs['info-modal'].show()
-    },
-    treeToListOnlyValues(node, parents = []) {
-      const { children, key } = node
-      if (isObjectId(key)) {
-        parents.push(node.data[this.keys[0].id])
-        return children.map(c => this.treeToListOnlyValues(c, parents)).flat()
-      }
-      const arrayName = [...parents, node.data[this.keys[0].id]]
-      const name = arrayName.join('/')
-      return [
-        {
-          key,
-          name,
-          value: node,
-        },
-      ]
     },
     getGroupsWithRoom(node, parent = null, roomId) {
       const { children, key, data } = node
@@ -276,7 +260,7 @@ export default {
 <template>
   <div class="center">
     <div v-if="outlay" class="center__body">
-      <div class="body-actions">
+      <div v-if="!showResults" class="body-actions">
         <div class="search-wrapper">
           <i class="pi pi-search"></i>
           <AutoComplete
@@ -313,7 +297,8 @@ export default {
           </div>
         </div>
       </div>
-      <TreeTable v-if="selectedRoom" ref="table" :striped="striped" />
+      <ResultsTable v-if="showResults" />
+      <TreeTable v-else-if="selectedRoom" ref="table" :striped="striped" />
       <TreeTableView v-else-if="rooms.length > 0" ref="table" />
     </div>
   </div>

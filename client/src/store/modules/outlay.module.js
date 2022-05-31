@@ -111,6 +111,7 @@ export default {
     formulaKey: null,
     striped: false,
     currentNode: null,
+    showResults: false,
   },
   mutations: {
     setOutlay(state) {
@@ -149,11 +150,13 @@ export default {
       state.outlay.sale = value
     },
     setSelectedRoom(state, payload) {
+      state.showResults = false
       state.selectedRoom = payload
       state.showOnlyChecked = false
-      // if(payload) {
-      //   state.currentNode =
-      // }
+    },
+    setShowResults(state, payload) {
+      state.selectedRoom = null
+      state.showResults = payload
     },
     setShowOnlyChecked(state, payload) {
       state.showOnlyChecked = payload
@@ -201,6 +204,7 @@ export default {
       state.keys = null
       state.roomsData = null
       state.selectedValues = null
+      state.showResults = false
     },
   },
   actions: {
@@ -429,5 +433,6 @@ export default {
     striped: s => s.striped,
     sale: s => s.outlay.sale,
     currentNode: s => s.currentNode,
+    showResults: s => s.showResults,
   },
 }
