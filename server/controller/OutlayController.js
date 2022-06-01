@@ -34,6 +34,17 @@ class OutlayController {
     }
   }
 
+  static async setActive(req, res, next) {
+    try {
+      const id = req.params.id
+      const response = await OutlayService.setActive(id)
+
+      return res.json({ updated: response })
+    } catch (error) {
+      next(error)
+    }
+  }
+
   static async delete(req, res, next) {
     try {
       const id = req.params.id

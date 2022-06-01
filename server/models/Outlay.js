@@ -26,15 +26,15 @@ const roomSchema = new mongoose.Schema(
     jobs: [jobsSchema],
     options: {
       width: {
-        type: Number,
+        type: String,
         required: true,
       },
       height: {
-        type: Number,
+        type: String,
         required: true,
       },
       length: {
-        type: Number,
+        type: String,
         required: true,
       },
       spaces: {
@@ -51,7 +51,6 @@ const schema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
-      unique: true,
     },
     date: {
       type: Date,
@@ -67,6 +66,11 @@ const schema = new mongoose.Schema(
       default: 0,
     },
     rooms: [roomSchema],
+    active: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
   },
   {
     versionKey: false,

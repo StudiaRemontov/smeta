@@ -35,6 +35,19 @@ class OutlayService {
     return edition
   }
 
+  static async setActive(id) {
+    const activeBefore = await Outlay.findOne({ active: true })
+    const activeNow = await OutlayService.update(id, {
+      active: true,
+    })
+    if (!activeBefore || activeBefore._id.equals(id)) {
+      return [activeNow]
+    }
+    activeBefore.active = false
+    await activeBefore.save()
+    return [activeNow, activeBefore]
+  }
+
   static async delete(id) {
     const edition = await Outlay.findByIdAndDelete(id)
     if (!edition) {
