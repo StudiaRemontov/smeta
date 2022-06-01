@@ -98,7 +98,7 @@ export default {
   methods: {
     ...mapMutations('outlay', ['selectJob', 'setStriped']),
     async windowResize() {
-      if (!this.outlay) {
+      if (!this.outlay || !this.selectedRoom) {
         return
       }
 

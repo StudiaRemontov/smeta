@@ -43,8 +43,6 @@ export default {
               date: undefined,
               _id: undefined,
             }
-            console.log(data)
-
             try {
               await this.create(data)
             } catch (error) {

@@ -22,11 +22,16 @@ export default {
   },
   emits: ['select-node'],
   computed: {
-    ...mapGetters('outlay', ['keys', 'selectedValues']),
+    ...mapGetters('outlay', ['keys', 'selectedValues', 'showOnlyChecked']),
     data() {
       return this.node.data
     },
     children() {
+      if (this.showOnlyChecked) {
+        return this.node.children.filter(n =>
+          this.selectedValues.includes(n.key),
+        )
+      }
       return this.node.children || []
     },
     isCategory() {

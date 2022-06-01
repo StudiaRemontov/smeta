@@ -249,6 +249,8 @@ export default {
               v-model="perimeter"
               placeholder="Периметер"
               :disabled="true"
+              :minFractionDigits="2"
+              :maxFractionDigits="2"
             />
           </div>
           <div class="form__group">
@@ -257,6 +259,8 @@ export default {
               v-model="floorArea"
               placeholder="Площадь пола"
               :disabled="true"
+              :minFractionDigits="2"
+              :maxFractionDigits="2"
             />
           </div>
           <div class="form__group">
@@ -265,6 +269,8 @@ export default {
               v-model="wallArea"
               placeholder="Площадь стен"
               :disabled="true"
+              :minFractionDigits="2"
+              :maxFractionDigits="2"
             />
           </div>
         </div>

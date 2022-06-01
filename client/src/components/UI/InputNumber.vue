@@ -71,6 +71,9 @@ export default {
         e.preventDefault()
         return this.decreaseValue()
       }
+      if (key === 'Space') {
+        return e.preventDefault()
+      }
       const avaliableKeys = ['ArrowRight', 'ArrowLeft', 'Backspace', 'Tab']
       if (avaliableKeys.includes(key) || (ctrlKey && /a/i.test(key))) {
         return

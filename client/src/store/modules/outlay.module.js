@@ -295,6 +295,21 @@ export default {
     ) {
       const cloningRoomData = getters.rooms.find(r => r.id === cloningRoomId)
       const clone = JSON.parse(JSON.stringify(cloningRoomData))
+      const nameRegex = new RegExp(`^${name}[\\s][\\d]*$|^${name}$`, 'gmi')
+      const roomsWithSameName = state.outlay.rooms.filter(r =>
+        r.name.match(nameRegex),
+      )
+      if (roomsWithSameName.length > 0) {
+        const maxNum = roomsWithSameName.reduce((acc, r) => {
+          const numInName = r.name.split(' ')[1] || 0
+          const num = +numInName
+          if (num > acc) {
+            return num
+          }
+          return acc
+        }, 0)
+        name = `${name} ${maxNum + 1}`
+      }
       const { jobs } = clone
       const room = {
         id: Date.now() + '',

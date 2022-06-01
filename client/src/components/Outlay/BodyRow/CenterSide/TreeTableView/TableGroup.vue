@@ -32,6 +32,8 @@ export default {
       'priceKey',
       'selectedValues',
       'selectedRoom',
+      'showOnlyChecked',
+      'selectedValues',
     ]),
     data() {
       return this.node.data
@@ -40,6 +42,11 @@ export default {
       return this.node.data[this.keys[0].id]
     },
     children() {
+      if (this.showOnlyChecked) {
+        return this.node.children.filter(n =>
+          this.selectedValues.includes(n.key),
+        )
+      }
       return this.node.children || []
     },
     isCategory() {
