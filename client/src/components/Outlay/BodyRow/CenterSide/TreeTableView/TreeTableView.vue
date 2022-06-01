@@ -73,13 +73,20 @@ export default {
     },
     scrollTo(roomId, nodeKey) {
       const { wrapper } = this.$refs
+      if (!wrapper) return
+      const tableData = wrapper.getBoundingClientRect()
       const row = wrapper.querySelector(
         `.table-row[data-room="${roomId}"][data-id="${nodeKey}"]`,
       )
+      if (!row) {
+        return
+      }
+      const rowData = row.getBoundingClientRect()
       const level = +row.dataset.level
-      const offsetTop = 32 * (level - 1)
+      const stickyRowsHeight = level * 32
+      const offsetFromTable = rowData.top - tableData.top - stickyRowsHeight
       wrapper.scrollTo({
-        top: row.offsetTop - offsetTop,
+        top: offsetFromTable + wrapper.scrollTop,
         behavior: 'smooth',
       })
     },
