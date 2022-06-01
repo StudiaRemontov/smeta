@@ -115,6 +115,11 @@ export default {
         selectedRow.setQuantityVisability(false)
       }
     })
+    emitter.$on('select', () => {
+      if (this.node.key === this.currentNode.key) {
+        this.select()
+      }
+    })
     if (!this.isClone) {
       return
     }
@@ -129,6 +134,7 @@ export default {
     emitter.$off('hideRow')
     emitter.$off('editQuantity')
     emitter.$off('stopEditQuantity')
+    emitter.$off('select')
   },
   methods: {
     ...mapMutations('outlay', [

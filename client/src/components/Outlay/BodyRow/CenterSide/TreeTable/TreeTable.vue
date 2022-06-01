@@ -191,7 +191,7 @@ export default {
       this.setCurrentNode(this.nodes[index])
     },
     keyHandler(e) {
-      const { key } = e
+      const { key, code } = e
       const path = e.composedPath()
       const controlledElementTags = ['INPUT', 'TEXTAREA', 'SELECT']
       const isBubblesFromController = path.find(e =>
@@ -208,6 +208,10 @@ export default {
         return
       }
       if (!this.currentNode) return
+
+      if (code === 'Space') {
+        return emitter.$emit('select')
+      }
       if (key === 'ArrowRight') {
         return emitter.$emit('editQuantity', this.currentNode.key)
       }
