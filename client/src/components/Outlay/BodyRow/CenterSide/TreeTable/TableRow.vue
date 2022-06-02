@@ -1,13 +1,11 @@
 <script>
-import { mapGetters, mapMutations } from 'vuex'
+import { mapActions, mapGetters, mapMutations } from 'vuex'
 import StretchedRow from './TableRows/StretchedRow.vue'
 import DefaultRow from './TableRows/DefaultRow.vue'
 import SelectedRow from './TableRows/SelectedRow.vue'
 import CloneRow from './TableRows/CloneRow.vue'
 
 import rowColors from '@/mixins/tableRowColors.mixin'
-
-import emitter from '@/modules/eventBus'
 
 export default {
   name: 'TalbeRow',
@@ -23,12 +21,6 @@ export default {
     parent: {
       type: Object,
     },
-  },
-  emits: ['select-node'],
-  data() {
-    return {
-      isCloneEditing: false,
-    }
   },
   computed: {
     ...mapGetters('outlay', [
@@ -94,54 +86,14 @@ export default {
       return this.currentNode?.key === this.node.key
     },
   },
-  mounted() {
-    emitter.$on('editQuantity', key => {
-      const { selectedRow } = this.$refs
-      if (this.node.key === key) {
-        if (this.isClone) {
-          return (this.isCloneEditing = true)
-        }
-        if (!selectedRow) return
-        selectedRow.setQuantityVisability(true)
-      }
-    })
-    emitter.$on('stopEditQuantity', key => {
-      const { selectedRow } = this.$refs
-      if (this.node.key === key) {
-        if (this.isClone) {
-          return (this.isCloneEditing = false)
-        }
-        if (!selectedRow) return
-        selectedRow.setQuantityVisability(false)
-      }
-    })
-    emitter.$on('select', () => {
-      if (this.node.key === this.currentNode.key) {
-        this.select()
-      }
-    })
-    if (!this.isClone) {
-      return
-    }
-    emitter.$on('cloned', key => {
-      if (this.node.key === key) {
-        this.isCloneEditing = true
-      }
-    })
-  },
-  unmounted() {
-    emitter.$off('cloned')
-    emitter.$off('hideRow')
-    emitter.$off('editQuantity')
-    emitter.$off('stopEditQuantity')
-    emitter.$off('select')
-  },
   methods: {
     ...mapMutations('outlay', [
       'selectJob',
-      'unselectJob',
       'updateNodeChildren',
+      'toggleNodeEditing',
+      'setCurrentNode',
     ]),
+    ...mapActions('outlay', ['selectJob', 'unSelectJob']),
     rowClickHandler(e) {
       const { target } = e
       const { cellindex } = target.dataset
@@ -149,30 +101,11 @@ export default {
       if (index > 0 || isNaN(index)) {
         return
       }
-      if (this.isCloneEditing) {
+      if (this.node.isEditing) {
         return
       }
-      this.select()
-      emitter.$emit('selectNode', this.node.key)
-    },
-    select() {
-      if (!this.selected) {
-        this.selectJob(this.node)
-        return this.$emit('select-node')
-      }
-
-      if (this.isCategory) {
-        const hasSelectedValues = !!this.node.children.find(n =>
-          this.selectedValues.includes(n.key),
-        )
-
-        if (!hasSelectedValues) {
-          this.unselectJob(this.node)
-        }
-        return this.$emit('select-node')
-      }
-      this.unselectJob(this.node)
-      this.$emit('select-node')
+      this.selectJob(this.node)
+      this.setCurrentNode(this.node)
     },
     getNodeFromTree(node, nodeKey, parents) {
       const { key, children } = node
@@ -193,6 +126,7 @@ export default {
         },
         key: Date.now() + '',
         isClone: true,
+        isEditing: true,
       }
       const { children } = this.parent
       const index = this.showOnlyChecked
@@ -212,18 +146,15 @@ export default {
         .flat()
       parents.forEach(this.selectJob)
       await this.$nextTick()
-      emitter.$emit('cloned', newNode.key)
+      this.setCurrentNode(newNode)
     },
     removeClone() {
       const children = this.parent.children.filter(c => c.key !== this.node.key)
       this.updateNodeChildren({ node: this.parent, children })
-      if (this.selected) {
-        return this.select()
-      }
-      this.unselectJob(this.node)
+      this.unSelectJob(this.node)
     },
     toggleEdit() {
-      this.isCloneEditing = !this.isCloneEditing
+      this.toggleNodeEditing(this.node)
     },
   },
 }
@@ -253,7 +184,7 @@ export default {
       :node="node"
       :sum="sum"
       :selected="selected"
-      :isEditing="isCloneEditing"
+      :isEditing="node.isEditing"
       @toggleEdit="toggleEdit"
       @remove="removeClone"
     />
@@ -267,7 +198,6 @@ export default {
       :index="index"
       :parent="node"
       :style="$attrs.style"
-      @select-node="select"
     />
   </template>
 </template>

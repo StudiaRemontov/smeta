@@ -30,11 +30,11 @@ export default {
     this.initPrice = this.modelValue
   },
   methods: {
-    changePrice() {
-      if (this.newValue < 1) {
+    changePrice(value) {
+      if (value < 1) {
         this.newValue = 1
       }
-      this.initPrice = this.newValue
+      this.initPrice = value
       this.coef = 1
     },
     inputCoef() {

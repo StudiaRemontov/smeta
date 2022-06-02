@@ -9,13 +9,9 @@ export default {
     modelValue: {
       required: true,
     },
+    isEditing: Boolean,
   },
-  emits: ['update:modelValue'],
-  data() {
-    return {
-      isEditing: false,
-    }
-  },
+  emits: ['update:modelValue', 'save'],
   computed: {
     newValue: {
       get() {
@@ -35,33 +31,28 @@ export default {
       return formatNumber(this.modelValue)
     },
   },
-  methods: {
-    toggleEditMode() {
-      if (this.isEditing) {
-        return this.closeEditMode()
-      }
+  watch: {
+    isEditing(value) {
+      if (!value) return
       this.openEditMode()
     },
+  },
+  methods: {
     async openEditMode() {
-      this.isEditing = true
       await this.$nextTick()
       const { input } = this.$refs
       input.$el.focus()
       input.$el.select()
     },
-    closeEditMode() {
-      this.isEditing = false
+    save() {
+      this.$emit('save')
     },
   },
 }
 </script>
 
 <template>
-  <div
-    class="table-cell"
-    :class="{ danger: !isCorrectValue }"
-    @click.stop="toggleEditMode"
-  >
+  <div class="table-cell" :class="{ danger: !isCorrectValue }">
     <span v-if="!isEditing">
       {{ viewValue }}
     </span>
@@ -70,8 +61,8 @@ export default {
       v-model="newValue"
       class="input"
       ref="input"
-      @blur="isEditing = false"
-      @keyup.enter="isEditing = false"
+      @blur="save"
+      @keyup.enter="save"
     />
   </div>
 </template>

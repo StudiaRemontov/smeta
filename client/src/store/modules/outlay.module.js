@@ -19,6 +19,11 @@ export const treeToList = node => {
   return []
 }
 
+const treeToListOnlyKeys = node => {
+  const { children } = node
+  return [node.key, ...children.map(treeToListOnlyKeys)].flat()
+}
+
 const treeToListOnlyValues = node => {
   const { children } = node
   if (children && children.length > 0) {
@@ -64,6 +69,7 @@ const mergeTree = (node, nodes) => {
 
   if (isExistsInNodes) {
     node.children = uniqBy([...isExistsInNodes.children, ...children], 'key')
+    node.children = node.children.map(n => ({ ...n, isEditing: false }))
     return [node]
   }
 
@@ -91,6 +97,16 @@ export const filterNodes = (node, selectedValues) => {
     return node
   }
   return []
+}
+
+const getParentsOfNode = (node, nodeKey, parents) => {
+  const { key, children } = node
+  if (key === nodeKey) {
+    return parents
+  }
+  return children
+    .map(c => getParentsOfNode(c, nodeKey, [node, ...parents]))
+    .flat()
 }
 
 export default {
@@ -194,6 +210,12 @@ export default {
         state.selectedRoom.id
       ].filter(n => n.key !== nodeKey)
     },
+    toggleNodeEditing(_, node) {
+      node.isEditing = !node.isEditing
+    },
+    setNodeEditing(_, { node, value }) {
+      node.isEditing = value
+    },
     resetOutlay(state) {
       state.outlay = null
       state.edition = null
@@ -253,6 +275,69 @@ export default {
         return acc
       }, {})
       commit('setSelectedRoom', null)
+    },
+    selectJob({ state, dispatch }, job) {
+      const { roomsData, selectedRoom, selectedValues } = state
+      const isSelected = selectedValues[selectedRoom.id].includes(job.key)
+      if (isSelected) {
+        return dispatch('unSelectJob', job)
+      }
+      const tree = JSON.parse(JSON.stringify(roomsData[selectedRoom.id]))
+      const parents = tree.map(n => getParentsOfNode(n, job.key, [])).flat()
+      const nodesToSelect = [job, ...parents]
+      nodesToSelect.forEach(n => {
+        if (selectedValues[selectedRoom.id].includes(n.key)) {
+          return
+        }
+        selectedValues[selectedRoom.id].push(n.key)
+      })
+    },
+    unSelectJob({ state, dispatch }, job) {
+      const { roomsData, selectedRoom, selectedValues } = state
+      const isSelected = selectedValues[selectedRoom.id].includes(job.key)
+      if (!isSelected) {
+        return dispatch('selectJob', job)
+      }
+      const tree = JSON.parse(JSON.stringify(roomsData[selectedRoom.id]))
+      const parents = tree.map(n => getParentsOfNode(n, job.key, [])).flat()
+      selectedValues[selectedRoom.id] = selectedValues[selectedRoom.id].filter(
+        key => key !== job.key,
+      )
+      parents.forEach(p => {
+        const { children } = p
+        const hasSelectedValues = children.find(c =>
+          selectedValues[selectedRoom.id].includes(c.key),
+        )
+        if (hasSelectedValues) {
+          return
+        }
+        selectedValues[selectedRoom.id] = selectedValues[
+          selectedRoom.id
+        ].filter(key => key !== p.key)
+      })
+    },
+    toggleCategoryJobs({ state, dispatch }, node) {
+      const { selectedValues, selectedRoom } = state
+      const selectedNodes = selectedValues[selectedRoom.id]
+      const { children } = node
+      const nodesInside = children.map(treeToListOnlyKeys).flat()
+      const selectedChildren = children.filter(node =>
+        selectedNodes.includes(node.key),
+      )
+      if (selectedChildren.length === children.length) {
+        selectedValues[selectedRoom.id] = selectedValues[
+          selectedRoom.id
+        ].filter(key => !nodesInside.includes(key))
+        return dispatch('selectJob', node)
+      }
+      const newValues = [...selectedValues[selectedRoom.id], ...nodesInside]
+      const unique = [...new Set(newValues)]
+      selectedValues[selectedRoom.id] = unique
+      const isSelectedCategory = selectedValues[selectedRoom.id].includes(
+        node.key,
+      )
+      if (isSelectedCategory) return
+      return dispatch('selectJob', node)
     },
     async createRoom({ commit, state, dispatch }, { name, options }) {
       if (!state.outlay) return

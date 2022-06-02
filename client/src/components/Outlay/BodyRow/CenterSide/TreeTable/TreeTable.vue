@@ -115,14 +115,18 @@ export default {
   },
   unmounted() {
     emitter.$off('scrollTo')
-    emitter.$off('hideRow')
     emitter.$off('selectNode')
     document.removeEventListener('keydown', this.keyHandler)
   },
   methods: {
-    ...mapMutations('outlay', ['selectJob', 'setCurrentNode']),
+    ...mapMutations('outlay', [
+      'selectJob',
+      'setCurrentNode',
+      'toggleNodeEditing',
+      'setNodeEditing',
+    ]),
     ...mapMutations('outlays', ['updateById']),
-    ...mapActions('outlay', ['saveLocaly']),
+    ...mapActions('outlay', ['saveLocaly', 'selectJob']),
     isObjectId(id) {
       return /^[0-9a-fA-F]{24}$/.test(id)
     },
@@ -154,9 +158,6 @@ export default {
         .flat()
     },
     scrollTo(nodeKey, smooth = true) {
-      if (this.showOnlyChecked) {
-        return this.selectNode(nodeKey)
-      }
       const { wrapper } = this.$refs
       if (!wrapper) return
       const tableData = wrapper.getBoundingClientRect()
@@ -173,16 +174,14 @@ export default {
         behavior: smooth ? 'smooth' : 'instant',
       })
     },
-    scrollToAndSelect(nodeKey) {
-      this.scrollTo(nodeKey)
-      this.selectNode(nodeKey)
+    scrollToAndSelect(node) {
+      const { key } = node
+      this.scrollTo(key)
+      this.selectNode(node)
     },
-    selectNode(nodeKey) {
-      const parents = this.roomsData[this.selectedRoom.id]
-        .map(n => this.getNodeFromTree(n, nodeKey, []))
-        .flat()
-      parents.forEach(this.selectJob)
-      this.setCurrentNodeByKey(nodeKey)
+    selectNode(node) {
+      this.selectJob(node)
+      this.setCurrentNodeByKey(node.key)
     },
     setCurrentNodeByKey(key) {
       const index = this.nodes.findIndex(n => n.key === key)
@@ -210,18 +209,26 @@ export default {
       if (!this.currentNode) return
 
       if (code === 'Space') {
-        return emitter.$emit('select')
+        this.selectJob(this.currentNode)
+        if (!this.showOnlyChecked) return
+        if (this.currentNodeIndex >= this.nodes.length - 1) {
+          this.currentNodeIndex = this.nodes.length - 1
+        }
+        const currentNode = this.nodes[this.currentNodeIndex]
+        return this.setCurrentNode(currentNode)
       }
       if (key === 'ArrowRight') {
-        return emitter.$emit('editQuantity', this.currentNode.key)
+        return this.toggleNodeEditing(this.currentNode)
       }
       if (key === 'ArrowLeft' || key === 'Enter') {
-        return emitter.$emit('stopEditQuantity', this.currentNode.key)
+        return this.setNodeEditing({ node: this.currentNode, value: false })
       }
       const avaliableKeys = ['ArrowUp', 'ArrowDown']
       if (!avaliableKeys.includes(key)) {
         return
       }
+      //refresh
+      this.setCurrentNodeByKey(this.currentNode.key)
       if (key === avaliableKeys[0]) {
         if (this.currentNodeIndex <= 0) {
           return (this.currentNodeIndex = 0)

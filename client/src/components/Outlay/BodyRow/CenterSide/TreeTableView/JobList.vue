@@ -1,5 +1,5 @@
 <script>
-import { mapGetters, mapMutations } from 'vuex'
+import { mapActions, mapGetters, mapMutations } from 'vuex'
 import TableRow from './TableRow.vue'
 import EditableTableRow from '../TreeTable/TableRow.vue'
 
@@ -60,6 +60,7 @@ export default {
   },
   methods: {
     ...mapMutations('outlay', ['selectJob', 'unselectJob']),
+    ...mapActions('outlay', ['toggleCategoryJobs']),
     select() {
       if (!this.selected) {
         this.selectJob(this.node)
@@ -79,13 +80,17 @@ export default {
       this.unselectJob(this.node)
       this.$emit('select-node')
     },
+    categoryClick() {
+      if (!this.editable) return
+      this.toggleCategoryJobs(this.node)
+    },
   },
 }
 </script>
 
 <template>
   <div v-if="title" class="table-row table-row--category" :style="headerStyle">
-    <div class="table-cell">
+    <div class="table-cell" @click="categoryClick">
       {{ title }}
     </div>
   </div>

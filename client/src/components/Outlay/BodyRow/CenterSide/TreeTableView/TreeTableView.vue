@@ -83,7 +83,7 @@ export default {
       }
       const rowData = row.getBoundingClientRect()
       const level = +row.dataset.level
-      const stickyRowsHeight = level * 32
+      const stickyRowsHeight = (level + 1) * 32
       const offsetFromTable = rowData.top - tableData.top - stickyRowsHeight
       wrapper.scrollTo({
         top: offsetFromTable + wrapper.scrollTop,

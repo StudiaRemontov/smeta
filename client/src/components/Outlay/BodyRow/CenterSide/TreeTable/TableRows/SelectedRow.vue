@@ -1,5 +1,5 @@
 <script>
-import { mapGetters } from 'vuex'
+import { mapGetters, mapMutations } from 'vuex'
 import DefaultActions from '../TableCells/DefaultActions.vue'
 import ViewCell from '../TableCells/ViewCell.vue'
 import PriceCell from '../TableCells/Seletcted/PriceCell.vue'
@@ -47,13 +47,12 @@ export default {
     },
   },
   methods: {
-    setQuantityVisability(value) {
-      const { quantity } = this.$refs
-      if (!quantity) return
-      if (value) {
-        return quantity[0].openEditMode()
-      }
-      quantity[0]?.closeEditMode()
+    ...mapMutations('outlay', ['setNodeEditing', 'toggleNodeEditing']),
+    closeEditing() {
+      this.setNodeEditing({ node: this.node, value: false })
+    },
+    quantityClick() {
+      this.toggleNodeEditing(this.node)
     },
   },
 }
@@ -66,6 +65,9 @@ export default {
       v-else-if="key.type === InputType.QUANTITY"
       v-model="data[key.id]"
       ref="quantity"
+      :isEditing="node.isEditing"
+      @save="closeEditing"
+      @click.stop="quantityClick"
     />
     <ViewCell v-else :value="data[key.id]" :index="index" :keyData="key" />
   </template>

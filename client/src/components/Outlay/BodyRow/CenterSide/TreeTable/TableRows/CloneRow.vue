@@ -96,9 +96,12 @@ export default {
     },
   },
   watch: {
-    isEditing(value) {
-      if (!value) return
-      this.focusFirstCell()
+    isEditing: {
+      handler(value) {
+        if (!value) return
+        this.focusFirstCell()
+      },
+      immediate: true,
     },
   },
   methods: {

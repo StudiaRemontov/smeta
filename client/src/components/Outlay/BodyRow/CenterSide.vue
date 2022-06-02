@@ -98,10 +98,9 @@ export default {
   methods: {
     ...mapMutations('outlay', ['selectJob', 'setStriped']),
     async windowResize() {
-      if (!this.outlay || !this.selectedRoom) {
+      if (!this.outlay || this.showResults) {
         return
       }
-
       await this.$nextTick()
       const { autocomplete } = this.$refs
       const { top } = autocomplete.$el.getBoundingClientRect()
@@ -238,14 +237,19 @@ export default {
         return [...acc, ...uniqueJobs]
       }, [])
     },
-    findJob(e) {
+    async findJob(e) {
       const key = e.value.key
       const room = e.value.roomId
-      const { table } = this.$refs
+      const { table, autocomplete } = this.$refs
+      const input = autocomplete.$el.querySelector('input')
+      if (input) {
+        await this.$nextTick()
+        input.blur()
+      }
       if (!this.selectedRoom) {
         return table.scrollTo(room, key)
       }
-      table.scrollToAndSelect(key)
+      table.scrollToAndSelect(e.value)
     },
     autoCompleteClickHanler() {
       this.selectedJob = null

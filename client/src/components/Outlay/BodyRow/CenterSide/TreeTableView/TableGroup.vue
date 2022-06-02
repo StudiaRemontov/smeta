@@ -1,5 +1,5 @@
 <script>
-import { mapGetters, mapMutations } from 'vuex'
+import { mapActions, mapGetters, mapMutations } from 'vuex'
 import JobList from './JobList.vue'
 import HeaderCells from './HeaderCells.vue'
 
@@ -15,6 +15,7 @@ export default {
     HeaderCells,
   },
   mixins: [tableRowColors],
+  inject: ['editable'],
   props: {
     node: {
       type: Object,
@@ -101,6 +102,7 @@ export default {
   },
   methods: {
     ...mapMutations('outlay', ['selectJob', 'unselectJob']),
+    ...mapActions('outlay', ['toggleCategoryJobs']),
     treeToListOnlyValues(node) {
       const { children, key } = node
       const childs = children.map(this.treeToListOnlyValues).flat()
@@ -130,6 +132,10 @@ export default {
       this.unselectJob(this.node)
       this.$emit('select-node')
     },
+    toggleCategory() {
+      if (!this.editable) return
+      this.toggleCategoryJobs(this.node)
+    },
   },
 }
 </script>
@@ -140,7 +146,7 @@ export default {
       {{ title }}
     </div>
     <div v-else class="table-row table-row--category" :style="categoryRowStyle">
-      <HeaderCells :title="title" />
+      <HeaderCells :title="title" @name-click="toggleCategory" />
     </div>
     <template v-if="isRoom && children.length > 0">
       <TableGroup

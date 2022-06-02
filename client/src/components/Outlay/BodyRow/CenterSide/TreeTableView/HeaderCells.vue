@@ -5,6 +5,7 @@ export default {
     title: String,
     level: Number,
   },
+  emits: ['name-click'],
   computed: {
     ...mapGetters('outlay', ['keys']),
     cells() {
@@ -30,12 +31,22 @@ export default {
       return keys
     },
   },
+  methods: {
+    nameClick() {
+      this.$emit('name-click')
+    },
+  },
 }
 </script>
 
 <template>
-  <div v-for="cell in cells" :key="cell.id" class="table-cell">
-    {{ cell.name }}
+  <div v-for="(cell, index) in cells" :key="cell.id" class="table-cell">
+    <span v-if="index === 0" @click="nameClick">
+      {{ cell.name }}
+    </span>
+    <template v-else>
+      {{ cell.name }}
+    </template>
   </div>
 </template>
 
