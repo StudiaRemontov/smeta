@@ -98,6 +98,19 @@ export default {
         return Promise.reject(error)
       }
     },
+    async print(_, id) {
+      try {
+        if (!id) {
+          throw 'id is required'
+        }
+        const response = await axios.post(`/outlay/pdf/${id}`, {
+          domain: window.location.origin,
+        })
+        return response
+      } catch (error) {
+        return Promise.reject(error)
+      }
+    },
   },
   getters: {
     outlays: s => s.outlays,

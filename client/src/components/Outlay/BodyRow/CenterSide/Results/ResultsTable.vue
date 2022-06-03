@@ -1,5 +1,5 @@
 <script>
-import { mapGetters } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 
 import roomParameters from '@/mixins/roomParameters.mixin'
 import { isObjectId } from '@/helpers/isObjectId'
@@ -11,10 +11,10 @@ import { uniqBy } from 'lodash'
 export default {
   mixins: [roomParameters],
   computed: {
+    ...mapState('outlay', ['selectedValues']),
     ...mapGetters('outlay', [
       'rooms',
       'roomsData',
-      'selectedValues',
       'quantityKey',
       'priceKey',
       'keys',
@@ -249,11 +249,11 @@ export default {
         <td
           v-for="(val, key) in category.rooms"
           :key="key"
-          class="results-table__cell"
+          class="results-table__cell price"
         >
           {{ format(val) }}
         </td>
-        <td class="results-table__cell results-table__cell bold">
+        <td class="results-table__cell results-table__cell bold price">
           {{ format(sumOfCategory[category.id]) }}
         </td>
       </tr>
@@ -262,11 +262,11 @@ export default {
         <th
           v-for="price in priceOfRooms"
           :key="price.id"
-          class="results-table__cell"
+          class="results-table__cell price"
         >
           {{ format(price.result) }}
         </th>
-        <th class="results-table__cell">
+        <th class="results-table__cell price">
           {{ format(totalPrice) }}
         </th>
       </tr>
@@ -275,11 +275,11 @@ export default {
         <th
           v-for="price in priceOfRoomsWithSale"
           :key="price.id"
-          class="results-table__cell"
+          class="results-table__cell price"
         >
           {{ format(price.result) }}
         </th>
-        <th class="results-table__cell">
+        <th class="results-table__cell price">
           {{ format(totalPriceWithSale) }}
         </th>
       </tr>
@@ -289,7 +289,7 @@ export default {
         <td class="subtable__cell">
           {{ item.text }}
         </td>
-        <td class="subtable__cell bold">
+        <td class="subtable__cell bold price">
           {{ item.value }}
         </td>
       </tr>
@@ -299,17 +299,28 @@ export default {
 
 <style lang="scss" scoped>
 .table-wrapper {
-  padding-top: 20px;
+  padding: 20px 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 20px;
+
+  @media print {
+    display: block;
+  }
 }
 
 .results-table {
   border-collapse: collapse;
+  display: block;
+
+  @media print {
+    margin-top: 10px;
+  }
 
   &__row {
+    -webkit-print-color-adjust: exact;
+    break-inside: avoid;
     &--head {
       background-color: #ccc;
     }
@@ -328,6 +339,15 @@ export default {
 
 .subtable {
   border-collapse: collapse;
+  display: block;
+
+  @media print {
+    margin-top: 10px;
+  }
+
+  &__row {
+    break-inside: avoid;
+  }
 
   &__cell {
     &:not(:first-child) {
@@ -340,5 +360,9 @@ export default {
 
 .bold {
   font-weight: 700;
+}
+
+.price {
+  text-align: right !important;
 }
 </style>

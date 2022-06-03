@@ -13,7 +13,8 @@ import PriceListsClone from '@/views/PriceLists/CloneView.vue'
 
 import SmetaIndexView from '@/views/Smeta/IndexView.vue'
 
-import SmetaView from '@/views/SmetaView.vue'
+import OutlayView from '@/views/SmetaView.vue'
+import PrintView from '@/views/PrintView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -74,7 +75,7 @@ const router = createRouter({
     {
       path: '/outlay',
       name: 'outlay',
-      component: SmetaView,
+      component: OutlayView,
       meta: {
         layout: 'MainLayout',
       },
@@ -89,9 +90,17 @@ const router = createRouter({
     {
       path: '/outlay/:id',
       name: 'outlayView',
-      component: SmetaView,
+      component: OutlayView,
       meta: {
         layout: 'OutlayLayout',
+      },
+    },
+    {
+      path: '/print/:id',
+      name: 'printView',
+      component: PrintView,
+      meta: {
+        layout: 'PrintLayout',
       },
     },
   ],

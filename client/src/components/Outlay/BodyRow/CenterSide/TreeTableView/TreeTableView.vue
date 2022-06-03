@@ -56,6 +56,27 @@ export default {
       }
     },
   },
+  async mounted() {
+    // await this.$nextTick()
+    // const { wrapper } = this.$refs
+    // const doc = new jsPDF({
+    //   unit: 'px',
+    //   hotfixes: ['px_scaling'],
+    // })
+    // doc.addFont(
+    //   '../../../../../../src/assets/fonts/Inter-Regular.ttf',
+    //   'Inter-Regular',
+    //   'normal',
+    // )
+    // doc.setFont('Inter-Regular')
+    // wrapper.style.fontFamily = 'Inter-Regular'
+    // await doc.html(wrapper, {
+    //   windowWidth: 800,
+    //   width: 800,
+    //   autoPaging: 'text',
+    // })
+    // doc.save('test.pdf')
+  },
   methods: {
     treeToList(node, list) {
       const { children } = node
@@ -100,6 +121,7 @@ export default {
       <div class="table-grid__body" ref="wrapper">
         <TableGroup
           v-for="node in data"
+          ref="table"
           :key="node.key"
           :node="node"
           :room="node.key"
@@ -123,11 +145,11 @@ export default {
   flex-direction: column;
   min-height: 0px;
   position: relative;
+  @include darkScroll;
+  overflow-y: overlay;
 
   &__body {
     flex: 1;
-    @include darkScroll;
-    overflow-y: overlay;
     position: relative;
   }
 }

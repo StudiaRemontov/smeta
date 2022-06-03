@@ -26,6 +26,7 @@ export default {
     <HeaderRow />
     <BodyRow v-if="outlay" />
   </main>
+  <div id="print" class="print"></div>
 </template>
 
 <style lang="scss" scoped>
@@ -36,5 +37,19 @@ export default {
   grid-template-rows: 60px 1fr;
   gap: 15px;
   font-family: $outlay-font-family;
+}
+
+.print {
+  display: none;
+}
+
+@media print {
+  .main {
+    display: none;
+  }
+
+  .print {
+    display: block;
+  }
 }
 </style>

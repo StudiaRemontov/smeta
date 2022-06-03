@@ -301,7 +301,9 @@ export default {
           </div>
         </div>
       </div>
-      <ResultsTable v-if="showResults" />
+      <div v-if="showResults" class="results-wrapper">
+        <ResultsTable />
+      </div>
       <TreeTable v-else-if="selectedRoom" ref="table" :striped="striped" />
       <TreeTableView v-else-if="rooms.length > 0" ref="table" />
     </div>
@@ -362,5 +364,9 @@ export default {
   display: flex;
   align-items: center;
   gap: 5px;
+}
+
+.results-wrapper {
+  padding: 20px;
 }
 </style>

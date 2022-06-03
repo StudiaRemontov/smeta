@@ -3,12 +3,23 @@ import BackIcon from '@/components/UI/Icons/ArrowRight.vue'
 import SaveIcon from '@/components/UI/Icons/SaveIcon.vue'
 import DownloadIcon from '@/components/UI/Icons/DownloadIcon.vue'
 import PrintIcon from '@/components/UI/Icons/PrintIcon.vue'
-import { mapActions, mapMutations } from 'vuex'
+import PrintPage from '@/components/Print/PrintPage.vue'
+
+import { mapActions, mapGetters, mapMutations } from 'vuex'
 
 import DownloadModal from './Modals/DownloadModal.vue'
 
+import axios from 'axios'
+
 export default {
-  components: { BackIcon, SaveIcon, DownloadIcon, PrintIcon, DownloadModal },
+  components: {
+    BackIcon,
+    SaveIcon,
+    DownloadIcon,
+    PrintIcon,
+    PrintPage,
+    DownloadModal,
+  },
   data() {
     return {
       actions: [
@@ -36,16 +47,20 @@ export default {
         {
           text: 'Распечатать',
           handler() {
-            console.log(1)
+            window.print()
           },
           icon: 'PrintIcon',
         },
       ],
     }
   },
+  computed: {
+    ...mapGetters('outlay', ['outlay']),
+  },
   methods: {
     ...mapMutations('outlay', ['setOutlay']),
     ...mapActions('outlay', ['update']),
+    ...mapActions('outlays', ['print']),
     async save() {
       this.setOutlay()
       try {
@@ -55,10 +70,29 @@ export default {
       }
     },
     async download() {
-      await this.$refs.download.show({
-        okButton: 'Скачать',
-        cancelButton: 'Отмена',
-      })
+      if (!this.outlay) {
+        return console.error('select outlay')
+      }
+      try {
+        await this.update()
+        await this.print(this.outlay._id)
+        const apiUrl = import.meta.env.VITE_BASE_URL
+        const urlParts = apiUrl.split('/')
+        urlParts.pop()
+        const serverDomain = urlParts.join('/')
+        const response = await axios.get(`${serverDomain}/pdf/smeta.pdf`, {
+          responseType: 'blob',
+        })
+        const url = window.URL.createObjectURL(new Blob([response.data]))
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', `${this.outlay.name}.pdf`)
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+      } catch (error) {
+        console.log(error)
+      }
     },
   },
 }
@@ -77,6 +111,9 @@ export default {
       <span class="action__text">{{ action.text }}</span>
     </button>
   </div>
+  <Teleport to="#print">
+    <PrintPage v-if="outlay" :outlay="outlay" />
+  </Teleport>
 </template>
 
 <style lang="scss" scoped>

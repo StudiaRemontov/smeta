@@ -32,6 +32,14 @@ const treeToListOnlyValues = node => {
   return [node.key]
 }
 
+export const getValuesInside = node => {
+  const { children } = node
+  if (children && children.length > 0) {
+    return children.map(getValuesInside).flat()
+  }
+  return [node]
+}
+
 const isObjectId = id => {
   return /^[0-9a-fA-F]{24}$/.test(id)
 }

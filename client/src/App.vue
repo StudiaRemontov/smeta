@@ -1,10 +1,12 @@
 <script>
 import MainLayout from '@/layouts/MainLayout.vue'
 import OutlayLayout from '@/layouts/OutlayLayout.vue'
+import PrintLayout from '@/layouts/PrintLayout.vue'
+
 import { mapActions } from 'vuex'
 
 export default {
-  components: { MainLayout, OutlayLayout },
+  components: { MainLayout, OutlayLayout, PrintLayout },
   data() {
     return {
       loading: false,

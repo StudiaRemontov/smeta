@@ -13,6 +13,10 @@ body {
   overflow: hidden;
   background-color: #e5e5e5;
   font-family: $base-font-family;
+
+  @media print {
+    background-color: #fff;
+  }
 }
 
 .page-title {
