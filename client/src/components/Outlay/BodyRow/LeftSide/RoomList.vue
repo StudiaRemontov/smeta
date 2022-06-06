@@ -2,11 +2,12 @@
 import RoomItem from './RoomItem.vue'
 import RoomModal from './Modals/RoomModal.vue'
 import Menu from 'primevue/menu'
+import draggable from 'vuedraggable'
 
 import { mapActions, mapGetters, mapMutations } from 'vuex'
 
 export default {
-  components: { RoomItem, RoomModal, Menu },
+  components: { RoomItem, RoomModal, Menu, draggable },
   emits: ['open-edit', 'clone'],
   data() {
     return {
@@ -35,12 +36,22 @@ export default {
           },
         },
       ],
+      dragOptions: {
+        animation: 200,
+        ghostClass: 'ghost',
+      },
     }
   },
   computed: {
     ...mapGetters('outlay', ['outlay', 'selectedRoom', 'rooms']),
-    roomList() {
-      return [...this.rooms].reverse()
+    roomsModel: {
+      get() {
+        return [...this.rooms].reverse()
+      },
+      set(value) {
+        const reversed = [...value].reverse()
+        this.updateRooms(reversed)
+      },
     },
     activeRoomId() {
       return this.selectedRoom?.id
@@ -48,7 +59,7 @@ export default {
   },
   methods: {
     ...mapMutations('outlay', ['setSelectedRoom']),
-    ...mapActions('outlay', ['removeRoom', 'updateRoom']),
+    ...mapActions('outlay', ['removeRoom', 'updateRoom', 'updateRooms']),
     openMenu(e, room) {
       this.selectedItem = room
       this.$refs.menu.toggle(e)
@@ -79,17 +90,28 @@ export default {
 <template>
   <Menu ref="menu" :model="items" :popup="true" />
   <RoomModal ref="edit-modal" />
-  <div class="room-list">
-    <RoomItem
-      v-for="room in roomList"
-      :key="room.id"
-      :room="room"
-      :active="activeRoomId === room.id"
-      @edit="openEditModal"
-      @remove="removeRoom"
-      @open-menu="openMenu"
-    />
-  </div>
+  <draggable
+    v-model="roomsModel"
+    item-key="id"
+    tag="transition-group"
+    :component-data="{
+      tag: 'div',
+      type: 'transition-group',
+    }"
+    v-bind="dragOptions"
+    class="room-list"
+  >
+    <template #item="{ element }">
+      <RoomItem
+        :key="element.id"
+        :room="element"
+        :active="activeRoomId === element.id"
+        @edit="openEditModal"
+        @remove="removeRoom"
+        @open-menu="openMenu"
+      />
+    </template>
+  </draggable>
 </template>
 
 <style lang="scss" scoped>

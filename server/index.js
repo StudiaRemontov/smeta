@@ -3,7 +3,7 @@ const cors = require('cors')
 const mongoose = require('mongoose')
 
 //utils
-const Logger = require('./utils/Logger')
+const Logger = require('./utils/logger')
 
 //config
 const config = require('./config/index')
@@ -18,11 +18,22 @@ const outlay = require('./router/outlay')
 const errorMiddleware = require('./middleware/error-middleware')
 
 const app = express()
-app.use(
-  cors({
-    origin: config.frontend,
-  })
-)
+
+if (config.IS_PRODUCTION) {
+  const serveStatic = require('serve-static')
+  const history = require('connect-history-api-fallback')
+
+  app.use(history())
+  app.use(serveStatic(path.join(__dirname, 'client')))
+}
+
+if (!config.IS_PRODUCTION) {
+  const corsOptions = {
+    origin: config.FRONTEND,
+  }
+
+  app.use(cors(corsOptions))
+}
 app.use(express.json())
 
 //routes
@@ -35,13 +46,13 @@ app.use('/pdf', express.static(__dirname + '/pdf'))
 //middleware
 app.use(errorMiddleware)
 
-app.listen(config.port, async () => {
+app.listen(config.PORT, async () => {
   try {
-    await mongoose.connect(config.mongo_url)
+    await mongoose.connect(config.MONGO_URL)
   } catch (error) {
     Logger.log('ERROR', 'Ошибка при подключении к базе')
   }
-  console.log(`successfully connected to mongoDb ${config.mongo_url}`)
+  console.log(`successfully connected to mongoDb ${config.MONGO_URL}`)
 
-  console.log(`app started on port ${config.port}`)
+  console.log(`app started on port ${config.PORT}`)
 })

@@ -111,6 +111,16 @@ export default {
         return Promise.reject(error)
       }
     },
+    async update({ commit }, { id, data }) {
+      try {
+        const response = await axios.put(`/outlay/${id}`, data)
+        commit('updateById', { id, data: response.data })
+        await idb.removeOutlay(id)
+        return response
+      } catch (error) {
+        return Promise.reject(error)
+      }
+    },
   },
   getters: {
     outlays: s => s.outlays,

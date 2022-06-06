@@ -27,21 +27,19 @@ export default {
       if (!this.roomsData) {
         return []
       }
-      const roomsData = Object.entries(this.roomsData)
-      const reversed = [...roomsData].reverse()
+      const reversed = [...this.rooms].reverse()
       if (reversed.length === 0 || this.selectedRoom) return []
-      return reversed.map(([key, values]) => {
-        const foundRoom = this.rooms.find(acc => acc.id === key)
-        const clone = JSON.parse(JSON.stringify(values))
+      return reversed.map(room => {
+        const clone = JSON.parse(JSON.stringify(this.roomsData[room.id]))
         const children = clone
-          .map(node => filterNodes(node, this.selectedValues[key]))
+          .map(node => filterNodes(node, this.selectedValues[room.id]))
           .flat()
 
-        if (!foundRoom) return {}
+        if (!room) return {}
         return {
-          key,
+          key: room.id,
           data: {
-            [this.keys[0].id]: foundRoom.name,
+            [this.keys[0].id]: room.name,
           },
           children,
           room: true,
@@ -55,27 +53,6 @@ export default {
         gridTemplateColumns: `4fr repeat(${keysLength}, minmax(100px, 1fr))`,
       }
     },
-  },
-  async mounted() {
-    // await this.$nextTick()
-    // const { wrapper } = this.$refs
-    // const doc = new jsPDF({
-    //   unit: 'px',
-    //   hotfixes: ['px_scaling'],
-    // })
-    // doc.addFont(
-    //   '../../../../../../src/assets/fonts/Inter-Regular.ttf',
-    //   'Inter-Regular',
-    //   'normal',
-    // )
-    // doc.setFont('Inter-Regular')
-    // wrapper.style.fontFamily = 'Inter-Regular'
-    // await doc.html(wrapper, {
-    //   windowWidth: 800,
-    //   width: 800,
-    //   autoPaging: 'text',
-    // })
-    // doc.save('test.pdf')
   },
   methods: {
     treeToList(node, list) {

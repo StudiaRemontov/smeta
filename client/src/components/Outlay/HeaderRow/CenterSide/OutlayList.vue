@@ -1,5 +1,6 @@
 <script>
 import OutlayItem from './OutlayItem.vue'
+import EditModal from './Modals/EditModal.vue'
 import Menu from 'primevue/menu'
 
 import { mapActions, mapGetters } from 'vuex'
@@ -8,6 +9,7 @@ export default {
   components: {
     OutlayItem,
     Menu,
+    EditModal,
   },
   data() {
     return {
@@ -26,6 +28,28 @@ export default {
           command: async () => {
             try {
               await this.setActive(this.selectedItem)
+            } catch (error) {
+              console.log(error)
+            }
+          },
+          disabled: this.selectedOutlay?.active,
+        },
+        {
+          label: 'Редактировать',
+          command: async () => {
+            const response = await this.$refs['edit-modal'].show({
+              okButton: 'Сохранить',
+              cancelButton: 'Отмена',
+              name: this.selectedOutlay.name,
+            })
+            try {
+              await this.update({
+                id: this.selectedItem,
+                data: {
+                  ...this.selectedOutlay,
+                  ...response,
+                },
+              })
             } catch (error) {
               console.log(error)
             }
@@ -71,7 +95,7 @@ export default {
     },
   },
   methods: {
-    ...mapActions('outlays', ['create', 'remove', 'setActive']),
+    ...mapActions('outlays', ['create', 'remove', 'setActive', 'update']),
     openMenu(e, id) {
       this.selectedItem = id
       this.$refs.menu.toggle(e)
@@ -82,6 +106,7 @@ export default {
 
 <template>
   <Menu ref="menu" :model="items" :popup="true" />
+  <EditModal ref="edit-modal" />
   <div v-if="outlays && outlays.length > 0" class="outlay-list">
     <OutlayItem
       v-for="outlay in outlayList"

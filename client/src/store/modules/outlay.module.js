@@ -117,6 +117,35 @@ const getParentsOfNode = (node, nodeKey, parents) => {
     .flat()
 }
 
+const getNameWithNumber = (name, rooms, callback) => {
+  const searchRegex = new RegExp(`^${name}\\s[№]\\d+$|^${name}$`)
+  const findingRooms = rooms.filter(r => r.name.match(searchRegex))
+  if (findingRooms.length === 0) {
+    return name
+  }
+  const maxNumInRooms = findingRooms.reduce((acc, room) => {
+    const numRegex = /№\d+/gm
+    const cropedName = room.name.replace(name, '')
+    const matches = cropedName.match(numRegex)
+    if (!matches) {
+      callback(room)
+      return acc
+    }
+    const match = matches[0]
+    const splitted = match.split('№')
+    const num = +splitted[1]
+    if (num > acc) {
+      return num
+    }
+    return acc
+  }, 0)
+
+  if (!maxNumInRooms) {
+    return `${name} №2`
+  }
+  return `${name} №${maxNumInRooms + 1}`
+}
+
 export default {
   namespaced: true,
   state: {
@@ -144,13 +173,14 @@ export default {
         return
       }
       const outlayClone = JSON.parse(JSON.stringify(outlay))
-      const roomsClone = JSON.parse(JSON.stringify(Object.entries(roomsData)))
-      const data = roomsClone.map(([roomId, values]) => {
-        const room = outlayClone.rooms.find(r => r.id === roomId)
+      const { rooms } = outlayClone
+      const roomsClone = JSON.parse(JSON.stringify(rooms))
+      const data = roomsClone.map(room => {
+        const values = JSON.parse(JSON.stringify(roomsData[room.id]))
         const filtered = values.filter(n =>
-          selectedValues[roomId].includes(n.key),
+          selectedValues[room.id].includes(n.key),
         )
-        const nodes = filtered.map(n => filterNodes(n, selectedValues[roomId]))
+        const nodes = filtered.map(n => filterNodes(n, selectedValues[room.id]))
         return {
           ...room,
           jobs: nodes,
@@ -284,6 +314,12 @@ export default {
       }, {})
       commit('setSelectedRoom', null)
     },
+    updateRooms({ state, dispatch }, payload) {
+      const { outlay } = state
+      if (!outlay) return
+      outlay.rooms = payload
+      dispatch('saveLocaly')
+    },
     selectJob({ state, dispatch }, job) {
       const { roomsData, selectedRoom, selectedValues } = state
       const isSelected = selectedValues[selectedRoom.id].includes(job.key)
@@ -349,24 +385,13 @@ export default {
     },
     async createRoom({ commit, state, dispatch }, { name, options }) {
       if (!state.outlay) return
-      const nameRegex = new RegExp(`^${name}[\\s][\\d]*$|^${name}$`, 'gmi')
-      const roomsWithSameName = state.outlay.rooms.filter(r =>
-        r.name.match(nameRegex),
-      )
-      if (roomsWithSameName.length > 0) {
-        const maxNum = roomsWithSameName.reduce((acc, r) => {
-          const numInName = r.name.split(' ')[1] || 0
-          const num = +numInName
-          if (num > acc) {
-            return num
-          }
-          return acc
-        }, 0)
-        name = `${name} ${maxNum + 1}`
-      }
+      const { rooms } = state.outlay
+      const newName = getNameWithNumber(name, rooms, room => {
+        room.name = `${room.name} №1`
+      })
       const room = {
         id: Date.now() + '',
-        name,
+        name: newName,
         options,
         jobs: [],
       }
@@ -388,25 +413,14 @@ export default {
     ) {
       const cloningRoomData = getters.rooms.find(r => r.id === cloningRoomId)
       const clone = JSON.parse(JSON.stringify(cloningRoomData))
-      const nameRegex = new RegExp(`^${name}[\\s][\\d]*$|^${name}$`, 'gmi')
-      const roomsWithSameName = state.outlay.rooms.filter(r =>
-        r.name.match(nameRegex),
-      )
-      if (roomsWithSameName.length > 0) {
-        const maxNum = roomsWithSameName.reduce((acc, r) => {
-          const numInName = r.name.split(' ')[1] || 0
-          const num = +numInName
-          if (num > acc) {
-            return num
-          }
-          return acc
-        }, 0)
-        name = `${name} ${maxNum + 1}`
-      }
+      const { rooms } = state.outlay
+      const newName = getNameWithNumber(name, rooms, room => {
+        room.name = `${room.name} №1`
+      })
       const { jobs } = clone
       const room = {
         id: Date.now() + '',
-        name,
+        name: newName,
         options,
         jobs,
       }
@@ -433,8 +447,21 @@ export default {
     },
     async updateRoom({ state, dispatch, commit }, payload) {
       if (!state.outlay || !state.selectedRoom) return
-      state.outlay.rooms = state.outlay.rooms.map(r => {
+      const { rooms } = state.outlay
+      const roomsForNewName = [...rooms].filter(
+        r => r.id !== state.selectedRoom.id,
+      )
+      state.outlay.rooms = rooms.map(r => {
         if (r.id === state.selectedRoom.id) {
+          if (r.name !== payload.name) {
+            payload.name = getNameWithNumber(
+              payload.name,
+              roomsForNewName,
+              room => {
+                room.name = `${room.name} №1`
+              },
+            )
+          }
           const data = {
             ...r,
             ...payload,

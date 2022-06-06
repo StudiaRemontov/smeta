@@ -5,6 +5,7 @@ import roomParameters from '@/mixins/roomParameters.mixin'
 import { isObjectId } from '@/helpers/isObjectId'
 import { filterNodes } from '@/store/modules/outlay.module'
 import { formatNumber } from '@/helpers/formatNumber'
+import categoriesWithoutSale from '@/enum/categoriesWithoutSale'
 
 import { uniqBy } from 'lodash'
 
@@ -20,6 +21,9 @@ export default {
       'keys',
       'sale',
     ]),
+    roomList() {
+      return [...this.rooms].reverse()
+    },
     parameters() {
       return {
         perimeter: this.roomOptions.perimeter,
@@ -28,7 +32,7 @@ export default {
       }
     },
     roomParameters() {
-      return this.rooms.map(r => {
+      return this.roomList.map(r => {
         const { options, id } = r
         const { computed } = this.calculateAllParameters(options)
         return {
@@ -38,54 +42,77 @@ export default {
       })
     },
     totalParameters() {
-      return this.rooms.reduce((acc, room) => {
+      return this.roomList.reduce((acc, room) => {
         const { options } = room
         const { computed } = this.calculateAllParameters(options)
         return this.sumParameters(acc, computed)
       }, {})
     },
     categories() {
-      const categories = this.rooms.reduce((acc, room) => {
+      const categories = this.roomList.reduce((acc, room) => {
         return [...acc, ...room.jobs]
       }, [])
       const uniqCategories = uniqBy(categories, 'key')
-      const roomsClone = JSON.parse(
-        JSON.stringify(Object.entries(this.roomsData)),
-      )
+      const roomsClone = JSON.parse(JSON.stringify(this.roomsData))
 
       return uniqCategories.map(c => {
-        const sumOfCategoryInRooms = roomsClone.reduce(
-          (acc, [roomId, values]) => {
-            const selected = this.selectedValues[roomId]
-            const nodes = values.map(v => filterNodes(v, selected))
-            const category = nodes.find(n => n.key === c.key)
-            if (!category) {
-              acc[roomId] = 0
-              return acc
-            }
-
-            const selectedItems = this.getSelectedItems(
-              category.children,
-              selected,
-            )
-            const selectedNodes = selectedItems
-              .map(this.treeToListOnlyValues)
-              .flat()
-            const sum = selectedNodes.reduce((acc, item) => {
-              const { data } = item
-              const sumData = data[this.quantityKey.id] * data[this.priceKey.id]
-              return acc + sumData
-            }, 0)
-            acc[roomId] = sum
+        const sumOfMontage = this.roomList.reduce((acc, room) => {
+          const selected = this.selectedValues[room.id]
+          const values = roomsClone[room.id]
+          const nodes = values.map(v => filterNodes(v, selected))
+          const category = nodes.find(n => n.key === c.key)
+          if (!category) {
+            acc[room.id] = 0
             return acc
-          },
-          {},
+          }
+          const specMontage = this.getOnlyMontage(category)
+          const onlyMontage = specMontage.map(this.treeToListOnlyValues).flat()
+          const sum = onlyMontage.reduce((s, node) => {
+            const { data } = node
+            const jobSum = data[this.quantityKey.id] * data[this.priceKey.id]
+            s += jobSum
+            return s
+          }, 0)
+          acc[room.id] = sum
+          return acc
+        }, {})
+
+        const sumOfCategoryInRooms = this.roomList.reduce((acc, room) => {
+          const selected = this.selectedValues[room.id]
+          const values = roomsClone[room.id]
+          const nodes = values.map(v => filterNodes(v, selected))
+          const category = nodes.find(n => n.key === c.key)
+          if (!category) {
+            acc[room.id] = 0
+            return acc
+          }
+
+          const selectedItems = this.getSelectedItems(
+            category.children,
+            selected,
+          )
+          const selectedNodes = selectedItems
+            .map(this.treeToListOnlyValues)
+            .flat()
+          const sum = selectedNodes.reduce((acc, item) => {
+            const { data } = item
+            const sumData = data[this.quantityKey.id] * data[this.priceKey.id]
+            return acc + sumData
+          }, 0)
+          acc[room.id] = sum - sumOfMontage[room.id]
+          return acc
+        }, {})
+
+        const totalMontage = Object.values(sumOfMontage).reduce(
+          (acc, item) => (acc += item),
+          0,
         )
 
         return {
           id: c.key,
           name: c.data[this.keys[0].id],
           rooms: sumOfCategoryInRooms,
+          specMontage: totalMontage,
         }
       })
     },
@@ -95,11 +122,12 @@ export default {
           (sum, value) => sum + value,
           0,
         )
+        acc[category.id] += category.specMontage
         return acc
       }, {})
     },
     priceOfRooms() {
-      return this.rooms.map(r => {
+      return this.roomList.map(r => {
         const result = this.categories.reduce((acc, category) => {
           const sumOfCategory = Object.entries(category.rooms).reduce(
             (sum, [key, value]) => {
@@ -116,7 +144,7 @@ export default {
 
         return {
           id: r.id,
-          result,
+          result: result,
         }
       })
     },
@@ -140,36 +168,69 @@ export default {
       const saleValue = (this.totalPrice / 100) * this.sale
       return this.totalPrice - saleValue
     },
+    specMontage() {
+      const categories = this.roomList.reduce((acc, room) => {
+        return [...acc, ...room.jobs]
+      }, [])
+      const onlySpecMontage = categories.map(this.getOnlyMontage).flat()
+      const values = onlySpecMontage.map(this.treeToListOnlyValues).flat()
+      const sum = values.reduce((acc, node) => {
+        const { data } = node
+        const jobSum = data[this.quantityKey.id] * data[this.priceKey.id]
+        acc += jobSum
+        return acc
+      }, 0)
+      return sum
+    },
+    workTime() {
+      const priceForDay = this.getPriceForDay(
+        this.totalPrice + this.specMontage,
+      )
+      const days = Math.ceil(this.totalPrice / priceForDay)
+      return days
+    },
     subTableData() {
       const saleValue = (this.totalPrice / 100) * this.sale
       return [
         {
           text: 'Стоимость без учета скидки',
-          value: this.format(this.totalPrice),
+          value: this.format(this.totalPrice + this.specMontage),
+          render: true,
         },
         {
           text: 'Стоимость общестр-х работ',
           value: this.format(this.totalPrice),
+          render: true,
         },
         {
           text: 'Скидка на общестр-е работы',
           value: `${this.sale} %`,
+          render: this.sale > 0,
         },
         {
           text: 'Скидка на общестр-е работы',
           value: this.format(saleValue),
+          render: this.sale > 0,
         },
         {
           text: 'Общестр-е работы с учетом скидки',
           value: this.format(this.totalPriceWithSale),
+          render: this.sale > 0,
+        },
+        {
+          text: 'Спецмонтаж',
+          value: this.format(this.specMontage),
+          render: this.specMontage > 0,
         },
         {
           text: 'Итого сметная стоимость',
-          value: this.format(this.totalPriceWithSale),
+          value: this.format(this.totalPriceWithSale + this.specMontage),
+          render: true,
         },
         {
           text: 'Срок выполнения работ',
-          value: '?',
+          value: `${this.workTime} дня`,
+          render: true,
         },
       ]
     },
@@ -198,6 +259,35 @@ export default {
     format(number) {
       return formatNumber(number)
     },
+    getOnlyMontage(node) {
+      let returnData = []
+      const { data, children } = node
+      const name = data[this.keys[0].id]
+      if (categoriesWithoutSale.includes(name)) {
+        returnData.push(node)
+      }
+      const subItems = children.map(this.getOnlyMontage).flat()
+      returnData = [...returnData, ...subItems]
+      return returnData
+    },
+    getPriceForDay(totalSum) {
+      if (totalSum >= 100000 && totalSum < 300000) {
+        return 5100
+      }
+      if (totalSum >= 300000 && totalSum < 600000) {
+        return 6900
+      }
+      if (totalSum >= 600000 && totalSum < 1000000) {
+        return 8000
+      }
+      if (totalSum >= 1000000 && totalSum < 2000000) {
+        return 10000
+      }
+      if (totalSum >= 2000000) {
+        return 13000
+      }
+      return 5100
+    },
   },
 }
 </script>
@@ -207,9 +297,10 @@ export default {
     <table class="results-table">
       <tr class="results-table__row results-table__row--head">
         <th class="results-table__cell">Параметры</th>
-        <th v-for="room in rooms" :key="room.id" class="results-table__cell">
+        <th v-for="room in roomList" :key="room.id" class="results-table__cell">
           {{ room.name }}
         </th>
+        <th v-if="specMontage > 0" class="results-table__cell">Спецмонтаж</th>
         <th class="results-table__cell">Итого</th>
       </tr>
       <tr
@@ -227,15 +318,17 @@ export default {
         >
           {{ room.computed[val] }}
         </td>
+        <td v-if="specMontage > 0" class="results-table__cell">-</td>
         <td class="results-table__cell bold">
           {{ totalParameters[val] }}
         </td>
       </tr>
       <tr class="results-table__row results-table__row--head">
         <th class="results-table__cell">Наименование работ</th>
-        <th v-for="room in rooms" :key="room.id" class="results-table__cell">
+        <th v-for="room in roomList" :key="room.id" class="results-table__cell">
           {{ room.name }}
         </th>
+        <th v-if="specMontage > 0" class="results-table__cell">Спецмонтаж</th>
         <th class="results-table__cell">Итого</th>
       </tr>
       <tr
@@ -253,7 +346,10 @@ export default {
         >
           {{ format(val) }}
         </td>
-        <td class="results-table__cell results-table__cell bold price">
+        <td v-if="specMontage > 0" class="results-table__cell">
+          {{ format(category.specMontage) }}
+        </td>
+        <td class="results-table__cell bold price">
           {{ format(sumOfCategory[category.id]) }}
         </td>
       </tr>
@@ -266,11 +362,14 @@ export default {
         >
           {{ format(price.result) }}
         </th>
+        <th v-if="specMontage > 0" class="results-table__cell price">
+          {{ format(specMontage) }}
+        </th>
         <th class="results-table__cell price">
-          {{ format(totalPrice) }}
+          {{ format(totalPrice + specMontage) }}
         </th>
       </tr>
-      <tr class="results-table__row results-table__row--head">
+      <tr v-if="sale" class="results-table__row results-table__row--head">
         <th class="results-table__cell">ИТОГО СО СКИДКОЙ</th>
         <th
           v-for="price in priceOfRoomsWithSale"
@@ -279,20 +378,25 @@ export default {
         >
           {{ format(price.result) }}
         </th>
+        <th v-if="specMontage > 0" class="results-table__cell price">
+          {{ format(specMontage) }}
+        </th>
         <th class="results-table__cell price">
-          {{ format(totalPriceWithSale) }}
+          {{ format(totalPriceWithSale + specMontage) }}
         </th>
       </tr>
     </table>
     <table class="subtable">
-      <tr v-for="item in subTableData" :key="item.text" class="subtable__row">
-        <td class="subtable__cell">
-          {{ item.text }}
-        </td>
-        <td class="subtable__cell bold price">
-          {{ item.value }}
-        </td>
-      </tr>
+      <template v-for="item in subTableData" :key="item.text">
+        <tr v-if="item.render" class="subtable__row">
+          <td class="subtable__cell">
+            {{ item.text }}
+          </td>
+          <td class="subtable__cell bold price">
+            {{ item.value }}
+          </td>
+        </tr>
+      </template>
     </table>
   </div>
 </template>

@@ -69,6 +69,7 @@ export default {
   display: revert;
   border-spacing: 0px;
   margin-bottom: 20px;
+  margin-top: 10px;
 }
 
 .table-cell {

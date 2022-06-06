@@ -39,7 +39,7 @@ export default {
   <div class="container">
     <div v-for="room in tableData" class="room" :key="room.id">
       <PageHeader :room="room" />
-      <span class="room-title">{{ room.name }}</span>
+      <span class="title">{{ room.name }}</span>
       <PrintTable :tableKeys="keys" :tableData="room.jobs" :room="room" />
       <div class="signs">
         <span class="sign">
@@ -52,6 +52,7 @@ export default {
         </div>
       </div>
     </div>
+    <span class="title results-table"> Сводная таблица </span>
     <ResultsTable />
   </div>
 </template>
@@ -96,14 +97,18 @@ export default {
 
 .room {
   page-break-before: always;
+}
 
-  &-title {
-    display: block;
-    text-align: center;
-    font-size: 18px;
-    font-weight: 700;
-    margin-top: 20px;
-  }
+.title {
+  display: block;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  margin-top: 20px;
+}
+
+.results-table {
+  page-break-before: always;
 }
 </style>
 

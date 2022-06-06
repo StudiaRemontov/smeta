@@ -29,16 +29,16 @@ export default {
     ]),
     data() {
       if (this.selectedRoom) {
-        const { id } = this.selectedRoom
         const values = JSON.parse(JSON.stringify(this.currentRoomData))
-        return [this.getRoomWithSum(id, values)]
+        const room = JSON.parse(JSON.stringify(this.selectedRoom))
+        return [this.getRoomWithSum(room, values)]
       }
-      const roomsClone = JSON.parse(
-        JSON.stringify(Object.entries(this.roomsData)),
-      )
-      return roomsClone.map(([roomId, values]) =>
-        this.getRoomWithSum(roomId, values),
-      )
+      const roomsClone = JSON.parse(JSON.stringify(this.roomsData))
+      const reversed = [...this.rooms]
+      return reversed.map(room => {
+        const values = roomsClone[room.id]
+        return this.getRoomWithSum(room, values)
+      })
     },
   },
   methods: {
@@ -75,9 +75,8 @@ export default {
     getSum(values) {
       return values.reduce((acc, val) => (acc += +val.sum), 0)
     },
-    getRoomWithSum(roomId, values) {
-      const room = this.rooms.find(r => r.id === roomId)
-      const selected = this.selectedValues[roomId]
+    getRoomWithSum(room, values) {
+      const selected = this.selectedValues[room.id]
       const nodes = this.getSelectedItems(values, selected)
       const vals = nodes.map(category => {
         const subCategories = this.getSelectedItems(category.children, selected)

@@ -63,7 +63,7 @@ export default {
           v-model="coef"
           class="input"
           ref="input"
-          @input="changePrice"
+          @update:modelValue="changePrice"
           @blur="isEditing = false"
           @keyup.enter="isEditing = false"
         />

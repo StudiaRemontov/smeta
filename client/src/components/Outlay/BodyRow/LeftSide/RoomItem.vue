@@ -1,6 +1,5 @@
 <script>
 import ViewListIcon from '@/components/UI/Icons/ViewListIcon.vue'
-import ContextMenu from 'primevue/contextmenu'
 
 import { mapGetters, mapMutations } from 'vuex'
 
@@ -11,7 +10,6 @@ import { getAllValues } from '@/helpers/treeMethods'
 export default {
   components: {
     ViewListIcon,
-    ContextMenu,
   },
   props: {
     room: {
@@ -82,10 +80,9 @@ export default {
 </script>
 
 <template>
-  <ContextMenu ref="menu" :model="items" />
   <div class="room-item" :class="{ active }" @click="setSelectedRoom(room)">
     <div class="room-item__text">
-      <span class="room-item__title"> {{ room.name }} </span>
+      <span class="room-item__title" :title="room.name"> {{ room.name }} </span>
     </div>
     <div class="room-item__actions" @click.stop>
       <button class="button" @click="viewMode = !viewMode">

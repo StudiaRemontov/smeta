@@ -1,5 +1,6 @@
 <script>
 import { formatNumber } from '@/helpers/formatNumber'
+import categoriesWithoutSale from '@/enum/categoriesWithoutSale'
 import { mapActions, mapGetters, mapMutations } from 'vuex'
 
 export default {
@@ -34,6 +35,19 @@ export default {
       if (!this.saleValue || this.saleValue < 0 || this.saleValue > 20) {
         return this.totalSumFormatted
       }
+      const categoriesWoutSale = this.data
+        .map(this.findCategoriesWithoutSale)
+        .flat()
+      if (categoriesWoutSale.length > 0) {
+        const sumOfCategories = categoriesWoutSale.reduce(
+          (acc, job) => (acc += job.sum),
+          0,
+        )
+        const sumForSale = this.totalSum - sumOfCategories
+        const saleValue = (sumForSale / 100) * this.saleValue
+        const result = this.totalSum - saleValue
+        return formatNumber(result)
+      }
       const saleValue = (this.totalSum / 100) * this.saleValue
       const result = this.totalSum - saleValue
       return formatNumber(result)
@@ -61,6 +75,18 @@ export default {
       this.timeout = setTimeout(async () => {
         await this.saveLocaly()
       }, 400)
+    },
+    findCategoriesWithoutSale(node) {
+      const { name, jobs } = node
+      let returnData = []
+      if (categoriesWithoutSale.includes(name)) {
+        returnData.push(node)
+      }
+      if (jobs) {
+        const subJobs = jobs.map(this.findCategoriesWithoutSale).flat()
+        returnData = [...returnData, ...subJobs]
+      }
+      return returnData
     },
   },
 }
