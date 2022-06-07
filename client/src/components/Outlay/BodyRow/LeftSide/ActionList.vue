@@ -22,13 +22,22 @@ export default {
   },
   data() {
     return {
-      actions: [
+      isDownloading: false,
+      isSaving: false,
+    }
+  },
+  computed: {
+    ...mapGetters('outlay', ['outlay']),
+    actions() {
+      return [
         {
           text: 'Назад',
-          handler() {
-            console.log(1)
+          handler: () => {
+            this.$router.push('/')
           },
           icon: 'BackIcon',
+          disabled: false,
+          loading: false,
         },
         {
           text: 'Сохранить',
@@ -36,6 +45,8 @@ export default {
             this.save()
           },
           icon: 'SaveIcon',
+          disabled: this.isSaving,
+          loading: this.isSaving,
         },
         {
           text: 'Скачать',
@@ -43,6 +54,8 @@ export default {
             this.download()
           },
           icon: 'DownloadIcon',
+          disabled: this.isDownloading,
+          loading: this.isDownloading,
         },
         {
           text: 'Распечатать',
@@ -50,29 +63,32 @@ export default {
             window.print()
           },
           icon: 'PrintIcon',
+          disabled: false,
+          loading: false,
         },
-      ],
-    }
-  },
-  computed: {
-    ...mapGetters('outlay', ['outlay']),
+      ]
+    },
   },
   methods: {
     ...mapMutations('outlay', ['setOutlay']),
     ...mapActions('outlay', ['update']),
     ...mapActions('outlays', ['print']),
     async save() {
+      this.isSaving = true
       this.setOutlay()
       try {
         await this.update()
       } catch (error) {
         console.log(error)
+      } finally {
+        this.isSaving = false
       }
     },
     async download() {
       if (!this.outlay) {
         return console.error('select outlay')
       }
+      this.isDownloading = true
       try {
         await this.update()
         await this.print(this.outlay._id)
@@ -92,6 +108,8 @@ export default {
         link.remove()
       } catch (error) {
         console.log(error)
+      } finally {
+        this.isDownloading = false
       }
     },
   },
@@ -105,10 +123,12 @@ export default {
       v-for="action in actions"
       class="button action"
       :key="action.text"
+      :disabled="action.disabled"
       @click="action.handler"
     >
       <component class="action__icon" :is="action.icon" />
       <span class="action__text">{{ action.text }}</span>
+      <i v-if="action.loading" class="pi pi-spin pi-spinner"></i>
     </button>
   </div>
   <Teleport to="#print">

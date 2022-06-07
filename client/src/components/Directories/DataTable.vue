@@ -26,6 +26,7 @@ export default {
   },
   computed: {
     ...mapGetters('directory', ['root']),
+    ...mapGetters('edition', ['editions']),
     directoryId() {
       return this.$route.params.id
     },
@@ -52,6 +53,9 @@ export default {
     },
     tableData() {
       return this.values.map(r => r.data)
+    },
+    isArchirectureInUse() {
+      return this.editions.find(e => e.dirId === this.root?._id)
     },
   },
   watch: {
@@ -101,6 +105,9 @@ export default {
       }
     },
     async createKeyHandler() {
+      if (this.isArchirectureInUse) {
+        return console.error('Данная архитектура используется в редакции')
+      }
       const response = await this.$refs['key-modal'].show({
         title: 'Добавить колонку',
         okButton: 'Добавить',
@@ -111,6 +118,9 @@ export default {
       this.createKey(response)
     },
     async editKey(id) {
+      if (this.isArchirectureInUse) {
+        return console.error('Данная архитектура используется в редакции')
+      }
       const keyToEdit = this.allKeys.find(k => k.id === id)
       const response = await this.$refs['key-modal'].show({
         title: 'Изменить колонку',
