@@ -9,44 +9,27 @@ export default {
     HeaderRow,
     BodyRow,
   },
-  data() {
-    return {
-      interval: null,
-    }
-  },
   computed: {
+    ...mapGetters('outlays', ['outlays']),
     ...mapGetters('outlay', ['outlay']),
-    ...mapGetters(['isOffline']),
-  },
-  watch: {
-    isOffline(value) {
-      if (!value) {
-        this.syncData()
-      }
+    id() {
+      return this.$route.params.id
     },
   },
   async mounted() {
-    this.interval = setInterval(this.save, 1000 * 60)
-  },
-  unmounted() {
-    clearInterval(this.interval)
+    if (!this.id) {
+      return
+    }
+
+    const outlay = this.outlays.find(o => o._id === this.id)
+    if (!outlay) {
+      return
+    }
+    await this.setOutlay(outlay)
   },
   methods: {
-    ...mapActions('outlays', ['fetchAll', 'uploadFromServer']),
-    ...mapActions('outlay', ['update', 'saveLocaly']),
-    async save() {
-      if (!this.isOffline) {
-        await this.update()
-        await this.saveLocaly()
-      }
-    },
-    async syncData() {
-      try {
-        await this.uploadFromServer()
-      } catch (error) {
-        console.log(error)
-      }
-    },
+    ...mapActions('outlay', ['setOutlay']),
+    ...mapActions('outlays', ['fetchAll']),
   },
 }
 </script>

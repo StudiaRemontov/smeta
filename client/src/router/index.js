@@ -11,9 +11,9 @@ import PriceListsIndex from '@/views/PriceLists/IndexView.vue'
 import PriceListsCreate from '@/views/PriceLists/CreateView.vue'
 import PriceListsClone from '@/views/PriceLists/CloneView.vue'
 
-import SmetaIndexView from '@/views/Smeta/IndexView.vue'
+import OutlayIndexView from '@/views/Outlay/IndexView.vue'
 
-import OutlayView from '@/views/SmetaView.vue'
+import OutlayView from '@/views/OutlayView.vue'
 import PrintView from '@/views/PrintView.vue'
 
 const router = createRouter({
@@ -83,7 +83,7 @@ const router = createRouter({
         {
           path: '',
           name: 'smetaIndexView',
-          component: SmetaIndexView,
+          component: OutlayIndexView,
         },
       ],
     },
@@ -101,6 +101,14 @@ const router = createRouter({
       component: PrintView,
       meta: {
         layout: 'PrintLayout',
+      },
+    },
+    {
+      path: '/outlay/:id/acts',
+      name: 'actsView',
+      component: OutlayView,
+      meta: {
+        layout: 'ActLayout',
       },
     },
   ],

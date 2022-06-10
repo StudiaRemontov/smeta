@@ -15,7 +15,7 @@ export default {
 
   async mounted() {
     try {
-      await this.fetchAll()
+      // await this.fetchAll()
     } catch (error) {
       const { response } = error
       const message = response ? response.data.message : error.message

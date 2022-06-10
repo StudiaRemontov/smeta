@@ -2,12 +2,13 @@
 import MainLayout from '@/layouts/MainLayout.vue'
 import OutlayLayout from '@/layouts/OutlayLayout.vue'
 import PrintLayout from '@/layouts/PrintLayout.vue'
+import ActLayout from '@/layouts/ActLayout.vue'
 import Toast from 'primevue/toast'
 
-import { mapActions } from 'vuex'
+import { mapActions, mapMutations } from 'vuex'
 
 export default {
-  components: { MainLayout, OutlayLayout, PrintLayout, Toast },
+  components: { MainLayout, OutlayLayout, ActLayout, PrintLayout, Toast },
   data() {
     return {
       loading: false,
@@ -20,25 +21,17 @@ export default {
   },
   async mounted() {
     this.loading = true
-    try {
-      await this.initApp()
-      await Promise.all([
-        this.fetchDirectories(),
-        this.fetchEditions(),
-        this.fetchPriceLists(),
-      ])
-    } catch (error) {
-      this.$toast.add({
-        severity: 'error',
-        summary: 'Ошибка при получении данных с сервера',
-        life: 3000,
-      })
-    } finally {
-      this.loading = false
-    }
+    await this.initApp()
+    await this.fetchData()
+    navigator.connection.addEventListener('change', this.onConnectionChange)
+    this.loading = false
+  },
+  unmounted() {
+    navigator.connection.removeEventListener('change', this.onConnectionChange)
   },
   methods: {
-    ...mapActions(['initApp']),
+    ...mapMutations(['setIsOffline']),
+    ...mapActions(['initApp', 'fetchAll']),
     ...mapActions('directory', {
       fetchDirectories: 'fetchAll',
     }),
@@ -48,6 +41,25 @@ export default {
     ...mapActions('priceList', {
       fetchPriceLists: 'fetchAll',
     }),
+    async fetchData() {
+      try {
+        await this.fetchAll()
+      } catch (error) {
+        const { response } = error
+        const message = response ? response.data.message : error.message
+        this.$toast.add({
+          severity: 'error',
+          summary: 'Ошибка',
+          detail: message,
+          life: 3000,
+        })
+      }
+    },
+    async onConnectionChange() {
+      const status = navigator.onLine
+      this.setIsOffline(!status)
+      this.fetchData()
+    },
   },
 }
 </script>

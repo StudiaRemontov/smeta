@@ -16,7 +16,7 @@ export default {
       return this.selected?._id === this.outlay._id
     },
     date() {
-      return new Date(this.outlay.date).toLocaleDateString()
+      return new Date(this.outlay.createdAt).toLocaleDateString()
     },
   },
   methods: {

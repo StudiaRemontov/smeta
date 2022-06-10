@@ -24,6 +24,7 @@ export default {
     return {
       isDownloading: false,
       isSaving: false,
+      isPrinting: false,
     }
   },
   computed: {
@@ -60,8 +61,9 @@ export default {
         },
         {
           text: 'Распечатать',
-          handler() {
-            window.print()
+          handler: async () => {
+            await this.$nextTick()
+            this.isPrinting = true
           },
           icon: 'PrintIcon',
           disabled: false,
@@ -69,6 +71,12 @@ export default {
         },
       ]
     },
+  },
+  mounted() {
+    window.addEventListener('afterprint', this.afterPrint)
+  },
+  unmounted() {
+    window.removeEventListener('afterprint', this.afterPrint)
   },
   methods: {
     ...mapMutations('outlay', {
@@ -129,6 +137,12 @@ export default {
         this.isDownloading = false
       }
     },
+    afterPrint() {
+      this.isPrinting = false
+    },
+    readyForPrint() {
+      window.print()
+    },
   },
 }
 </script>
@@ -149,7 +163,11 @@ export default {
     </button>
   </div>
   <Teleport to="#print">
-    <PrintPage v-if="outlay" :outlay="outlay" />
+    <PrintPage
+      v-if="outlay && isPrinting"
+      :outlay="outlay"
+      @mounted="readyForPrint"
+    />
   </Teleport>
 </template>
 

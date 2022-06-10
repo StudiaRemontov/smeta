@@ -1,10 +1,9 @@
 <script>
 import BurgerIcon from '@/components/UI/Icons/BurgerIcon.vue'
-import UserAvatar from '@/components/UI/UserAvatar.vue'
-import NotificationButton from '@/components/UI/NotificationButton.vue'
+import RightSide from './Header/RightSide.vue'
 
 export default {
-  components: { BurgerIcon, NotificationButton, UserAvatar },
+  components: { BurgerIcon, RightSide },
 }
 </script>
 
@@ -15,13 +14,7 @@ export default {
         <BurgerIcon />
       </AppButton>
     </div>
-
-    <div class="app-header__right-side">
-      <NotificationButton />
-      <AppButton>
-        <UserAvatar />
-      </AppButton>
-    </div>
+    <RightSide />
   </div>
 </template>
 

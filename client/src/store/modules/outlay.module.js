@@ -526,7 +526,10 @@ export default {
           return
         }
         const data = JSON.parse(JSON.stringify(outlay))
-        await idb.saveDataInCollection('outlays', data)
+        await idb.saveDataInCollection('outlays', {
+          ...data,
+          updatedAt: new Date(),
+        })
         commit('outlays/updateById', { id: outlay._id, data }, { root: true })
       } catch (error) {
         return Promise.reject(error)

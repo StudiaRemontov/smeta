@@ -53,13 +53,4 @@ export default {
     min-height: 0px;
   }
 }
-
-// .print {
-//   position: fixed;
-//   top: 50%;
-//   left: 50%;
-//   width: 800px;
-//   height: 600px;
-//   box-shadow: 0px 0px 4px black;
-// }
 </style>

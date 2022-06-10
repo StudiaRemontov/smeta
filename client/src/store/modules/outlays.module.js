@@ -1,13 +1,23 @@
 import axios from '../../modules/axios'
 import idb from '../local/idb'
+import { generateMongoId } from '@/helpers/generateMongoId'
 
-const mergeData = (local, server) => {
-  return server.map(s => {
-    const savedLocaly = local.find(l => l._id === s._id)
-    if (savedLocaly) {
-      return savedLocaly
-    }
-    return s
+const mergeData = (serverData, localData) => {
+  const mergedOutlays = [...serverData, ...localData]
+  const grouped = mergedOutlays.reduce((acc, outlay) => {
+    acc[outlay._id] = acc[outlay._id] || []
+    acc[outlay._id].push(outlay)
+    return acc
+  }, {})
+  return Object.values(grouped).map(outlays => {
+    return outlays.reduce((acc, outlay) => {
+      if (!acc) {
+        return outlay
+      }
+      const timeA = new Date(outlay.updatedAt).getTime()
+      const timeB = new Date(acc.updatedAt).getTime()
+      return timeA > timeB ? outlay : acc
+    }, null)
   })
 }
 
@@ -45,27 +55,77 @@ export default {
     },
   },
   actions: {
-    async fetchAll({ commit, state, rootState }) {
-      if (state.contentLoaded || rootState.isOffline) {
+    async fetchAll({ commit, state, rootGetters }) {
+      if (state.contentLoaded) {
         return
       }
-      const localOutlays = await idb.getCollectionData('outlays')
+      const { isOffline } = rootGetters
+
       try {
-        commit('setContentLoaded', true)
+        const localOutlays = await idb.getCollectionData('outlays')
+        if (isOffline) {
+          commit('setOutlays', localOutlays)
+          commit('setContentLoaded', true)
+          return Promise.resolve(localOutlays)
+        }
         const response = await axios.get('/outlay')
-        const data =
-          localOutlays.length > 0
-            ? mergeData(localOutlays, response.data)
-            : response.data
-        commit('setOutlays', data)
-        await idb.setArrayToCollection('outlays', data)
+        const merged = mergeData(response.data, localOutlays)
+        commit('setOutlays', merged)
+        await idb.setArrayToCollection('outlays', merged)
         return response
       } catch (error) {
         return Promise.reject(error)
       }
     },
-    async create({ commit, dispatch }, payload) {
+    async uploadFromServer({ state, rootGetters, commit, dispatch }) {
+      const { isOffline } = rootGetters
+      if (isOffline) return
       try {
+        const response = await axios.get('/outlay')
+        const localData = state.outlays
+        const merged = mergeData(response.data, localData)
+        commit('setOutlays', merged)
+        await idb.setArrayToCollection('outlays', merged)
+        const newest = merged.filter(o => o.local)
+        await dispatch('saveArray', newest)
+        return response
+      } catch (error) {
+        return Promise.reject(error)
+      }
+    },
+    async saveArray({ commit }, array) {
+      try {
+        return Promise.all(
+          array.map(async data => {
+            const response = await axios.post('/outlay', data)
+            commit('updateById', { id: response._id, data: response.data })
+            return response
+          }),
+        )
+      } catch (error) {
+        return Promise.reject(error)
+      }
+    },
+    async create({ commit, dispatch, rootGetters }, payload) {
+      const { isOffline } = rootGetters
+      try {
+        if (isOffline) {
+          const currentDate = new Date()
+          const newData = {
+            ...payload,
+            active: false,
+            _id: generateMongoId(),
+            local: true,
+            rooms: [],
+            createdAt: currentDate,
+            updatedAt: currentDate,
+            sale: 0,
+          }
+          commit('pushOutlay', newData)
+          await idb.saveDataInCollection('outlays', newData)
+          await dispatch('outlay/setOutlay', newData, { root: true })
+          return Promise.resolve()
+        }
         const response = await axios.post('/outlay', payload)
         commit('pushOutlay', response.data)
         dispatch('outlay/setOutlay', response.data, { root: true })

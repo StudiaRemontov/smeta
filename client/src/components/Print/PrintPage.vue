@@ -13,6 +13,7 @@ export default {
       type: Object,
     },
   },
+  emits: ['mounted'],
   computed: {
     ...mapGetters('outlay', ['keys']),
     tableKeys() {
@@ -31,6 +32,9 @@ export default {
     tableData() {
       return [...this.outlay.rooms].reverse()
     },
+  },
+  mounted() {
+    this.$emit('mounted')
   },
 }
 </script>

@@ -9,7 +9,6 @@ export default defineConfig({
   plugins: [
     vue(),
     VitePWA({
-      mode: 'development',
       base: '/',
       srcDir: 'src',
       filename: 'sw.js',
@@ -22,12 +21,11 @@ export default defineConfig({
         start_url: '/',
         background_color: '#ffffff',
       },
-      devOptions: {
-        enabled: true,
-        type: 'module',
-      },
       injectManifest: {
         globPatterns: ['**/*.{js,css,html}', 'assets/*'],
+      },
+      workbox: {
+        navigateFallback: 'index.html',
       },
     }),
   ],

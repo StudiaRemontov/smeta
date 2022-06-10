@@ -4,6 +4,8 @@ import router from './router'
 import store from './store'
 import PrimeVue from 'primevue/config'
 import ToastService from 'primevue/toastservice'
+import Tooltip from 'primevue/tooltip'
+import { registerSW } from 'virtual:pwa-register'
 
 import 'normalize.css'
 import '@/assets/index.scss'
@@ -20,6 +22,7 @@ const app = createApp(App)
 //global components
 app.component('AppButton', AppButton)
 app.component('AppInput', AppInput)
+app.directive('tooltip', Tooltip)
 
 app.use(router)
 app.use(store)
@@ -27,3 +30,7 @@ app.use(PrimeVue)
 app.use(ToastService)
 
 app.mount('#app')
+
+registerSW({
+  immediate: true,
+})
