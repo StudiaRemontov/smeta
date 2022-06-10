@@ -5,6 +5,7 @@
     "dev": "vite",
     "build": "vite build --mode staging",
     "preview": "vite preview --port 3000",
+    "pwa": "npm run build && npm run preview",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
   },
   "dependencies": {
@@ -29,6 +30,8 @@
     "eslint-plugin-vue": "^8.2.0",
     "prettier": "^2.5.1",
     "sass": "^1.49.9",
-    "vite": "^2.8.6"
+    "vite": "^2.8.6",
+    "vite-plugin-pwa": "^0.12.0",
+    "workbox-precaching": "^6.5.3"
   }
 }

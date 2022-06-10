@@ -1,6 +1,7 @@
 import axios from '../../modules/axios'
 import { InputType } from '../../enum/InputType'
 import Key from '../../helpers/Key'
+import idb from '../local/idb'
 
 const getChildren = (directory, directories) => {
   const children = directories.filter(d => d.parent === directory._id)
@@ -87,20 +88,22 @@ export default {
       try {
         const response = await axios.post('/directory', payload)
         commit('pushDirectory', response.data)
+        await idb.saveDataInCollection('directories', response.data)
         return response
       } catch (error) {
         console.log(error)
         return Promise.reject(error)
       }
     },
-    async fetchAll({ state, commit }) {
-      if (state.contentLoaded) {
+    async fetchAll({ state, commit, rootGetters }) {
+      if (state.contentLoaded || rootGetters.isOffline) {
         return
       }
       try {
         const response = await axios.get('/directory')
         commit('setDirectories', response.data)
         commit('setContentLoaded', true)
+        await idb.setArrayToCollection('directories', response.data)
         return response
       } catch (error) {
         console.log(error)
@@ -118,6 +121,7 @@ export default {
           values,
         }
         await axios.put(`/directory/${id}`, data)
+        await idb.saveDataInCollection('directories', data)
       } catch (error) {
         return Promise.reject(error)
       }
@@ -129,6 +133,7 @@ export default {
           id: response.data._id,
           data: response.data,
         })
+        await idb.saveDataInCollection('directories', data)
         return response
       } catch (error) {
         console.log(error)
@@ -144,6 +149,7 @@ export default {
         response.data.forEach(d => {
           commit('removeDirectory', d._id)
         })
+        await idb.removeDataInCollection('directories', payload)
         return response
       } catch (error) {
         console.log(error)
@@ -244,6 +250,7 @@ export default {
         const response = await axios.put(`/directory/${id}`, clone)
         const newValues = response.data.values
         commit('updateDirectoryValues', { id, values: newValues })
+        await idb.saveDataInCollection('directories', response.data)
         return response
       } catch (error) {
         return Promise.reject(error)

@@ -208,7 +208,14 @@ export default {
           },
         })
       } catch (error) {
-        console.log(error)
+        const { response } = error
+        const message = response ? response.data.message : error.message
+        this.$toast.add({
+          severity: 'error',
+          summary: 'Ошибка',
+          detail: message,
+          life: 3000,
+        })
       }
     },
     async updateValues(values) {
@@ -223,7 +230,14 @@ export default {
           data: newDirectory,
         })
       } catch (error) {
-        console.log(error)
+        const { response } = error
+        const message = response ? response.data.message : error.message
+        this.$toast.add({
+          severity: 'error',
+          summary: 'Ошибка',
+          detail: message,
+          life: 3000,
+        })
       }
     },
     getExcelKeysAndValues(rows) {

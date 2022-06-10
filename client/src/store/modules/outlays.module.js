@@ -38,18 +38,18 @@ export default {
     async updateField(state, { id, key, value }) {
       const outlay = state.outlays.find(o => o._id === id)
       outlay[key] = value
-      await idb.saveOutlay(outlay)
+      await idb.saveDataInCollection('outlays', outlay)
     },
     removeById(state, id) {
       state.outlays = state.outlays.filter(o => o._id !== id)
     },
   },
   actions: {
-    async fetchAll({ commit, state }) {
-      if (state.contentLoaded) {
+    async fetchAll({ commit, state, rootState }) {
+      if (state.contentLoaded || rootState.isOffline) {
         return
       }
-      const localOutlays = await idb.getOutlays()
+      const localOutlays = await idb.getCollectionData('outlays')
       try {
         commit('setContentLoaded', true)
         const response = await axios.get('/outlay')
@@ -58,6 +58,7 @@ export default {
             ? mergeData(localOutlays, response.data)
             : response.data
         commit('setOutlays', data)
+        await idb.setArrayToCollection('outlays', data)
         return response
       } catch (error) {
         return Promise.reject(error)
@@ -68,6 +69,7 @@ export default {
         const response = await axios.post('/outlay', payload)
         commit('pushOutlay', response.data)
         dispatch('outlay/setOutlay', response.data, { root: true })
+        await idb.saveDataInCollection('outlays', response.data)
         return response
       } catch (error) {
         return Promise.reject(error)
@@ -80,7 +82,7 @@ export default {
           dispatch('outlay/setOutlay', null, { root: true })
         }
         commit('removeById', id)
-        await idb.removeOutlay(id)
+        await idb.removeDataInCollection('outlays', id)
         return response
       } catch (error) {
         return Promise.reject(error)
@@ -115,7 +117,7 @@ export default {
       try {
         const response = await axios.put(`/outlay/${id}`, data)
         commit('updateById', { id, data: response.data })
-        await idb.removeOutlay(id)
+        await idb.removeDataInCollection('outlays', id)
         return response
       } catch (error) {
         return Promise.reject(error)

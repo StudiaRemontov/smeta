@@ -1,4 +1,5 @@
 import axios from '../../modules/axios'
+import idb from '../local/idb'
 
 export default {
   namespaced: true,
@@ -52,14 +53,15 @@ export default {
     },
   },
   actions: {
-    async fetchAll({ state, commit }) {
-      if (state.contentLoaded) {
+    async fetchAll({ state, commit, rootGetters }) {
+      if (state.contentLoaded || rootGetters.isOffline) {
         return
       }
       try {
         const response = await axios.get('/edition')
         commit('setEditions', response.data)
         commit('setContentLoaded', true)
+        await idb.setArrayToCollection('editions', response.data)
         return response
       } catch (error) {
         return Promise.reject(error)

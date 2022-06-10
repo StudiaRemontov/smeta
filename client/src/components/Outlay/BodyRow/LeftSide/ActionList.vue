@@ -33,6 +33,7 @@ export default {
         {
           text: 'Назад',
           handler: () => {
+            this.setOutlay(null)
             this.$router.push('/')
           },
           icon: 'BackIcon',
@@ -70,16 +71,25 @@ export default {
     },
   },
   methods: {
-    ...mapMutations('outlay', ['setOutlay']),
-    ...mapActions('outlay', ['update']),
+    ...mapMutations('outlay', {
+      prepareOutlay: 'setOutlay',
+    }),
+    ...mapActions('outlay', ['update', 'setOutlay']),
     ...mapActions('outlays', ['print']),
     async save() {
       this.isSaving = true
-      this.setOutlay()
+      this.prepareOutlay()
       try {
         await this.update()
       } catch (error) {
-        console.log(error)
+        const { response } = error
+        const message = response ? response.data.message : error.message
+        this.$toast.add({
+          severity: 'error',
+          summary: 'Ошибка',
+          detail: message,
+          life: 3000,
+        })
       } finally {
         this.isSaving = false
       }
@@ -107,7 +117,14 @@ export default {
         link.click()
         link.remove()
       } catch (error) {
-        console.log(error)
+        const { response } = error
+        const message = response ? response.data.message : error.message
+        this.$toast.add({
+          severity: 'error',
+          summary: 'Ошибка',
+          detail: message,
+          life: 3000,
+        })
       } finally {
         this.isDownloading = false
       }

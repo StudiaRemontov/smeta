@@ -29,7 +29,14 @@ export default {
             try {
               await this.setActive(this.selectedItem)
             } catch (error) {
-              console.log(error)
+              const { response } = error
+              const message = response ? response.data.message : error.message
+              this.$toast.add({
+                severity: 'error',
+                summary: 'Ошибка',
+                detail: message,
+                life: 3000,
+              })
             }
           },
           disabled: this.selectedOutlay?.active,
@@ -51,7 +58,14 @@ export default {
                 },
               })
             } catch (error) {
-              console.log(error)
+              const { response } = error
+              const message = response ? response.data.message : error.message
+              this.$toast.add({
+                severity: 'error',
+                summary: 'Ошибка',
+                detail: message,
+                life: 3000,
+              })
             }
           },
           disabled: this.selectedOutlay?.active,
@@ -70,7 +84,14 @@ export default {
             try {
               await this.create(data)
             } catch (error) {
-              console.log(error)
+              const { response } = error
+              const message = response ? response.data.message : error.message
+              this.$toast.add({
+                severity: 'error',
+                summary: 'Ошибка',
+                detail: message,
+                life: 3000,
+              })
             }
           },
           disabled: false,
@@ -81,7 +102,14 @@ export default {
             try {
               await this.remove(this.selectedItem)
             } catch (error) {
-              console.log(error)
+              const { response } = error
+              const message = response ? response.data.message : error.message
+              this.$toast.add({
+                severity: 'error',
+                summary: 'Ошибка',
+                detail: message,
+                life: 3000,
+              })
             } finally {
               this.selectedItem = null
             }

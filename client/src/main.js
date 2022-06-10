@@ -3,6 +3,7 @@ import App from './App.vue'
 import router from './router'
 import store from './store'
 import PrimeVue from 'primevue/config'
+import ToastService from 'primevue/toastservice'
 
 import 'normalize.css'
 import '@/assets/index.scss'
@@ -23,5 +24,6 @@ app.component('AppInput', AppInput)
 app.use(router)
 app.use(store)
 app.use(PrimeVue)
+app.use(ToastService)
 
 app.mount('#app')

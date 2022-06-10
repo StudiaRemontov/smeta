@@ -116,7 +116,14 @@ export default {
         this.setClone(null)
         this.$router.push('/pricelists')
       } catch (error) {
-        console.log(error)
+        const { response } = error
+        const message = response ? response.data.message : error.message
+        this.$toast.add({
+          severity: 'error',
+          summary: 'Ошибка',
+          detail: message,
+          life: 3000,
+        })
       }
     },
   },

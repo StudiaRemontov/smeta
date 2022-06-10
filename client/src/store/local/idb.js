@@ -1,6 +1,10 @@
+import collections from './collections'
+
 const DB_NAME = 'outlay'
 const DB_VERSION = 1
 let DB = null
+
+const dbCollections = Object.keys(collections)
 
 export default {
   async getDb() {
@@ -23,56 +27,81 @@ export default {
       request.onupgradeneeded = e => {
         console.log('onupgradeneeded')
         const db = e.target.result
-        db.createObjectStore('outlays', { keyPath: '_id' })
+        dbCollections.forEach(colName => {
+          db.createObjectStore(colName, { keyPath: '_id' })
+        })
       }
     })
   },
-  async getOutlays() {
-    const db = await this.getDb()
-
+  async getCollectionData(collection) {
+    const db = await this.getDb(collection)
     return new Promise(resolve => {
-      const trans = db.transaction(['outlays'], 'readonly')
-      const store = trans.objectStore('outlays')
-      const outlays = []
+      const trans = db.transaction([collection], 'readonly')
+      const store = trans.objectStore(collection)
+      const docs = []
       trans.oncomplete = () => {
-        resolve(outlays)
+        resolve(docs)
       }
 
       store.openCursor().onsuccess = e => {
         const cursor = e.target.result
         if (cursor) {
-          outlays.push(cursor.value)
+          docs.push(cursor.value)
           cursor.continue()
         }
       }
     })
   },
-  async saveOutlay(outlay) {
-    const db = await this.getDb()
-
+  async saveDataInCollection(collection, payload) {
+    const db = await this.getDb(collection)
     return new Promise(resolve => {
-      const trans = db.transaction(['outlays'], 'readwrite')
+      const trans = db.transaction([collection], 'readwrite')
 
       trans.oncomplete = () => {
         resolve()
       }
 
-      const store = trans.objectStore('outlays')
-      const data = JSON.parse(JSON.stringify(outlay))
+      const store = trans.objectStore(collection)
+      const data = JSON.parse(JSON.stringify(payload))
       store.put(data)
     })
   },
-  async removeOutlay(id) {
-    const db = await this.getDb()
+  async removeDataInCollection(collection, id) {
+    const db = await this.getDb(collection)
     return new Promise(resolve => {
-      const trans = db.transaction(['outlays'], 'readwrite')
+      const trans = db.transaction([collection], 'readwrite')
 
       trans.oncomplete = () => {
         resolve()
       }
 
-      const store = trans.objectStore('outlays')
+      const store = trans.objectStore(collection)
       store.delete(id)
     })
+  },
+
+  async clearCollection(collection) {
+    const db = await this.getDb(collection)
+
+    return new Promise(resolve => {
+      const trans = db.transaction([collection], 'readwrite')
+
+      trans.oncomplete = () => {
+        resolve()
+      }
+
+      const store = trans.objectStore(collection)
+      store.clear()
+    })
+  },
+
+  async setArrayToCollection(collection, array) {
+    await this.clearCollection(collection)
+    return await Promise.all(
+      array.map(async item => {
+        const data = await JSON.parse(JSON.stringify(item))
+        return await this.saveDataInCollection(collection, data)
+      }),
+    )
   },
 }

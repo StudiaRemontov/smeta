@@ -512,7 +512,7 @@ export default {
           { id: _id, data: response.data },
           { root: true },
         )
-        await idb.removeOutlay(_id)
+        await idb.removeDataInCollection('outlays', _id)
         return response
       } catch (error) {
         return Promise.reject(error)
@@ -526,7 +526,7 @@ export default {
           return
         }
         const data = JSON.parse(JSON.stringify(outlay))
-        await idb.saveOutlay(data)
+        await idb.saveDataInCollection('outlays', data)
         commit('outlays/updateById', { id: outlay._id, data }, { root: true })
       } catch (error) {
         return Promise.reject(error)

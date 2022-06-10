@@ -9,14 +9,31 @@ export default {
     HeaderRow,
     BodyRow,
   },
+  data() {
+    return {
+      interval: null,
+    }
+  },
   computed: {
     ...mapGetters('outlay', ['outlay']),
+    ...mapGetters(['isOffline']),
   },
   async mounted() {
     await this.fetchAll()
+    this.interval = setInterval(this.save, 1000 * 60)
+  },
+  unmounted() {
+    clearInterval(this.interval)
   },
   methods: {
     ...mapActions('outlays', ['fetchAll']),
+    ...mapActions('outlay', ['update', 'saveLocaly']),
+    async save() {
+      if (!this.isOffline) {
+        await this.update()
+        await this.saveLocaly()
+      }
+    },
   },
 }
 </script>
