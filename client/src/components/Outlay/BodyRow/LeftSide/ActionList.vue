@@ -8,6 +8,7 @@ import PrintPage from '@/components/Print/PrintPage.vue'
 import { mapActions, mapGetters, mapMutations } from 'vuex'
 
 import DownloadModal from './Modals/DownloadModal.vue'
+import OutlayBlock from '@/components/Layout/OutlayBlock.vue'
 
 import axios from 'axios'
 
@@ -19,6 +20,7 @@ export default {
     PrintIcon,
     PrintPage,
     DownloadModal,
+    OutlayBlock,
   },
   data() {
     return {
@@ -148,39 +150,36 @@ export default {
 </script>
 
 <template>
-  <DownloadModal ref="download" />
-  <div class="action-list">
-    <button
-      v-for="action in actions"
-      class="button action"
-      :key="action.text"
-      :disabled="action.disabled"
-      @click="action.handler"
-    >
-      <component class="action__icon" :is="action.icon" />
-      <span class="action__text">{{ action.text }}</span>
-      <i v-if="action.loading" class="pi pi-spin pi-spinner"></i>
-    </button>
-  </div>
-  <Teleport to="#print">
-    <PrintPage
-      v-if="outlay && isPrinting"
-      :outlay="outlay"
-      @mounted="readyForPrint"
-    />
-  </Teleport>
+  <OutlayBlock>
+    <DownloadModal ref="download" />
+    <div class="action-list">
+      <button
+        v-for="action in actions"
+        class="button action"
+        :key="action.text"
+        :disabled="action.disabled"
+        @click="action.handler"
+      >
+        <component class="action__icon" :is="action.icon" />
+        <span class="action__text">{{ action.text }}</span>
+        <i v-if="action.loading" class="pi pi-spin pi-spinner"></i>
+      </button>
+    </div>
+    <Teleport to="#print">
+      <PrintPage
+        v-if="outlay && isPrinting"
+        :outlay="outlay"
+        @mounted="readyForPrint"
+      />
+    </Teleport>
+  </OutlayBlock>
 </template>
 
 <style lang="scss" scoped>
 .action-list {
-  background-color: $color-light;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  border-radius: 5px;
-  padding: 25px;
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
-  border-radius: 10px;
 }
 
 .action {

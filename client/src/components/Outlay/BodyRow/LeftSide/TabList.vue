@@ -3,6 +3,7 @@ import Button from 'primevue/button'
 import RoomsIcon from '@/components/UI/Icons/RoomsIcon.vue'
 import DocumentIcon from '@/components/UI/Icons/DocumentIcon.vue'
 import CirclePlusIcon from '@/components/UI/Icons/CirclePlusIcon.vue'
+import OutlayBlock from '@/components/Layout/OutlayBlock.vue'
 
 import RoomModal from './Modals/RoomModal.vue'
 import RoomList from './RoomList.vue'
@@ -17,6 +18,7 @@ export default {
     Button,
     CirclePlusIcon,
     RoomModal,
+    OutlayBlock,
   },
   computed: {
     ...mapGetters('outlay', ['selectedRoom', 'showResults']),
@@ -83,7 +85,7 @@ export default {
 
 <template>
   <RoomModal ref="room-modal" />
-  <div class="tab-list">
+  <OutlayBlock class="tab-list">
     <div class="rooms">
       <button class="button create" @click="openCreateModal">
         <CirclePlusIcon />
@@ -105,7 +107,7 @@ export default {
         </span>
       </button>
     </div>
-  </div>
+  </OutlayBlock>
 </template>
 
 <style lang="scss" scoped>
@@ -113,9 +115,6 @@ export default {
   display: flex;
   flex-direction: column;
   flex: 1;
-  background: $color-light;
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
-  border-radius: 10px;
   padding: 25px 13px;
   min-height: 0px;
   gap: 25px;
@@ -126,8 +125,8 @@ export default {
   flex-direction: column;
   gap: 15px;
   padding: 25px 12px;
+  padding-bottom: 0;
   border-top: 1px solid #a7a7a7;
-  height: 110px;
 }
 
 .main-tab {

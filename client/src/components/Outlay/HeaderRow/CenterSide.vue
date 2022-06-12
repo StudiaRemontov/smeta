@@ -3,6 +3,8 @@ import InfoCircleFill from '@/components/UI/Icons/InfoCircleFill.vue'
 import OutlayList from '../HeaderRow/CenterSide/OutlayList.vue'
 import InfoModal from './CenterSide/Modals/InfoModal.vue'
 import CreateModal from './CenterSide/Modals/CreateModal.vue'
+import OutlayBlock from '@/components/Layout/OutlayBlock.vue'
+
 import { mapActions } from 'vuex'
 
 export default {
@@ -11,6 +13,7 @@ export default {
     OutlayList,
     InfoModal,
     CreateModal,
+    OutlayBlock,
   },
   methods: {
     ...mapActions('outlays', ['create']),
@@ -44,7 +47,7 @@ export default {
   <CreateModal ref="create-modal" />
   <InfoModal ref="info-modal" />
   <div class="center">
-    <div class="center__info">
+    <OutlayBlock class="center__info">
       <div class="center__info-wrapper">
         <div class="center__info-text">
           <span class="center__info-id"> 423423432 </span>
@@ -54,13 +57,13 @@ export default {
           <InfoCircleFill />
         </button>
       </div>
-    </div>
-    <div class="center__outlays">
+    </OutlayBlock>
+    <OutlayBlock class="center__outlays">
       <button class="button create" @click="createOutlay">
         <i class="pi pi-plus create__icon" />
       </button>
       <OutlayList />
-    </div>
+    </OutlayBlock>
   </div>
 </template>
 
@@ -76,7 +79,6 @@ export default {
     border-radius: 0px 0px 10px 10px;
     max-width: 212px;
     width: 100%;
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
     padding: 5px;
 
     &-wrapper {
@@ -114,8 +116,6 @@ export default {
   }
 
   &__outlays {
-    background-color: $color-light;
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
     border-radius: 0px 0px 10px 10px;
     padding: 10px 15px;
     flex: 1;

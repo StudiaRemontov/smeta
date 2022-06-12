@@ -6,6 +6,7 @@ import MultiSelect from 'primevue/multiselect'
 import TreeTable from './CenterSide/TreeTable/TreeTable.vue'
 import TreeTableView from './CenterSide/TreeTableView/TreeTableView.vue'
 import ResultsTable from './CenterSide/Results/ResultsTable.vue'
+import OutlayBlock from '@/components/Layout/OutlayBlock.vue'
 
 import { isObjectId } from '@/helpers/isObjectId'
 
@@ -21,6 +22,7 @@ export default {
     TreeTableView,
     MultiSelect,
     ResultsTable,
+    OutlayBlock,
   },
   data() {
     return {
@@ -262,7 +264,7 @@ export default {
 </script>
 
 <template>
-  <div class="center">
+  <OutlayBlock class="center">
     <div v-if="outlay" class="center__body">
       <div v-if="!showResults" class="body-actions">
         <div class="search-wrapper">
@@ -307,7 +309,7 @@ export default {
       <TreeTable v-else-if="selectedRoom" ref="table" :striped="striped" />
       <TreeTableView v-else-if="rooms.length > 0" ref="table" />
     </div>
-  </div>
+  </OutlayBlock>
 </template>
 
 <style lang="scss" scoped>
@@ -315,7 +317,8 @@ export default {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+  padding: 0;
+  overflow: hidden;
 
   &__body {
     display: flex;
