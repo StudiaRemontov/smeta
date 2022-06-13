@@ -64,15 +64,14 @@ export default {
     },
     rowStyle() {
       const keysLength = this.keys.length
-      if (this.isCategory) {
-        return {
-          backgroundColor: this.colors[this.level],
-          gridTemplateColumns: `4fr repeat(${keysLength}, minmax(100px, 1fr)) 50px`,
-        }
-      }
-      return {
+      const style = {
         gridTemplateColumns: `4fr repeat(${keysLength}, minmax(100px, 1fr)) 50px`,
       }
+      if (this.level > 2 && this.isCategory) {
+        style.color = '#000'
+        style.fontWeight = '700'
+      }
+      return style
     },
     sum() {
       const quantity = this.data[this.quantityKey.id]

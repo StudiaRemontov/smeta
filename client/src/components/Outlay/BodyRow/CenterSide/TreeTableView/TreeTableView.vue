@@ -81,7 +81,7 @@ export default {
       }
       const rowData = row.getBoundingClientRect()
       const level = +row.dataset.level
-      const stickyRowsHeight = (level + 1) * 32
+      const stickyRowsHeight = level * 32
       const offsetFromTable = rowData.top - tableData.top - stickyRowsHeight
       wrapper.scrollTo({
         top: offsetFromTable + wrapper.scrollTop,
@@ -94,18 +94,16 @@ export default {
 
 <template>
   <div class="tree-table">
-    <div class="table-grid">
-      <div class="table-grid__body" ref="wrapper">
-        <TableGroup
-          v-for="node in data"
-          ref="table"
-          :key="node.key"
-          :node="node"
-          :room="node.key"
-          :level="0"
-          isRoom
-        />
-      </div>
+    <div class="table-grid" ref="wrapper">
+      <TableGroup
+        v-for="node in data"
+        ref="table"
+        :key="node.key"
+        :node="node"
+        :room="node.key"
+        :level="0"
+        isRoom
+      />
     </div>
   </div>
 </template>
@@ -118,16 +116,9 @@ export default {
 }
 
 .table-grid {
-  display: flex;
-  flex-direction: column;
-  min-height: 0px;
-  position: relative;
+  flex: 1;
   @include darkScroll;
   overflow-y: overlay;
-
-  &__body {
-    flex: 1;
-    position: relative;
-  }
+  position: relative;
 }
 </style>

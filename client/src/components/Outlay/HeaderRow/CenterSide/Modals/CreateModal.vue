@@ -50,8 +50,12 @@ export default {
         return foundEdition.active === true
       })
       if (!activeEdition) {
-        console.error('В данном прайс листе нету активной редакции')
-        return
+        return this.$toast.add({
+          severity: 'error',
+          summary: 'Ошибка',
+          detail: 'В данном прайс листе нету активной редакции',
+          life: 3000,
+        })
       }
       const data = {
         name: this.name,

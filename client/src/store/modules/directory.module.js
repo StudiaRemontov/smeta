@@ -133,7 +133,7 @@ export default {
           id: response.data._id,
           data: response.data,
         })
-        await idb.saveDataInCollection('directories', data)
+        await idb.saveDataInCollection('directories', response.data)
         return response
       } catch (error) {
         console.log(error)

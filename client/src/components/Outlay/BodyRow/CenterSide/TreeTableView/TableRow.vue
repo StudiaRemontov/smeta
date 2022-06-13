@@ -51,7 +51,7 @@ export default {
     <div v-for="key in keys" :key="key.id" class="table-cell">
       {{ data[key.id] }}
     </div>
-    <div class="table-cell">
+    <div v-if="!isCategory" class="table-cell">
       {{ sum }}
     </div>
   </div>

@@ -68,7 +68,7 @@ export default {
               })
             }
           },
-          disabled: this.selectedOutlay?.active,
+          disabled: false,
         },
         {
           label: 'Клонировать',

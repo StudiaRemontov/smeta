@@ -111,7 +111,7 @@ export default {
       v-for="child in children"
       :key="child.key"
       :node="child"
-      :level="level"
+      :level="level + 1"
       :room="room"
     />
   </template>
