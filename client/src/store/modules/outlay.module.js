@@ -1,6 +1,7 @@
 import axios from '../../modules/axios'
 import { uniqBy } from 'lodash'
 import idb from '../local/idb'
+import OutlayService from '../../api/OutlayService'
 
 import roomParametersMixin from '../../mixins/roomParameters.mixin'
 
@@ -506,13 +507,12 @@ export default {
       if (!state.outlay) return
       const { _id } = state.outlay
       try {
-        const response = await axios.put(`/outlay/${_id}`, state.outlay)
+        const response = await OutlayService.update(state.outlay)
         commit(
           'outlays/updateById',
           { id: _id, data: response.data },
           { root: true },
         )
-        await idb.removeDataInCollection('outlays', _id)
         return response
       } catch (error) {
         return Promise.reject(error)

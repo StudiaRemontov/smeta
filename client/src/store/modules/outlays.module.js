@@ -1,31 +1,15 @@
 import axios from '../../modules/axios'
 import idb from '../local/idb'
-import { generateMongoId } from '@/helpers/generateMongoId'
 
-const mergeData = (serverData, localData) => {
-  const mergedOutlays = [...serverData, ...localData]
-  const grouped = mergedOutlays.reduce((acc, outlay) => {
-    acc[outlay._id] = acc[outlay._id] || []
-    acc[outlay._id].push(outlay)
-    return acc
-  }, {})
-  return Object.values(grouped).map(outlays => {
-    return outlays.reduce((acc, outlay) => {
-      if (!acc) {
-        return outlay
-      }
-      const timeA = new Date(outlay.updatedAt).getTime()
-      const timeB = new Date(acc.updatedAt).getTime()
-      return timeA > timeB ? outlay : acc
-    }, null)
-  })
-}
+import OutlayService from '../../api/OutlayService'
+import Outlay from '../../models/Outlay'
 
 export default {
   namespaced: true,
   state: {
     contentLoaded: false,
     outlays: [],
+    loading: false,
   },
   mutations: {
     setContentLoaded(state, payload) {
@@ -55,39 +39,55 @@ export default {
     },
   },
   actions: {
-    async fetchAll({ commit, state, rootGetters }) {
-      if (state.contentLoaded) {
+    async fetchAll({ commit, state, dispatch, rootGetters }) {
+      if (state.contentLoaded || state.loading) {
         return
       }
+      state.loading = true
       const { isOffline } = rootGetters
 
       try {
-        const localOutlays = await idb.getCollectionData('outlays')
+        const data = await OutlayService.getAll()
         if (isOffline) {
-          commit('setOutlays', localOutlays)
+          commit('setOutlays', data)
           commit('setContentLoaded', true)
-          return Promise.resolve(localOutlays)
+          return Promise.resolve(data)
         }
-        const response = await axios.get('/outlay')
-        const merged = mergeData(response.data, localOutlays)
-        commit('setOutlays', merged)
-        await idb.setArrayToCollection('outlays', merged)
-        return response
+        commit('setOutlays', data)
+        const localData = await idb.getCollectionData('outlays')
+        const diff = OutlayService.getLocalDifference(data, localData)
+        const { created, updated, removed } = diff
+        await idb.setArrayToCollection('outlays', data)
+        await Promise.all(
+          created.map(async o => {
+            return await dispatch('clone', o)
+          }),
+        )
+        await Promise.all(
+          updated.map(async o => {
+            const { _id: id, ...data } = o
+            return await dispatch('update', { id, data })
+          }),
+        )
+        await Promise.all(
+          removed.map(async o => {
+            return await dispatch('removeLocal', o)
+          }),
+        )
+        commit('setContentLoaded', true)
+        return Promise.resolve(data)
       } catch (error) {
         return Promise.reject(error)
+      } finally {
+        state.loading = false
       }
     },
-    async uploadFromServer({ state, rootGetters, commit, dispatch }) {
+    async uploadFromServer({ rootGetters, commit, dispatch }) {
       const { isOffline } = rootGetters
       if (isOffline) return
       try {
-        const response = await axios.get('/outlay')
-        const localData = state.outlays
-        const merged = mergeData(response.data, localData)
-        commit('setOutlays', merged)
-        await idb.setArrayToCollection('outlays', merged)
-        const newest = merged.filter(o => o.local)
-        await dispatch('saveArray', newest)
+        commit('setContentLoaded', false)
+        const response = await dispatch('fetchAll')
         return response
       } catch (error) {
         return Promise.reject(error)
@@ -106,43 +106,48 @@ export default {
         return Promise.reject(error)
       }
     },
-    async create({ commit, dispatch, rootGetters }, payload) {
-      const { isOffline } = rootGetters
+    async create({ commit, dispatch }, { name, edition }) {
       try {
-        if (isOffline) {
-          const currentDate = new Date()
-          const newData = {
-            ...payload,
-            active: false,
-            _id: generateMongoId(),
-            local: true,
-            rooms: [],
-            createdAt: currentDate,
-            updatedAt: currentDate,
-            sale: 0,
-          }
-          commit('pushOutlay', newData)
-          await idb.saveDataInCollection('outlays', newData)
-          await dispatch('outlay/setOutlay', newData, { root: true })
-          return Promise.resolve()
-        }
-        const response = await axios.post('/outlay', payload)
+        const response = await OutlayService.create(name, edition)
         commit('pushOutlay', response.data)
-        dispatch('outlay/setOutlay', response.data, { root: true })
+        await dispatch('outlay/setOutlay', response.data, { root: true })
         await idb.saveDataInCollection('outlays', response.data)
         return response
       } catch (error) {
         return Promise.reject(error)
       }
     },
-    async remove({ commit, dispatch, rootGetters }, id) {
+    async clone({ dispatch }, cloningOutlay) {
       try {
-        const response = await axios.delete(`/outlay/${id}`)
+        const clone = Outlay.getClone(cloningOutlay)
+        const response = await dispatch('create', clone)
+
+        return response
+      } catch (error) {
+        return Promise.reject(error)
+      }
+    },
+    async remove({ state, commit, dispatch, rootGetters }, id) {
+      try {
+        const { outlays } = state
+        const outlay = outlays.find(o => o._id === id)
+        if (!outlay) {
+          throw new Error('Outlay not found')
+        }
+        const response = await OutlayService.remove(outlay)
         if (rootGetters['outlay/outlay']?._id === id) {
           dispatch('outlay/setOutlay', null, { root: true })
         }
         commit('removeById', id)
-        await idb.removeDataInCollection('outlays', id)
+        return response
+      } catch (error) {
+        return Promise.reject(error)
+      }
+    },
+    async removeLocal({ commit }, outlay) {
+      try {
+        const response = await OutlayService.remove(outlay)
+        commit('removeById', outlay._id)
         return response
       } catch (error) {
         return Promise.reject(error)
@@ -163,7 +168,7 @@ export default {
     async print(_, id) {
       try {
         if (!id) {
-          throw 'id is required'
+          throw new Error('id is required')
         }
         const response = await axios.post(`/outlay/pdf/${id}`, {
           domain: window.location.origin,
@@ -175,9 +180,8 @@ export default {
     },
     async update({ commit }, { id, data }) {
       try {
-        const response = await axios.put(`/outlay/${id}`, data)
+        const response = await OutlayService.update({ _id: id, ...data })
         commit('updateById', { id, data: response.data })
-        await idb.removeDataInCollection('outlays', id)
         return response
       } catch (error) {
         return Promise.reject(error)

@@ -73,16 +73,9 @@ export default {
         {
           label: 'Клонировать',
           command: async () => {
-            const outlay = this.outlays.find(o => o._id === this.selectedItem)
-            const clone = JSON.parse(JSON.stringify(outlay))
-            const data = {
-              ...clone,
-              active: false,
-              date: undefined,
-              _id: undefined,
-            }
             try {
-              await this.create(data)
+              const outlay = this.outlays.find(o => o._id === this.selectedItem)
+              await this.clone(outlay)
             } catch (error) {
               const { response } = error
               const message = response ? response.data.message : error.message
@@ -123,7 +116,13 @@ export default {
     },
   },
   methods: {
-    ...mapActions('outlays', ['create', 'remove', 'setActive', 'update']),
+    ...mapActions('outlays', [
+      'create',
+      'remove',
+      'setActive',
+      'update',
+      'clone',
+    ]),
     openMenu(e, id) {
       this.selectedItem = id
       this.$refs.menu.toggle(e)

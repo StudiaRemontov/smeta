@@ -32,15 +32,6 @@ export default {
   methods: {
     ...mapMutations(['setIsOffline']),
     ...mapActions(['initApp', 'fetchAll']),
-    ...mapActions('directory', {
-      fetchDirectories: 'fetchAll',
-    }),
-    ...mapActions('edition', {
-      fetchEditions: 'fetchAll',
-    }),
-    ...mapActions('priceList', {
-      fetchPriceLists: 'fetchAll',
-    }),
     async fetchData() {
       try {
         await this.fetchAll()
@@ -58,7 +49,9 @@ export default {
     async onConnectionChange() {
       const status = navigator.onLine
       this.setIsOffline(!status)
-      this.fetchData()
+      if (status) {
+        this.fetchData()
+      }
     },
   },
 }
