@@ -5,7 +5,7 @@
   }
   &::-webkit-scrollbar {
     background-color: transparent;
-    height: 6px;
+    height: 14px;
     width: 6px;
   }
   
@@ -43,6 +43,17 @@
   &:not(:first-child) {
     text-align: center;
   }
+
+  &:first-of-type {
+    min-width: 300px;
+  }
+}
+
+@mixin act-table-cell {
+  padding: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 100px;
 }
 
 @mixin modal {

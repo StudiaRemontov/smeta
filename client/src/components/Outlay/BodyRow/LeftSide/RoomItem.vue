@@ -127,7 +127,6 @@ export default {
 
   &__actions {
     display: flex;
-    align-items: center;
     border-left: 1px solid v-bind(textColor);
   }
 

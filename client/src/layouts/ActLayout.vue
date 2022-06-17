@@ -1,8 +1,8 @@
 <script>
 import { mapActions, mapGetters } from 'vuex'
 
-import HeaderRow from '@/components/Outlay/HeaderRow.vue'
-import BodyRow from '@/components/Outlay/BodyRow.vue'
+import HeaderRow from '@/components/Act/HeaderRow.vue'
+import BodyRow from '@/components/Act/BodyRow.vue'
 
 export default {
   components: {
@@ -11,7 +11,7 @@ export default {
   },
   computed: {
     ...mapGetters('outlays', ['outlays']),
-    ...mapGetters('outlay', ['outlay']),
+    ...mapGetters('acts', ['act']),
     id() {
       return this.$route.params.id
     },
@@ -20,16 +20,19 @@ export default {
     if (!this.id) {
       return
     }
-
+    await this.fetchAll()
     const outlay = this.outlays.find(o => o._id === this.id)
     if (!outlay) {
       return
     }
-    await this.setOutlay(outlay)
+    await this.prepateOutlay(outlay)
+    this.setOutlay(outlay)
   },
   methods: {
-    ...mapActions('outlay', ['setOutlay']),
-    ...mapActions('outlays', ['fetchAll']),
+    ...mapActions('acts', ['fetchAll', 'setOutlay']),
+    ...mapActions('outlay', {
+      prepateOutlay: 'setOutlay',
+    }),
   },
 }
 </script>
@@ -37,7 +40,7 @@ export default {
 <template>
   <main class="main">
     <HeaderRow />
-    <BodyRow v-if="outlay" />
+    <BodyRow v-if="act" />
   </main>
   <div id="print" class="print"></div>
 </template>

@@ -7,7 +7,6 @@ import PrintPage from '@/components/Print/PrintPage.vue'
 
 import { mapActions, mapGetters, mapMutations } from 'vuex'
 
-import DownloadModal from './Modals/DownloadModal.vue'
 import OutlayBlock from '@/components/Layout/OutlayBlock.vue'
 
 import axios from 'axios'
@@ -19,7 +18,6 @@ export default {
     DownloadIcon,
     PrintIcon,
     PrintPage,
-    DownloadModal,
     OutlayBlock,
   },
   data() {
@@ -151,7 +149,6 @@ export default {
 
 <template>
   <OutlayBlock>
-    <DownloadModal ref="download" />
     <div class="action-list">
       <button
         v-for="action in actions"

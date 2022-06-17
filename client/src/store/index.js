@@ -6,6 +6,7 @@ import priceList from './modules/priceList.module'
 import edition from './modules/edition.module'
 import outlay from './modules/outlay.module'
 import outlays from './modules/outlays.module'
+import acts from './modules/acts.module'
 import OutlayService from '../api/OutlayService'
 import collections from './local/collections'
 import idb from './local/idb'
@@ -29,6 +30,7 @@ const store = createStore({
     edition,
     outlay,
     outlays,
+    acts,
   },
   actions: {
     async initApp({ commit }) {

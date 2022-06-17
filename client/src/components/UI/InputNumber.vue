@@ -4,14 +4,20 @@ export default {
     modelValue: {
       default: 0,
     },
-    min: Number,
-    max: Number,
+    min: {
+      type: Number,
+      default: Number.MIN_VALUE,
+    },
+    max: {
+      type: Number,
+      default: Number.MAX_VALUE,
+    },
     step: {
       type: Number,
       default: 1,
     },
   },
-  emits: ['update:modelValue'],
+  emits: ['update:modelValue', 'change'],
   data() {
     return {
       value: null,
@@ -55,10 +61,16 @@ export default {
       this.newValue = number
     },
     increaseValue() {
-      this.newValue = this.newValue + this.step
+      const newValue = this.newValue + this.step
+      if (this.max >= newValue) {
+        this.newValue = newValue
+      }
     },
     decreaseValue() {
-      this.newValue = this.newValue - this.step
+      const newValue = this.newValue - this.step
+      if (this.min <= newValue) {
+        this.newValue = newValue
+      }
     },
     checkKey(e) {
       const regex = /^[0-9.,]*$/
@@ -83,6 +95,9 @@ export default {
         e.preventDefault()
       }
     },
+    enterHandler() {
+      this.$refs.input.blur()
+    },
   },
 }
 </script>
@@ -95,5 +110,7 @@ export default {
     type="text"
     @input="inputHandler"
     @keydown="checkKey"
+    @change="$emit('change')"
+    @keyup.enter="enterHandler"
   />
 </template>

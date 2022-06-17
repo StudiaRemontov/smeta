@@ -20,7 +20,7 @@ export const treeToList = node => {
   return []
 }
 
-const treeToListOnlyKeys = node => {
+export const treeToListOnlyKeys = node => {
   const { children } = node
   return [node.key, ...children.map(treeToListOnlyKeys)].flat()
 }
@@ -72,7 +72,7 @@ const updateNodeInTree = (node, key, children) => {
   }
 }
 
-const mergeTree = (node, nodes) => {
+export const mergeTree = (node, nodes) => {
   const { key, children } = node
   const isExistsInNodes = nodes.find(n => n.key === key)
 
@@ -291,10 +291,13 @@ export default {
       state.keys = edition.keys
       const rooms = JSON.parse(JSON.stringify(state.outlay.rooms))
       state.roomsData = rooms.reduce((acc, room) => {
+        //получаю категории с работами. (Не категории с категориями)
         const nodes = room.jobs.map(treeToList).flat()
+        //создаю клон с данными из редакции
         const clone = JSON.parse(JSON.stringify(initData))
         const { options } = room
         const { computed } = methods.calculateAllParameters(options)
+        //для каждой работы из клона редакции устанавливаю дефолтное количество
         clone.forEach(n =>
           getQuantityByFormula(
             n,
@@ -303,8 +306,9 @@ export default {
             state.formulaKey.id,
           ),
         )
+        //объединяю деревья заменяя дефолтное количество на сохраненное в смете
         const mergedTree = clone.map(c => mergeTree(c, nodes)).flat()
-
+        //сохраняю данные для таблицы для комнаты
         acc[room.id] = mergedTree
         return acc
       }, {})
