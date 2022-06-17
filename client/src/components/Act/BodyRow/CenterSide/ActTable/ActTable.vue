@@ -3,17 +3,22 @@ import { mapGetters } from 'vuex'
 
 import TableGroup from './TableGroup.vue'
 
-import tableRowColors from '@/mixins/tableRowColors.mixin'
 import { formatNumber } from '@/helpers/formatNumber'
 import { getValuesInside } from '@/store/modules/outlay.module'
 
 export default {
   components: { TableGroup },
-  mixins: [tableRowColors],
-  provide() {
-    return {
-      editable: false,
-    }
+  props: {
+    data: {
+      type: Array,
+      required: true,
+      default: () => [],
+    },
+    room: {
+      type: Object,
+      required: true,
+      default: () => ({}),
+    },
   },
   computed: {
     ...mapGetters('outlay', ['rooms', 'keys', 'priceKey']),
@@ -24,31 +29,9 @@ export default {
       'showOnlyCompleted',
       'completedValues',
     ]),
-    data() {
-      if (!this.roomsData || !this.act) {
-        return []
-      }
-      const room = this.rooms.find(r => r.id === this.activeRoom.id)
-      return [room].map(room => {
-        const children = this.showOnlyCompleted
-          ? this.roomsData[room.id].filter(n =>
-              this.completedValues.includes(n.key),
-            )
-          : this.roomsData[room.id]
-        return {
-          key: room.id,
-          data: {
-            [this.keys[0].id]: this.act.name,
-          },
-          children,
-          room: true,
-          level: 0,
-        }
-      })
-    },
     sum() {
       const roomsDataClone = JSON.parse(
-        JSON.stringify(this.roomsData[this.activeRoom.id]),
+        JSON.stringify(this.roomsData[this.room.id]),
       )
       const nodes = roomsDataClone.map(getValuesInside).flat()
       const completed = nodes.filter(n => n.data.quantity > 0)
@@ -74,6 +57,7 @@ export default {
         :key="node.key"
         :node="node"
         :level="0"
+        :room="room.id"
         isAct
       />
       <div class="table-row">

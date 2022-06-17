@@ -29,7 +29,7 @@ export default {
     children() {
       if (this.showOnlyCompleted) {
         return this.node.children.filter(n =>
-          this.completedValues.includes(n.key),
+          this.completedValues[this.room].includes(n.key),
         )
       }
       return this.node.children || []

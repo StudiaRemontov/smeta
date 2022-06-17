@@ -26,6 +26,7 @@ export default {
           text: 'Выполненные работы',
           handler: () => {
             this.setActiveTab('completed')
+            this.setShowOnlyCompleted(true)
           },
           icon: 'RoomsIcon',
           active: this.activeTab === 'completed',
@@ -50,7 +51,7 @@ export default {
     },
   },
   methods: {
-    ...mapMutations('acts', ['setActiveTab']),
+    ...mapMutations('acts', ['setActiveTab', 'setShowOnlyCompleted']),
   },
 }
 </script>

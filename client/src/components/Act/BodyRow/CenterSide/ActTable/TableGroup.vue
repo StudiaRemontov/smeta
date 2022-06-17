@@ -3,23 +3,20 @@ import { mapGetters } from 'vuex'
 import JobList from './JobList.vue'
 import HeaderCells from './HeaderCells.vue'
 
-import tableRowColors from '@/mixins/tableRowColors.mixin'
-
 export default {
   name: 'TableGroup',
   components: {
     JobList,
     HeaderCells,
   },
-  mixins: [tableRowColors],
   props: {
     node: {
       type: Object,
       required: true,
       default: () => {},
     },
-    level: Number,
     room: String,
+    level: Number,
     isAct: Boolean,
   },
   computed: {
@@ -34,7 +31,7 @@ export default {
     children() {
       if (this.showOnlyCompleted) {
         return this.node.children.filter(n =>
-          this.completedValues.includes(n.key),
+          this.completedValues[this.room].includes(n.key),
         )
       }
       return this.node.children || []
@@ -63,6 +60,7 @@ export default {
         :key="category.key"
         :node="category"
         :level="level + 1"
+        :room="room"
       />
     </template>
     <template v-else>
@@ -72,10 +70,16 @@ export default {
           :key="child.key"
           :node="child"
           :level="level + 1"
+          :room="room"
         />
       </template>
       <template v-else>
-        <JobList :node="node" :level="level + 1" :hasTitle="false" />
+        <JobList
+          :node="node"
+          :level="level + 1"
+          :room="room"
+          :hasTitle="false"
+        />
       </template>
     </template>
   </div>

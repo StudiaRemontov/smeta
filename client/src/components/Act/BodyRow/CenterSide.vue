@@ -2,7 +2,9 @@
 import AutoComplete from 'primevue/autocomplete'
 import InputSwitch from 'primevue/inputswitch'
 
-import TreeTableView from './CenterSide/TreeTableView/TreeTableView.vue'
+import RoomTable from './CenterSide/RoomTable/RoomTable.vue'
+import CompletedTable from './CenterSide/CompletedTable/CompletedTable.vue'
+import ActsTable from './CenterSide/ActsTable/ActsTable.vue'
 import OutlayBlock from '@/components/Layout/OutlayBlock.vue'
 
 import { isObjectId } from '@/helpers/isObjectId'
@@ -15,8 +17,10 @@ export default {
   components: {
     AutoComplete,
     InputSwitch,
-    TreeTableView,
+    RoomTable,
     OutlayBlock,
+    CompletedTable,
+    ActsTable,
   },
   data() {
     return {
@@ -36,7 +40,7 @@ export default {
       'selectedValues',
       'showResults',
     ]),
-    ...mapGetters('acts', ['activeTab', 'activeRoom']),
+    ...mapGetters('acts', ['activeTab', 'activeRoom', 'act']),
     striped: {
       get() {
         return this.$store.getters['outlay/striped']
@@ -278,16 +282,16 @@ export default {
         </div>
       </div>
       <template v-if="activeTab === 'completed'">
-        <span>Выполненные</span>
+        <CompletedTable ref="completed" :rooms="rooms" />
       </template>
       <template v-else-if="activeTab === 'acts'">
-        <span>Сводная по актам</span>
+        <ActsTable ref="acts" :rooms="rooms" />
       </template>
       <template v-else-if="activeTab === 'results'">
         <span>Сводная редакции</span>
       </template>
       <template v-else-if="activeTab === 'room' && activeRoom">
-        <TreeTableView ref="table" />
+        <RoomTable :room="activeRoom" :acts="[act]" ref="table" />
       </template>
     </div>
   </OutlayBlock>

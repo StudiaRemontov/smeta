@@ -75,7 +75,6 @@ export default {
     },
     resetAct(state) {
       state.act = null
-      state.outlay = null
       state.roomsData = {}
     },
     updateQuantity(state, { node, value }) {
@@ -120,6 +119,9 @@ export default {
       if (!payload) {
         return commit('resetAct')
       }
+      if (state.act) {
+        commit('resetAct')
+      }
       state.act = payload
       const { outlay: currentOutlay } = state
       const clone = JSON.parse(JSON.stringify(currentOutlay.rooms))
@@ -148,7 +150,7 @@ export default {
         return Promise.reject(error)
       }
     },
-    async create({ commit, state }) {
+    async create({ commit, state, dispatch }) {
       try {
         const { acts, outlay } = state
         const actsLengths = acts.length
@@ -158,7 +160,7 @@ export default {
           outlay: outlay._id,
         })
         commit('pushAct', response.data)
-        commit('setAct', response.data)
+        dispatch('setAct', response.data)
         return response
       } catch (error) {
         return Promise.reject(error)
@@ -205,13 +207,17 @@ export default {
     roomsData: s => s.roomsData,
     showOnlyCompleted: s => s.showOnlyCompleted,
     completedValues: s => {
-      const { showOnlyCompleted, act, activeRoom } = s
-      if (!showOnlyCompleted) {
-        return []
+      const { act, outlay } = s
+      if (!act || !outlay) {
+        return {}
       }
-      const room = act.rooms.find(r => r.id === activeRoom.id)
-      const nodes = room.jobs.map(treeToListOnlyKeys).flat()
-      return nodes
+      const { rooms } = outlay
+      return rooms.reduce((acc, room) => {
+        const found = act.rooms.find(r => r.id === room.id)
+        const jobs = found ? found.jobs.map(treeToListOnlyKeys).flat() : []
+        acc[room.id] = jobs
+        return acc
+      }, {})
     },
   },
 }
