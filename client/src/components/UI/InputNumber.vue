@@ -29,7 +29,8 @@ export default {
         return this.modelValue
       },
       set(value) {
-        return this.$emit('update:modelValue', value)
+        this.$emit('update:modelValue', value)
+        this.$emit('change', value)
       },
     },
   },
@@ -110,7 +111,7 @@ export default {
     type="text"
     @input="inputHandler"
     @keydown="checkKey"
-    @change="$emit('change')"
+    @change="$emit('change', $event.target.value)"
     @keyup.enter="enterHandler"
   />
 </template>

@@ -11,6 +11,16 @@ export default {
 </script>
 
 <template>
-  <ActionList />
-  <TabList />
+  <div class="wrapper">
+    <ActionList />
+    <TabList />
+  </div>
 </template>
+
+<style lang="scss" scoped>
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+</style>

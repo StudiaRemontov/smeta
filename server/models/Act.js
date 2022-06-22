@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const actStatus = require('../enums/ActStatus')
 
 const jobsSchema = new mongoose.Schema({ _id: false }, { versionKey: false })
 
@@ -31,6 +32,11 @@ const schema = new mongoose.Schema(
       type: mongoose.SchemaTypes.ObjectId,
       ref: 'Outlay',
       required: true,
+    },
+    status: {
+      enum: Object.values(actStatus),
+      type: String,
+      default: actStatus.NEW,
     },
   },
   {

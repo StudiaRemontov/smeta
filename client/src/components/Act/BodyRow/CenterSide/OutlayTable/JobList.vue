@@ -1,12 +1,10 @@
 <script>
-import { mapGetters } from 'vuex'
+import { mapActions, mapGetters, mapMutations } from 'vuex'
 import TableRow from './TableRow.vue'
-import actsTable from '@/mixins/actsTable.mixin'
 
 export default {
   name: 'JobList',
   components: { TableRow },
-  mixins: [actsTable],
   props: {
     node: {
       type: Object,
@@ -20,16 +18,16 @@ export default {
       default: true,
     },
   },
+  emits: ['select-node'],
   computed: {
-    ...mapGetters('outlay', ['keys']),
-    ...mapGetters('acts', ['showOnlyCompleted', 'completedValues', 'act']),
+    ...mapGetters('outlay', ['keys', 'selectedValues', 'showOnlyChecked']),
     data() {
       return this.node.data
     },
     children() {
-      if (this.showOnlyCompleted) {
+      if (this.showOnlyChecked) {
         return this.node.children.filter(n =>
-          this.completedValues[this.act._id][this.room].includes(n.key),
+          this.selectedValues.includes(n.key),
         )
       }
       return this.node.children || []
@@ -43,12 +41,25 @@ export default {
       }
       return null
     },
+    headerStyle() {
+      const keysLength = this.keys.length
+      return {
+        gridTemplateColumns: `4fr repeat(${keysLength}, minmax(100px, 1fr)) 50px`,
+      }
+    },
+    selected() {
+      return this.selectedValues.includes(this.node.key)
+    },
+  },
+  methods: {
+    ...mapMutations('outlay', ['selectJob', 'unselectJob']),
+    ...mapActions('outlay', ['toggleCategoryJobs']),
   },
 }
 </script>
 
 <template>
-  <div v-if="title" class="table-row table-row--category" :style="rowStyle">
+  <div v-if="title" class="table-row table-row--category" :style="headerStyle">
     <div class="table-cell">
       {{ title }}
     </div>
@@ -66,7 +77,6 @@ export default {
 .table-row {
   display: grid;
   background-color: #fff;
-  height: 32px;
 
   &--category {
     font-weight: 700;

@@ -3,8 +3,9 @@ import InfoCircleFill from '@/components/UI/Icons/InfoCircleFill.vue'
 import OutlayList from './CenterSide/ActList.vue'
 import InfoModal from './CenterSide/Modals/InfoModal.vue'
 import OutlayBlock from '@/components/Layout/OutlayBlock.vue'
+import { actStatus } from '../../../enum/actStatus'
 
-import { mapActions } from 'vuex'
+import { mapActions, mapGetters } from 'vuex'
 
 export default {
   components: {
@@ -13,12 +14,33 @@ export default {
     InfoModal,
     OutlayBlock,
   },
+  computed: {
+    ...mapGetters('acts', ['acts']),
+  },
   methods: {
     ...mapActions('acts', ['create']),
     showInfo() {
       this.$refs['info-modal'].show()
     },
+    canCreate() {
+      const lastAct = this.acts[this.acts.length - 1]
+      if (!lastAct) {
+        return true
+      }
+      const { status } = lastAct
+
+      return status !== actStatus.NEW
+    },
     async createAct() {
+      const canCreate = this.canCreate()
+      if (!canCreate) {
+        return this.$toast.add({
+          severity: 'error',
+          summary: 'Ошибка',
+          detail: 'Предыдущий акт должен быть согласован или отклонен',
+          life: 3000,
+        })
+      }
       try {
         await this.create()
       } catch (error) {

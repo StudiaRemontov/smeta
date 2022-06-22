@@ -9,6 +9,8 @@ import { mapActions, mapGetters } from 'vuex'
 
 import OutlayBlock from '@/components/Layout/OutlayBlock.vue'
 
+import { actStatus } from '../../../../enum/actStatus'
+
 export default {
   components: {
     BackIcon,
@@ -21,10 +23,12 @@ export default {
   data() {
     return {
       isSaving: false,
+      isInConfirmation: false,
     }
   },
   computed: {
     ...mapGetters('outlay', ['outlay']),
+    ...mapGetters('acts', ['act']),
     actions() {
       return [
         {
@@ -48,16 +52,16 @@ export default {
         },
         {
           text: 'Согласование',
-          handler: () => {},
+          handler: this.confirm,
           icon: 'DownloadIcon',
-          disabled: false,
-          loading: false,
+          disabled: this.isInConfirmation,
+          loading: this.isInConfirmation,
         },
       ]
     },
   },
   methods: {
-    ...mapActions('acts', ['save', 'setAct']),
+    ...mapActions('acts', ['save', 'setAct', 'update']),
     async saveHandler() {
       try {
         this.isSaving = true
@@ -73,6 +77,27 @@ export default {
         })
       } finally {
         this.isSaving = false
+      }
+    },
+    async confirm() {
+      this.isInConfirmation = true
+      try {
+        const data = {
+          ...this.act,
+          status: actStatus.CONFIRMED,
+        }
+        await this.update({ id: data._id, data })
+      } catch (error) {
+        const { response } = error
+        const message = response ? response.data.message : error.message
+        this.$toast.add({
+          severity: 'error',
+          summary: 'Ошибка',
+          detail: message,
+          life: 3000,
+        })
+      } finally {
+        this.isInConfirmation = false
       }
     },
   },

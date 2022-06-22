@@ -1,14 +1,9 @@
 <script>
-import { mapGetters, mapMutations } from 'vuex'
+import { mapGetters } from 'vuex'
 import { formatNumber } from '@/helpers/formatNumber'
-
-import InputNumber from '@/components/UI/InputNumber.vue'
 
 export default {
   name: 'TableRow',
-  components: {
-    InputNumber,
-  },
   props: {
     node: {
       type: Object,
@@ -18,14 +13,8 @@ export default {
     level: Number,
     room: String,
   },
-  data() {
-    return {
-      interval: null,
-    }
-  },
   computed: {
-    ...mapGetters('outlay', ['priceKey', 'striped']),
-    ...mapGetters('acts', ['act']),
+    ...mapGetters('outlay', ['keys', 'quantityKey', 'priceKey', 'striped']),
     data() {
       return this.node.data
     },
@@ -35,16 +24,30 @@ export default {
     isCategory() {
       return this.children.length > 0
     },
-    sum() {
-      const quantity = this.data.quantity || 0
-      const price = this.data[this.priceKey.id]
-      return formatNumber(quantity * price)
+    visibleKeys() {
+      const keys = this.keys.map(k => {
+        if (k.id === this.quantityKey.id) {
+          return {
+            ...k,
+            name: 'Количество',
+            id: 'quantity',
+          }
+        }
+        return k
+      })
+
+      return keys
     },
-  },
-  methods: {
-    ...mapMutations('acts', ['updateById']),
-    changeHandler() {
-      //update local
+    headerStyle() {
+      const keysLength = this.keys.length
+      return {
+        gridTemplateColumns: `4fr repeat(${keysLength}, minmax(100px, 1fr))`,
+      }
+    },
+    sum() {
+      const quantity = this.node.data.quantity
+      const price = this.node.data[this.priceKey.id]
+      return formatNumber(quantity * price)
     },
   },
 }
@@ -57,16 +60,14 @@ export default {
     :data-id="node.key"
     :data-level="level"
     :data-room="room"
+    :style="headerStyle"
   >
-    <div class="table-cell">
-      <InputNumber
-        v-model="data.quantity"
-        class="input"
-        :min="0"
-        @change="changeHandler"
-      />
+    <div v-for="key in visibleKeys" :key="key.id" class="table-cell">
+      {{ data[key.id] }}
     </div>
-    <div class="table-cell">{{ sum }}</div>
+    <div v-if="!isCategory" class="table-cell">
+      {{ sum }}
+    </div>
   </div>
   <template v-if="isCategory">
     <TableRow
@@ -84,9 +85,6 @@ export default {
   display: grid;
   background-color: #fff;
   align-items: center;
-  height: 32px;
-  overflow: hidden;
-  grid-template-columns: 1fr 1fr;
 
   &.category {
     font-weight: 700;
@@ -101,15 +99,6 @@ export default {
 }
 
 .table-cell {
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  text-align: center;
-  @include act-table-cell;
-}
-
-.input {
-  max-width: 100%;
-  width: 100%;
-  text-align: center;
+  @include table-cell;
 }
 </style>

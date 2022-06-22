@@ -21,7 +21,7 @@ export default {
   },
   computed: {
     ...mapGetters('outlay', ['keys']),
-    ...mapGetters('acts', ['showOnlyCompleted', 'completedValues']),
+    ...mapGetters('acts', ['showOnlyCompleted', 'completedValues', 'act']),
     data() {
       return this.node.data
     },
@@ -31,7 +31,7 @@ export default {
     children() {
       if (this.showOnlyCompleted) {
         return this.node.children.filter(n =>
-          this.completedValues[this.room].includes(n.key),
+          this.completedValues[this.act._id][this.room].includes(n.key),
         )
       }
       return this.node.children || []

@@ -1,12 +1,12 @@
 <script>
-import { mapGetters } from 'vuex'
-
 import TableGroup from './TableGroup.vue'
 import ActTable from '../ActTable/ActTable.vue'
+import ResultTable from '../ResultTable/ResultTable.vue'
 import actsTable from '@/mixins/actsTable.mixin'
+import { getValuesInside } from '@/store/modules/outlay.module'
 
 export default {
-  components: { TableGroup, ActTable },
+  components: { TableGroup, ActTable, ResultTable },
   mixins: [actsTable],
   props: {
     room: {
@@ -22,26 +22,18 @@ export default {
     actTable: Boolean,
   },
   computed: {
-    ...mapGetters('outlay', ['rooms', 'keys']),
-    ...mapGetters('acts', [
-      'showOnlyCompleted',
-      'completedValues',
-      'actsData',
-      'act',
-    ]),
+    completed() {
+      const nodes = this.room.jobs.map(getValuesInside).flat()
+      return nodes.map(({ key }) => key)
+    },
     data() {
-      const children = this.showOnlyCompleted
-        ? this.actsData[this.act._id][this.room.id].filter(n =>
-            this.completedValues[this.act._id][this.room.id].includes(n.key),
-          )
-        : this.actsData[this.act._id][this.room.id]
       return [
         {
           key: this.room.id,
           data: {
             [this.keys[0].id]: this.room.name,
           },
-          children,
+          children: this.room.jobs,
           room: true,
           level: 0,
         },
@@ -49,14 +41,9 @@ export default {
     },
     actData() {
       return this.acts.map(act => {
-        const children = this.showOnlyCompleted
-          ? this.actsData[act._id][this.room.id].filter(n =>
-              this.completedValues[act._id][this.room.id].includes(n.key),
-            )
-          : this.actsData[act._id][this.room.id]
-
+        const children = this.data[0].children
         return {
-          key: act._id,
+          act,
           data: [
             {
               key: this.room.id,
@@ -65,7 +52,6 @@ export default {
               },
               children,
               room: true,
-              level: 0,
             },
           ],
         }
@@ -92,6 +78,16 @@ export default {
         behavior: 'smooth',
       })
     },
+    filterByCompleted(node, completed) {
+      const { children, key } = node
+      if (children && children.length > 0) {
+        node.children = children.filter(n =>
+          this.filterByCompleted(n, completed),
+        )
+        return node.children.length > 0
+      }
+      return completed.includes(key)
+    },
   },
 }
 </script>
@@ -114,22 +110,22 @@ export default {
         </div>
       </div>
     </div>
-    <div class="acts-wrapper">
+    <div v-if="actData && actData.length > 0" class="acts-wrapper">
       <ActTable
         v-for="act in actData"
         :key="act.key"
-        :act="act.key"
+        :act="act.act"
         :data="act.data"
         :room="room"
       />
+      <ResultTable :acts="actData" :room="room" />
     </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
 .table-wrapper {
-  display: grid;
-  grid-template-columns: 1fr 201px;
+  display: flex;
   min-height: 0px;
   overflow-y: overlay;
   overflow-x: auto;
@@ -145,17 +141,13 @@ export default {
   display: flex;
   flex-direction: column;
   min-height: 0px;
+  border-right: 1px black solid;
 
   &.acts {
     position: sticky;
     left: 0px;
     z-index: 21;
     flex: 1;
-
-    .acts {
-      flex: 1;
-      position: static;
-    }
   }
 }
 
@@ -175,6 +167,7 @@ export default {
 .acts-wrapper {
   display: flex;
   gap: 1px;
+  // max-width: 201px;
 
   & > .tree-table {
     position: sticky;

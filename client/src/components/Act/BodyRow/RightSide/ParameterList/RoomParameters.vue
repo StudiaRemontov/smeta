@@ -14,9 +14,9 @@ export default {
   },
   mixins: [roomParameters],
   computed: {
-    ...mapGetters('outlay', ['selectedRoom']),
+    ...mapGetters('acts', ['activeRoom']),
     parameters() {
-      return this.selectedRoom.options
+      return this.activeRoom.options
     },
     allParameters() {
       const parameters = this.calculateAllParameters(this.parameters)
@@ -37,7 +37,7 @@ export default {
 
 <template>
   <span class="title">
-    {{ selectedRoom.name }}
+    {{ activeRoom.name }}
   </span>
   <div class="groups">
     <RoomParameters :parameters="allParameters.options" />

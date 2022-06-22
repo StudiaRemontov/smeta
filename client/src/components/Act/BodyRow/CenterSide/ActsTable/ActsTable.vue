@@ -1,28 +1,57 @@
 <script>
-import RoomTable from '../RoomTable/RoomTable.vue'
+import RoomTable from './RoomTable/RoomTable.vue'
 import ActsTable from '@/mixins/actsTable.mixin'
 
 import { formatNumber } from '@/helpers/formatNumber'
-import { getValuesInside } from '@/store/modules/outlay.module'
+import {
+  getValuesInside,
+  treeToListOnlyKeys,
+} from '@/store/modules/outlay.module'
+import { filterTreeByQuantity } from '@/store/modules/acts.module'
+
 import { mapGetters } from 'vuex'
 
 export default {
   components: { RoomTable },
   mixins: [ActsTable],
-  props: {
-    rooms: {
-      type: Array,
-      required: true,
-      default: () => [],
-    },
-  },
   computed: {
-    ...mapGetters('outlay', ['priceKey']),
-    ...mapGetters('acts', ['roomsData', 'act', 'acts']),
+    ...mapGetters('outlay', ['priceKey', 'rooms']),
+    ...mapGetters('acts', ['actsData', 'act', 'acts']),
+    completed() {
+      return this.rooms.reduce((acc, r) => {
+        const values = this.acts
+          .map(act => {
+            const actRoomData = JSON.parse(
+              JSON.stringify(this.actsData[act._id][r.id]),
+            )
+            const filtered = actRoomData.filter(filterTreeByQuantity)
+            const keys = filtered.map(treeToListOnlyKeys).flat()
+            return keys
+          })
+          .flat()
+        const uniq = new Set(values)
+        acc[r.id] = [...uniq]
+        return acc
+      }, {})
+    },
+    tableData() {
+      if (!this.completed) return []
+      const reversed = [...this.rooms].reverse()
+      return reversed.map(room => {
+        const cloneJobs = JSON.parse(JSON.stringify(room.jobs))
+        const jobs = cloneJobs.filter(n =>
+          this.filterByCompleted(n, this.completed[room.id]),
+        )
+        return {
+          ...room,
+          jobs,
+        }
+      })
+    },
     sum() {
       const total = this.rooms.reduce((total, room) => {
         const roomsDataClone = JSON.parse(
-          JSON.stringify(this.roomsData[room.id]),
+          JSON.stringify(this.actsData[room.id]),
         )
         const nodes = roomsDataClone.map(getValuesInside).flat()
         const completed = nodes.filter(n => n.data.quantity > 0)
@@ -38,38 +67,54 @@ export default {
       return formatNumber(total)
     },
   },
+  methods: {
+    filterByCompleted(node, completed) {
+      const { children, key } = node
+      if (children && children.length > 0) {
+        node.children = children.filter(n =>
+          this.filterByCompleted(n, completed),
+        )
+        return node.children.length > 0
+      }
+      return completed.includes(key)
+    },
+  },
 }
 </script>
 
 <template>
   <div class="acts-table">
     <RoomTable
-      v-for="room in rooms"
+      v-for="room in tableData"
       :acts="acts"
       :key="room.id"
       :room="room"
       actTable
     />
-    <div class="results-row">
+    <!-- MB IN FUTURE -->
+    <!-- <div class="results-row">
       <div class="table-row table-row--sticky" :style="rowStyle">
         <div class="table-cell"></div>
       </div>
-      <div
-        v-for="act in acts"
-        :key="act._id"
-        class="table-row table-row--result"
-      >
-        <div class="act-table-cell">Итого</div>
-        <div class="act-table-cell">
-          {{ sum }}
+      <div class="acts">
+        <div
+          v-for="act in acts"
+          :key="act._id"
+          class="table-row table-row--result"
+        >
+          <div class="act-table-cell">Итого</div>
+          <div class="act-table-cell">
+            {{ sum }}
+          </div>
         </div>
       </div>
-    </div>
+    </div> -->
   </div>
 </template>
 
 <style lang="scss" scoped>
 .acts-table {
+  width: 100%;
   overflow-x: auto;
   overflow-y: overlay;
   @include darkScroll;
@@ -88,22 +133,24 @@ export default {
   &--result {
     grid-template-columns: 1fr 1fr;
     border-left: 1px black solid;
+    width: 200px;
   }
 
   &--sticky {
     position: sticky;
     left: 0px;
     z-index: 2;
+    flex: 1;
   }
 }
 
 .results-row {
   display: flex;
-  width: fit-content;
+  min-width: fit-content;
+}
 
-  &--stretched {
-    flex: 1;
-  }
+.acts {
+  display: flex;
 }
 
 .table-cell {

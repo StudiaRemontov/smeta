@@ -1,14 +1,9 @@
 <script>
-import { mapGetters, mapMutations } from 'vuex'
+import { mapGetters } from 'vuex'
 import { formatNumber } from '@/helpers/formatNumber'
-
-import InputNumber from '@/components/UI/InputNumber.vue'
 
 export default {
   name: 'TableRow',
-  components: {
-    InputNumber,
-  },
   props: {
     node: {
       type: Object,
@@ -18,14 +13,8 @@ export default {
     level: Number,
     room: String,
   },
-  data() {
-    return {
-      interval: null,
-    }
-  },
   computed: {
     ...mapGetters('outlay', ['priceKey', 'striped']),
-    ...mapGetters('acts', ['act']),
     data() {
       return this.node.data
     },
@@ -41,12 +30,6 @@ export default {
       return formatNumber(quantity * price)
     },
   },
-  methods: {
-    ...mapMutations('acts', ['updateById']),
-    changeHandler() {
-      //update local
-    },
-  },
 }
 </script>
 
@@ -59,12 +42,7 @@ export default {
     :data-room="room"
   >
     <div class="table-cell">
-      <InputNumber
-        v-model="data.quantity"
-        class="input"
-        :min="0"
-        @change="changeHandler"
-      />
+      {{ data.quantity }}
     </div>
     <div class="table-cell">{{ sum }}</div>
   </div>
@@ -104,6 +82,7 @@ export default {
   white-space: nowrap;
   text-overflow: ellipsis;
   text-align: center;
+  font-weight: 700;
   @include act-table-cell;
 }
 

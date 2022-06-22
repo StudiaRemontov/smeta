@@ -9,20 +9,16 @@ import { mapGetters } from 'vuex'
 export default {
   components: { RoomTable },
   mixins: [ActsTable],
-  props: {
-    rooms: {
-      type: Array,
-      required: true,
-      default: () => [],
-    },
-  },
   computed: {
-    ...mapGetters('outlay', ['priceKey']),
-    ...mapGetters('acts', ['roomsData', 'act']),
+    ...mapGetters('outlay', ['priceKey', 'keys', 'rooms']),
+    ...mapGetters('acts', ['actsData', 'act']),
+    roomList() {
+      return [...this.rooms].reverse()
+    },
     sum() {
       const total = this.rooms.reduce((total, room) => {
         const roomsDataClone = JSON.parse(
-          JSON.stringify(this.roomsData[room.id]),
+          JSON.stringify(this.actsData[this.act._id][room.id]),
         )
         const nodes = roomsDataClone.map(getValuesInside).flat()
         const completed = nodes.filter(n => n.data.quantity > 0)
@@ -44,14 +40,14 @@ export default {
 <template>
   <div class="completed-table">
     <RoomTable
-      v-for="room in rooms"
+      v-for="room in roomList"
       :acts="[act]"
       :key="room.id"
       :room="room"
     />
     <div class="results-row">
       <div class="table-row table-row--stretched" :style="rowStyle">
-        <div class="table-cell"></div>
+        <div v-for="key in keys" :key="key" class="table-cell"></div>
       </div>
       <div class="table-row table-row--result">
         <div class="act-table-cell">Итого</div>
@@ -83,8 +79,6 @@ export default {
   &--result {
     grid-template-columns: 1fr 1fr;
     border-left: 1px black solid;
-    position: sticky;
-    right: 0px;
   }
 }
 

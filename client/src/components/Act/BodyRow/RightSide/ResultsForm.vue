@@ -10,72 +10,18 @@ export default {
       required: true,
     },
   },
-  data() {
-    return {
-      timeout: null,
-    }
-  },
   computed: {
-    ...mapGetters('outlay', ['sale']),
-    saleValue: {
-      get() {
-        return this.sale
-      },
-      set(value) {
-        this.setSale(value)
-      },
-    },
+    ...mapGetters('acts', ['actsData']),
     totalSum() {
       return this.data.reduce((acc, val) => acc + +val.sum, 0)
     },
     totalSumFormatted() {
       return formatNumber(this.totalSum)
     },
-    totalSumWithSale() {
-      if (!this.saleValue || this.saleValue < 0 || this.saleValue > 20) {
-        return this.totalSumFormatted
-      }
-      const categoriesWoutSale = this.data
-        .map(this.findCategoriesWithoutSale)
-        .flat()
-      if (categoriesWoutSale.length > 0) {
-        const sumOfCategories = categoriesWoutSale.reduce(
-          (acc, job) => (acc += job.sum),
-          0,
-        )
-        const sumForSale = this.totalSum - sumOfCategories
-        const saleValue = (sumForSale / 100) * this.saleValue
-        const result = this.totalSum - saleValue
-        return formatNumber(result)
-      }
-      const saleValue = (this.totalSum / 100) * this.saleValue
-      const result = this.totalSum - saleValue
-      return formatNumber(result)
-    },
   },
   methods: {
     ...mapMutations('outlay', ['setSale']),
     ...mapActions('outlay', ['saveLocaly']),
-    inputSale(e) {
-      const { target } = e
-      const { valueAsNumber } = target
-      if (valueAsNumber < 0) {
-        target.value = 0
-        return
-      }
-      if (valueAsNumber > 20) {
-        target.value = 20
-      }
-      target.value = this.saleValue
-    },
-    changeSale() {
-      if (this.timeout) {
-        clearTimeout(this.timeout)
-      }
-      this.timeout = setTimeout(async () => {
-        await this.saveLocaly()
-      }, 400)
-    },
     findCategoriesWithoutSale(node) {
       const { name, jobs } = node
       let returnData = []
@@ -95,25 +41,9 @@ export default {
 <template>
   <div class="results">
     <span>
-      Без скидки: <span class="result"> {{ totalSumFormatted }}</span>
-    </span>
-    <div class="right-side__sale">
-      <span>Скидка, %: </span>
-      <input
-        v-model="saleValue"
-        class="input"
-        placeholder="%"
-        type="number"
-        :max="20"
-        :min="0"
-        @input="inputSale"
-        @change="changeSale"
-      />
-    </div>
-    <span>
       ИТОГО:
       <span class="result result--sale">
-        {{ totalSumWithSale }}
+        {{ totalSumFormatted }}
       </span>
     </span>
   </div>
@@ -121,7 +51,6 @@ export default {
 
 <style lang="scss" scoped>
 .results {
-  height: 121px;
   padding: 15px 12px;
   border-top: 1px solid #a7a7a7;
   display: flex;

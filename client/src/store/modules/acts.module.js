@@ -2,7 +2,26 @@ import axios from '../../modules/axios'
 import { getValuesInside, treeToListOnlyKeys } from './outlay.module'
 // import idb from '../local/idb'
 
-const setDefaultQuantityExcept = (node, except) => {
+const getNameWithNumber = acts => {
+  const number = acts.reduce((acc, act) => {
+    const numRegex = /№\d+/gm
+    const cropedName = act.name.replace('Акт', '')
+    const matches = cropedName.match(numRegex)
+    if (!matches) {
+      return acc
+    }
+    const match = matches[0]
+    const splitted = match.split('№')
+    const num = +splitted[1]
+    if (num > acc) {
+      return num
+    }
+    return acc
+  }, 0)
+  return `Акт №${number + 1}`
+}
+
+export const setDefaultQuantityExcept = (node, except) => {
   const { key, children, data } = node
   if (children && children.length > 0) {
     node.children = node.children.map(n => setDefaultQuantityExcept(n, except))
@@ -24,13 +43,34 @@ const getNodeFromTree = (node, nodeKey) => {
   return children.map(c => getNodeFromTree(c, nodeKey)).flat()
 }
 
-const filterTreeByQuantity = node => {
+export const filterTreeByQuantity = node => {
   const { children, data } = node
   if (children && children.length > 0) {
     node.children = children.filter(filterTreeByQuantity)
     return node.children.length > 0
   }
   return data.quantity > 0
+}
+
+const prepareData = (actsData, outlay, act) => {
+  const actsDataClone = JSON.parse(JSON.stringify(actsData))
+
+  const rooms = outlay.rooms.map(room => {
+    const { id } = room
+    const jobs = actsDataClone[act._id][id].filter(filterTreeByQuantity)
+    return {
+      id,
+      jobs,
+    }
+  })
+
+  const filteredRooms = rooms.filter(r => r.jobs.length > 0)
+  const data = {
+    ...act,
+    rooms: filteredRooms,
+  }
+
+  return data
 }
 
 export default {
@@ -44,6 +84,8 @@ export default {
     outlay: null,
     roomsData: {},
     showOnlyCompleted: false,
+    actsData: {},
+    changeView: false,
   },
   mutations: {
     setActs(state, payload) {
@@ -59,6 +101,9 @@ export default {
         }
         return act
       })
+    },
+    removeById(state, id) {
+      state.acts = state.acts.filter(a => a._id !== id)
     },
     setActiveTab(state, payload) {
       state.activeTab = payload
@@ -94,13 +139,13 @@ export default {
       state.showOnlyCompleted = payload
       if (!payload) return
 
-      const { act, roomsData, outlay } = state
+      const { act, actsData, outlay } = state
       if (!act) return
 
-      const roomsDataClone = JSON.parse(JSON.stringify(roomsData))
+      const actsDataClone = JSON.parse(JSON.stringify(actsData))
       const rooms = outlay.rooms.map(room => {
         const { id } = room
-        const jobs = roomsDataClone[id].filter(filterTreeByQuantity)
+        const jobs = actsDataClone[act._id][id].filter(filterTreeByQuantity)
         return {
           id,
           jobs,
@@ -109,6 +154,9 @@ export default {
 
       const filteredRooms = rooms.filter(r => r.jobs.length > 0)
       state.act.rooms = filteredRooms
+    },
+    setChangeView(state, payload) {
+      state.changeView = payload
     },
   },
   actions: {
@@ -122,19 +170,27 @@ export default {
       if (state.act) {
         commit('resetAct')
       }
-      state.act = payload
-      const { outlay: currentOutlay } = state
+      const { outlay: currentOutlay, acts } = state
+      state.act = acts.find(act => act._id === payload._id)
       const clone = JSON.parse(JSON.stringify(currentOutlay.rooms))
-      state.roomsData = clone.reduce((acc, room) => {
-        const actRoom = state.act.rooms.find(r => r.id === room.id)
-        let jobs = []
-        if (actRoom) {
-          jobs = actRoom.jobs.map(getValuesInside).flat()
-        }
-        const data = room.jobs.map(n => setDefaultQuantityExcept(n, jobs))
-        acc[room.id] = data
+      const actsData = acts.reduce((acc, act) => {
+        const actRooms = clone.reduce((rooms, room) => {
+          const roomClone = JSON.parse(JSON.stringify(room))
+          const foundRoom = act.rooms.find(r => r.id === room.id)
+          let jobs = []
+          if (foundRoom) {
+            jobs = foundRoom.jobs.map(getValuesInside).flat()
+          }
+          const data = roomClone.jobs.map(n =>
+            setDefaultQuantityExcept(n, jobs),
+          )
+          rooms[room.id] = data
+          return rooms
+        }, {})
+        acc[act._id] = actRooms
         return acc
       }, {})
+      state.actsData = actsData
     },
     async fetchAll({ state, commit }) {
       const { contentLoaded } = state
@@ -153,8 +209,7 @@ export default {
     async create({ commit, state, dispatch }) {
       try {
         const { acts, outlay } = state
-        const actsLengths = acts.length
-        const nameWithNumber = `Акт №${actsLengths + 1}`
+        const nameWithNumber = getNameWithNumber(acts)
         const response = await axios.post('/act', {
           name: nameWithNumber,
           outlay: outlay._id,
@@ -169,29 +224,40 @@ export default {
     async save({ state, commit }) {
       try {
         // формирование данных
-        const { act, roomsData, outlay } = state
+        const { act, actsData, outlay } = state
         if (!act) {
           return
         }
-        const roomsDataClone = JSON.parse(JSON.stringify(roomsData))
-
-        const rooms = outlay.rooms.map(room => {
-          const { id } = room
-          const jobs = roomsDataClone[id].filter(filterTreeByQuantity)
-          return {
-            id,
-            jobs,
-          }
-        })
-
-        const filteredRooms = rooms.filter(r => r.jobs.length > 0)
-        const data = {
-          ...act,
-          rooms: filteredRooms,
-        }
+        const data = prepareData(actsData, outlay, act)
         // отправка на сервер
         const response = await axios.put(`/act/${act._id}`, data)
         commit('updateById', { id: act._id, data: response.data })
+        return response
+      } catch (error) {
+        return Promise.reject(error)
+      }
+    },
+    async update({ state, commit }, { id, data }) {
+      try {
+        const { actsData, outlay } = state
+        if (!data) {
+          return
+        }
+        const saveData = prepareData(actsData, outlay, data)
+        const response = await axios.put(`/act/${id}`, saveData)
+        commit('updateById', { id, data: response.data })
+        return response
+      } catch (error) {
+        return Promise.reject(error)
+      }
+    },
+    async remove({ commit, dispatch, state }, payload) {
+      try {
+        const response = await axios.delete(`/act/${payload}`)
+        if (state.act._id === payload) {
+          dispatch('setAct', null)
+        }
+        commit('removeById', payload)
         return response
       } catch (error) {
         return Promise.reject(error)
@@ -207,17 +273,41 @@ export default {
     roomsData: s => s.roomsData,
     showOnlyCompleted: s => s.showOnlyCompleted,
     completedValues: s => {
-      const { act, outlay } = s
-      if (!act || !outlay) {
+      const { acts, outlay, actsData } = s
+      if (!outlay) {
         return {}
       }
       const { rooms } = outlay
-      return rooms.reduce((acc, room) => {
-        const found = act.rooms.find(r => r.id === room.id)
-        const jobs = found ? found.jobs.map(treeToListOnlyKeys).flat() : []
-        acc[room.id] = jobs
+      const actsDataTransformed = Object.entries(actsData).map(
+        ([key, value]) => {
+          const act = acts.find(act => act._id === key)
+          const rooms = act.rooms.map(room => {
+            return {
+              ...room,
+              jobs: value[room.id],
+            }
+          })
+          return {
+            ...act,
+            rooms,
+          }
+        },
+      )
+      return actsDataTransformed.reduce((acc, act) => {
+        const roomsData = rooms.reduce((acc, room) => {
+          const found = act.rooms.find(r => r.id === room.id)
+          const jobs = found ? found.jobs : []
+          const clone = JSON.parse(JSON.stringify(jobs))
+          const filtered = clone.filter(filterTreeByQuantity)
+          const keys = filtered.map(treeToListOnlyKeys).flat()
+          acc[room.id] = keys
+          return acc
+        }, {})
+        acc[act._id] = roomsData
         return acc
       }, {})
     },
+    actsData: s => s.actsData,
+    changeView: s => s.changeView,
   },
 }

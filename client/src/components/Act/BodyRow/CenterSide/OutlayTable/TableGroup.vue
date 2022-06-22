@@ -4,8 +4,9 @@ import JobList from './JobList.vue'
 import HeaderCells from './HeaderCells.vue'
 
 import { isObjectId } from '@/helpers/isObjectId'
+import { formatNumber } from '@/helpers/formatNumber'
 
-import actsTable from '@/mixins/actsTable.mixin'
+import tableRowColors from '@/mixins/tableRowColors.mixin'
 
 export default {
   name: 'TableGroup',
@@ -13,7 +14,7 @@ export default {
     JobList,
     HeaderCells,
   },
-  mixins: [actsTable],
+  mixins: [tableRowColors],
   props: {
     node: {
       type: Object,
@@ -25,8 +26,14 @@ export default {
     isRoom: Boolean,
   },
   computed: {
-    ...mapGetters('outlay', ['keys']),
-    ...mapGetters('acts', ['showOnlyCompleted', 'completedValues', 'act']),
+    ...mapGetters('outlay', [
+      'keys',
+      'priceKey',
+      'selectedValues',
+      'selectedRoom',
+      'showOnlyChecked',
+      'selectedValues',
+    ]),
     data() {
       return this.node.data
     },
@@ -34,9 +41,9 @@ export default {
       return this.node.data[this.keys[0].id]
     },
     children() {
-      if (this.showOnlyCompleted) {
+      if (this.showOnlyChecked) {
         return this.node.children.filter(n =>
-          this.completedValues[this.act._id][this.room].includes(n.key),
+          this.selectedValues.includes(n.key),
         )
       }
       return this.node.children || []
@@ -49,6 +56,43 @@ export default {
         const { children } = c
         return children && children.length > 0
       })
+    },
+    sum() {
+      const allNodes = this.node.children.map(this.treeToListOnlyValues).flat()
+      if (this.selectedRoom) {
+        const selected = allNodes.filter(n =>
+          this.selectedValues.includes(n.key),
+        )
+        const sum = selected.reduce((acc, node) => {
+          const { data } = node
+          const price = data[this.priceKey.id] * data.quantity
+          return acc + price
+        }, 0)
+        return formatNumber(sum)
+      }
+      const sum = allNodes.reduce((acc, node) => {
+        const { data } = node
+        const price = data[this.priceKey.id] * data.quantity
+        return acc + price
+      }, 0)
+      return formatNumber(sum)
+    },
+    result() {
+      return `Итого по ${this.isRoom ? 'помещению' : 'разделу'} (${this.title})`
+    },
+    resultsRowStyle() {
+      const keysLength = this.keys.length
+      return {
+        gridTemplateColumns: `${4 + keysLength - 1}fr minmax(100px, 1fr)`,
+      }
+    },
+    categoryRowStyle() {
+      const keysLength = this.keys.length
+      return {
+        gridTemplateColumns: `4fr repeat(${keysLength}, minmax(100px, 1fr)) ${
+          this.selectedRoom ? '50px' : ''
+        }`,
+      }
     },
   },
   methods: {
@@ -73,7 +117,7 @@ export default {
     <div v-if="isRoom" class="title-row">
       {{ title }}
     </div>
-    <div v-else class="table-row table-row--category" :style="rowStyle">
+    <div v-else class="table-row table-row--category" :style="categoryRowStyle">
       <HeaderCells :title="title" />
     </div>
     <template v-if="isRoom && children.length > 0">
@@ -104,6 +148,12 @@ export default {
         />
       </template>
     </template>
+    <div class="results-row" :style="resultsRowStyle">
+      <div class="table-cell table-cell--results">
+        {{ result }}
+      </div>
+      <div class="table-cell" :title="sum">{{ sum }}</div>
+    </div>
   </div>
 </template>
 
@@ -153,5 +203,14 @@ export default {
   display: grid;
   padding: 0;
   font-weight: 700;
+}
+
+.table-cell {
+  @include table-cell;
+  text-align: left;
+
+  &--results {
+    text-align: right;
+  }
 }
 </style>

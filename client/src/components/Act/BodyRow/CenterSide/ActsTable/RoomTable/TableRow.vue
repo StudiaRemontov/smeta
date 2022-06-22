@@ -1,14 +1,11 @@
 <script>
-import { mapGetters, mapMutations } from 'vuex'
+import { mapGetters } from 'vuex'
 import { formatNumber } from '@/helpers/formatNumber'
-
-import InputNumber from '@/components/UI/InputNumber.vue'
+import actsTable from '@/mixins/actsTable.mixin'
 
 export default {
   name: 'TableRow',
-  components: {
-    InputNumber,
-  },
+  mixins: [actsTable],
   props: {
     node: {
       type: Object,
@@ -18,14 +15,8 @@ export default {
     level: Number,
     room: String,
   },
-  data() {
-    return {
-      interval: null,
-    }
-  },
   computed: {
-    ...mapGetters('outlay', ['priceKey', 'striped']),
-    ...mapGetters('acts', ['act']),
+    ...mapGetters('outlay', ['keys', 'quantityKey', 'priceKey', 'striped']),
     data() {
       return this.node.data
     },
@@ -36,15 +27,9 @@ export default {
       return this.children.length > 0
     },
     sum() {
-      const quantity = this.data.quantity || 0
-      const price = this.data[this.priceKey.id]
+      const quantity = this.node.data[this.quantityKey.id]
+      const price = this.node.data[this.priceKey.id]
       return formatNumber(quantity * price)
-    },
-  },
-  methods: {
-    ...mapMutations('acts', ['updateById']),
-    changeHandler() {
-      //update local
     },
   },
 }
@@ -57,16 +42,19 @@ export default {
     :data-id="node.key"
     :data-level="level"
     :data-room="room"
+    :style="rowStyle"
   >
-    <div class="table-cell">
-      <InputNumber
-        v-model="data.quantity"
-        class="input"
-        :min="0"
-        @change="changeHandler"
-      />
+    <div
+      v-for="key in keys"
+      :key="key.id"
+      class="table-cell"
+      :title="data[key.id]"
+    >
+      {{ data[key.id] }}
     </div>
-    <div class="table-cell">{{ sum }}</div>
+    <div v-if="!isCategory" class="table-cell">
+      {{ sum }}
+    </div>
   </div>
   <template v-if="isCategory">
     <TableRow
@@ -84,9 +72,8 @@ export default {
   display: grid;
   background-color: #fff;
   align-items: center;
-  height: 32px;
   overflow: hidden;
-  grid-template-columns: 1fr 1fr;
+  height: 32px;
 
   &.category {
     font-weight: 700;
@@ -98,18 +85,16 @@ export default {
   &:not(.category).striped:nth-child(even) {
     background-color: rgb(232, 232, 232);
   }
+
+  &:first-of-type {
+    position: sticky;
+    left: 0;
+  }
 }
 
 .table-cell {
   white-space: nowrap;
   text-overflow: ellipsis;
-  text-align: center;
-  @include act-table-cell;
-}
-
-.input {
-  max-width: 100%;
-  width: 100%;
-  text-align: center;
+  @include table-cell;
 }
 </style>

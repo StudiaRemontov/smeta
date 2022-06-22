@@ -5,6 +5,7 @@ import InputSwitch from 'primevue/inputswitch'
 import RoomTable from './CenterSide/RoomTable/RoomTable.vue'
 import CompletedTable from './CenterSide/CompletedTable/CompletedTable.vue'
 import ActsTable from './CenterSide/ActsTable/ActsTable.vue'
+import OutlayTable from './CenterSide/OutlayTable/OutlayTable.vue'
 import OutlayBlock from '@/components/Layout/OutlayBlock.vue'
 
 import { isObjectId } from '@/helpers/isObjectId'
@@ -21,6 +22,7 @@ export default {
     OutlayBlock,
     CompletedTable,
     ActsTable,
+    OutlayTable,
   },
   data() {
     return {
@@ -47,6 +49,14 @@ export default {
       },
       set(value) {
         this.setStriped(value)
+      },
+    },
+    changeView: {
+      get() {
+        return this.$store.getters['acts/changeView']
+      },
+      set(value) {
+        this.setChangeView(value)
       },
     },
     scrollHeight() {
@@ -85,6 +95,7 @@ export default {
   },
   methods: {
     ...mapMutations('outlay', ['setStriped']),
+    ...mapMutations('acts', ['setChangeView']),
     async windowResize() {
       if (!this.outlay || this.showResults) {
         return
@@ -279,16 +290,22 @@ export default {
             </div>
             <span>Чередовние цветов</span>
           </div>
+          <div class="switch-wrapper">
+            <div class="switch">
+              <InputSwitch v-model="changeView" />
+            </div>
+            <span>Изменить вид</span>
+          </div>
         </div>
       </div>
       <template v-if="activeTab === 'completed'">
-        <CompletedTable ref="completed" :rooms="rooms" />
+        <CompletedTable ref="completed" />
       </template>
       <template v-else-if="activeTab === 'acts'">
-        <ActsTable ref="acts" :rooms="rooms" />
+        <ActsTable ref="acts" />
       </template>
       <template v-else-if="activeTab === 'results'">
-        <span>Сводная редакции</span>
+        <OutlayTable ref="outlay" />
       </template>
       <template v-else-if="activeTab === 'room' && activeRoom">
         <RoomTable :room="activeRoom" :acts="[act]" ref="table" />

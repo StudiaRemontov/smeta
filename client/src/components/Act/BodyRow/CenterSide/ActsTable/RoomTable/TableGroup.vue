@@ -1,9 +1,7 @@
 <script>
-import { mapActions, mapGetters, mapMutations } from 'vuex'
+import { mapGetters } from 'vuex'
 import JobList from './JobList.vue'
 import HeaderCells from './HeaderCells.vue'
-
-import { isObjectId } from '@/helpers/isObjectId'
 
 import actsTable from '@/mixins/actsTable.mixin'
 
@@ -26,7 +24,6 @@ export default {
   },
   computed: {
     ...mapGetters('outlay', ['keys']),
-    ...mapGetters('acts', ['showOnlyCompleted', 'completedValues', 'act']),
     data() {
       return this.node.data
     },
@@ -34,35 +31,13 @@ export default {
       return this.node.data[this.keys[0].id]
     },
     children() {
-      if (this.showOnlyCompleted) {
-        return this.node.children.filter(n =>
-          this.completedValues[this.act._id][this.room].includes(n.key),
-        )
-      }
       return this.node.children || []
-    },
-    isCategory() {
-      return this.children.length > 0
     },
     categories() {
       return this.children.filter(c => {
         const { children } = c
         return children && children.length > 0
       })
-    },
-  },
-  methods: {
-    ...mapMutations('outlay', ['selectJob', 'unselectJob']),
-    ...mapActions('outlay', ['toggleCategoryJobs']),
-    treeToListOnlyValues(node) {
-      const { children, key } = node
-      const childs = children.map(this.treeToListOnlyValues).flat()
-
-      if (isObjectId(key)) {
-        return childs
-      }
-
-      return [node]
     },
   },
 }

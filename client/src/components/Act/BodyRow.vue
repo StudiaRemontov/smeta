@@ -9,11 +9,30 @@ export default {
     CenterSide,
     RightSide,
   },
+  data() {
+    return {
+      isMinimized: false,
+    }
+  },
+  mounted() {
+    document.addEventListener('keydown', this.onKeyDown)
+  },
+  unmounted() {
+    document.removeEventListener('keydown', this.onKeyDown)
+  },
+  methods: {
+    onKeyDown(e) {
+      const { ctrlKey, keyCode } = e
+      if (ctrlKey && keyCode === 66) {
+        this.isMinimized = !this.isMinimized
+      }
+    },
+  },
 }
 </script>
 
 <template>
-  <div class="body-row">
+  <div class="body-row" :class="{ minimized: isMinimized }">
     <div class="left-side">
       <LeftSide />
     </div>
@@ -30,6 +49,13 @@ export default {
   grid-template-columns: min-content 1fr min-content;
   padding-bottom: 17px;
   min-height: 0px;
+
+  &.minimized {
+    .left-side,
+    .right-side {
+      width: 50px;
+    }
+  }
 }
 
 .left-side,
@@ -37,9 +63,8 @@ export default {
   width: 270px;
   padding: 0px 15px;
   display: flex;
-  flex-direction: column;
-  gap: 13px;
   min-height: 0px;
+  transition: all 0.2s ease-in-out;
 }
 
 .center {

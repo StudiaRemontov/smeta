@@ -11,7 +11,7 @@ export default {
     TotalParameters,
   },
   computed: {
-    ...mapGetters('outlay', ['selectedRoom']),
+    ...mapGetters('acts', ['activeRoom', 'activeTab']),
   },
 }
 </script>
@@ -19,7 +19,7 @@ export default {
 <template>
   <OutlayBlock>
     <div class="parameters">
-      <RoomParameters v-if="selectedRoom" />
+      <RoomParameters v-if="activeTab === 'room' && activeRoom" />
       <TotalParameters v-else />
     </div>
   </OutlayBlock>

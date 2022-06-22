@@ -1,11 +1,7 @@
 <script>
-import { mapActions, mapGetters, mapMutations } from 'vuex'
+import { mapGetters } from 'vuex'
 import JobList from './JobList.vue'
 import HeaderCells from './HeaderCells.vue'
-
-import { isObjectId } from '@/helpers/isObjectId'
-
-import actsTable from '@/mixins/actsTable.mixin'
 
 export default {
   name: 'TableGroup',
@@ -13,36 +9,27 @@ export default {
     JobList,
     HeaderCells,
   },
-  mixins: [actsTable],
   props: {
     node: {
       type: Object,
       required: true,
       default: () => {},
     },
-    level: Number,
     room: String,
-    isRoom: Boolean,
+    level: Number,
+    isAct: Boolean,
   },
   computed: {
     ...mapGetters('outlay', ['keys']),
-    ...mapGetters('acts', ['showOnlyCompleted', 'completedValues', 'act']),
+    ...mapGetters('acts', ['act']),
     data() {
       return this.node.data
     },
     title() {
-      return this.node.data[this.keys[0].id]
+      return this.data[this.keys[0].id]
     },
     children() {
-      if (this.showOnlyCompleted) {
-        return this.node.children.filter(n =>
-          this.completedValues[this.act._id][this.room].includes(n.key),
-        )
-      }
       return this.node.children || []
-    },
-    isCategory() {
-      return this.children.length > 0
     },
     categories() {
       return this.children.filter(c => {
@@ -51,32 +38,18 @@ export default {
       })
     },
   },
-  methods: {
-    ...mapMutations('outlay', ['selectJob', 'unselectJob']),
-    ...mapActions('outlay', ['toggleCategoryJobs']),
-    treeToListOnlyValues(node) {
-      const { children, key } = node
-      const childs = children.map(this.treeToListOnlyValues).flat()
-
-      if (isObjectId(key)) {
-        return childs
-      }
-
-      return [node]
-    },
-  },
 }
 </script>
 
 <template>
   <div class="table-group">
-    <div v-if="isRoom" class="title-row">
+    <div v-if="isAct" class="title-row">
       {{ title }}
     </div>
-    <div v-else class="table-row table-row--category" :style="rowStyle">
-      <HeaderCells :title="title" />
+    <div v-else class="table-row table-row--category">
+      <HeaderCells />
     </div>
-    <template v-if="isRoom && children.length > 0">
+    <template v-if="isAct && children.length > 0">
       <TableGroup
         v-for="category in children"
         :key="category.key"
@@ -125,10 +98,11 @@ export default {
     font-weight: 400;
     color: #ffffff;
     z-index: calc(10 - v-bind(level));
+    grid-template-columns: 1fr 1fr;
   }
 
   &--results {
-    @include table-cell;
+    @include act-table-cell;
     font-weight: 700;
   }
 }
@@ -153,5 +127,14 @@ export default {
   display: grid;
   padding: 0;
   font-weight: 700;
+}
+
+.table-cell {
+  @include act-table-cell;
+  text-align: left;
+
+  &--results {
+    text-align: right;
+  }
 }
 </style>

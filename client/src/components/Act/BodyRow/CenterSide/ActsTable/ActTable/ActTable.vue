@@ -4,7 +4,10 @@ import { mapGetters } from 'vuex'
 import TableGroup from './TableGroup.vue'
 
 import { formatNumber } from '@/helpers/formatNumber'
-import { getValuesInside } from '@/store/modules/outlay.module'
+import {
+  getValuesInside,
+  treeToListOnlyKeys,
+} from '@/store/modules/outlay.module'
 
 export default {
   components: { TableGroup },
@@ -20,16 +23,36 @@ export default {
       default: () => ({}),
     },
     act: {
-      type: String,
+      type: Object,
       required: true,
+      default: () => ({}),
     },
   },
   computed: {
-    ...mapGetters('outlay', ['priceKey']),
+    ...mapGetters('outlay', ['keys', 'priceKey']),
     ...mapGetters('acts', ['actsData']),
+    tempData() {
+      const cloneData = JSON.parse(JSON.stringify(this.data))
+      const completed = cloneData.map(treeToListOnlyKeys).flat()
+      const clone = JSON.parse(
+        JSON.stringify(this.actsData[this.act._id][this.room.id]),
+      )
+      const children = clone.filter(n => this.filterByCompleted(n, completed))
+      const data = [
+        {
+          key: this.act._id,
+          data: {
+            [this.keys[0].id]: this.act.name,
+          },
+          children,
+          room: true,
+        },
+      ]
+      return data
+    },
     sum() {
       const roomsDataClone = JSON.parse(
-        JSON.stringify(this.actsData[this.act][this.room.id]),
+        JSON.stringify(this.actsData[this.act._id][this.room.id]),
       )
       const nodes = roomsDataClone.map(getValuesInside).flat()
       const completed = nodes.filter(n => n.data.quantity > 0)
@@ -43,6 +66,18 @@ export default {
       return formatNumber(sum)
     },
   },
+  methods: {
+    filterByCompleted(node, completed) {
+      const { children, key } = node
+      if (children && children.length > 0) {
+        node.children = children.filter(n =>
+          this.filterByCompleted(n, completed),
+        )
+        return node.children.length > 0
+      }
+      return completed.includes(key)
+    },
+  },
 }
 </script>
 
@@ -50,7 +85,7 @@ export default {
   <div class="tree-table">
     <div class="table-grid" ref="wrapper">
       <TableGroup
-        v-for="node in data"
+        v-for="node in tempData"
         ref="table"
         :key="node.key"
         :node="node"
@@ -79,7 +114,7 @@ export default {
   flex: 1;
   position: relative;
   min-width: fit-content;
-  border-left: 1px black solid;
+  border-right: 1px black solid;
 }
 
 .table-row {

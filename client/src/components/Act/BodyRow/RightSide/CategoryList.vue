@@ -12,10 +12,13 @@ export default {
     },
   },
   computed: {
-    ...mapGetters('outlay', ['roomsData', 'selectedRoom']),
+    ...mapGetters('acts', ['activeRoom', 'selectedRoom', 'changeView']),
     categoryList() {
-      if (this.selectedRoom) {
-        const room = this.categories.find(r => r.id === this.selectedRoom.id)
+      if (this.changeView) {
+        return this.categories[0].jobs
+      }
+      if (this.activeRoom) {
+        const room = this.categories.find(r => r.id === this.activeRoom.id)
         return room.jobs
       }
       return [...this.categories].reverse()

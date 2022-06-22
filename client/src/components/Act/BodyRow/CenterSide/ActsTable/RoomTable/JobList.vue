@@ -22,16 +22,11 @@ export default {
   },
   computed: {
     ...mapGetters('outlay', ['keys']),
-    ...mapGetters('acts', ['showOnlyCompleted', 'completedValues', 'act']),
+    ...mapGetters('acts', ['act']),
     data() {
       return this.node.data
     },
     children() {
-      if (this.showOnlyCompleted) {
-        return this.node.children.filter(n =>
-          this.completedValues[this.act._id][this.room].includes(n.key),
-        )
-      }
       return this.node.children || []
     },
     isCategory() {

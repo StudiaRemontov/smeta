@@ -1,5 +1,6 @@
 <script>
 import { mapActions, mapGetters } from 'vuex'
+import { actStatus } from '../../../../enum/actStatus'
 
 export default {
   props: {
@@ -15,8 +16,28 @@ export default {
     isSelected() {
       return this.selected?._id === this.act._id
     },
+    showDot() {
+      return this.act.status !== actStatus.NEW
+    },
+    dotStyle() {
+      if (!this.showDot) {
+        return {}
+      }
+
+      const colors = {
+        [actStatus.CONFIRMED]: '#28c430',
+        [actStatus.REJECTED]: '#de4848',
+      }
+
+      return {
+        backgroundColor: colors[this.act.status],
+      }
+    },
     date() {
       return new Date(this.act.createdAt).toLocaleDateString()
+    },
+    color() {
+      return this.isSelected ? '#3ca1ff' : '#808080'
     },
   },
   methods: {
@@ -33,6 +54,9 @@ export default {
 
 <template>
   <div class="act-item" :class="{ selected: isSelected }" @click="selectAct">
+    <div class="act-item__dot-wrapper">
+      <div v-if="showDot" class="act-item__dot" :style="dotStyle"></div>
+    </div>
     <div class="act-item__text">
       <div class="act-item__date">от {{ date }}</div>
       <span class="act-item__name" :title="act.name"> {{ act.name }}</span>
@@ -48,13 +72,13 @@ $dot-size: 7px;
 
 .act-item {
   position: relative;
-  border: 1px solid #a7a7a7;
+  border: 1px solid v-bind(color);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 5px;
-  border: 1px solid #808080;
+  border: 1px solid v-bind(color);
   border-radius: 10px;
   min-width: 130px;
   max-width: 130px;
@@ -62,17 +86,8 @@ $dot-size: 7px;
   padding: 7px 15px;
   padding-left: 7px;
 
-  &.selected {
-    color: #28c430;
-    border: 1px #28c430 solid;
-  }
-
   .icon {
-    color: #808080;
-  }
-
-  &.selected .icon {
-    color: #28c430;
+    color: v-bind(color);
   }
 
   &__text {
@@ -101,12 +116,12 @@ $dot-size: 7px;
     overflow: hidden;
     font-weight: 400;
     line-height: 15px;
-    color: #808080;
+    color: v-bind(color);
   }
 
   &__date {
     font-size: 11px;
-    color: #808080;
+    color: v-bind(color);
   }
 }
 </style>
