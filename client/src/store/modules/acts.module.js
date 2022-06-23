@@ -1,6 +1,7 @@
 import axios from '../../modules/axios'
 import { getValuesInside, treeToListOnlyKeys } from './outlay.module'
-// import idb from '../local/idb'
+import ActService from '../../api/ActService'
+import idb from '../local/idb'
 
 const getNameWithNumber = acts => {
   const number = acts.reduce((acc, act) => {
@@ -116,7 +117,7 @@ export default {
     setActiveRoom(state, payload) {
       state.activeRoom = payload
       const tabBefore = state.activeTab
-      if (tabBefore === 'completed') {
+      if (tabBefore !== 'room') {
         state.showOnlyCompleted = false
       }
       state.activeTab = 'room'
@@ -200,17 +201,35 @@ export default {
       }, {})
       state.actsData = actsData
     },
-    async fetchAll({ state, commit }) {
+    async fetchAll({ state, commit, dispatch }) {
       const { contentLoaded, loading } = state
       if (contentLoaded || loading) {
         return
       }
       state.loading = true
       try {
-        const response = await axios.get('/act')
-        commit('setActs', response.data)
+        const data = await ActService.getAll()
+        commit('setActs', data)
+        const localData = await idb.getCollectionData('acts')
+        const { updated, created, removed } = ActService.getLocalDifference(
+          data,
+          localData,
+        )
+        await idb.setArrayToCollection('acts', data)
+        await Promise.all(
+          updated.map(async a => {
+            const { _id: id, ...data } = a
+            return await dispatch('updateLocalData', { id, data })
+          }),
+          created.map(async a => {
+            return await dispatch('createLocalData', a)
+          }),
+          removed.map(async a => {
+            return await dispatch('remove', a._id)
+          }),
+        )
         commit('setContentLoaded', true)
-        return response
+        return Promise.resolve(data)
       } catch (error) {
         return Promise.reject(error)
       } finally {
@@ -221,10 +240,7 @@ export default {
       try {
         const { acts, outlay } = state
         const nameWithNumber = getNameWithNumber(acts)
-        const response = await axios.post('/act', {
-          name: nameWithNumber,
-          outlay: outlay._id,
-        })
+        const response = await ActService.create(nameWithNumber, outlay._id)
         commit('pushAct', response.data)
         dispatch('setAct', response.data)
         return response
@@ -241,9 +257,26 @@ export default {
         }
         const data = prepareData(actsData, outlay, act)
         // отправка на сервер
-        const response = await axios.put(`/act/${act._id}`, data)
+        const response = await ActService.update(data)
         commit('updateById', { id: act._id, data: response.data })
         return response
+      } catch (error) {
+        return Promise.reject(error)
+      }
+    },
+    async saveLocaly({ state, commit }) {
+      try {
+        // формирование данных
+        const { act, actsData, outlay } = state
+        if (!act) {
+          return
+        }
+        const data = prepareData(actsData, outlay, act)
+        await idb.saveDataInCollection('acts', {
+          ...data,
+          updatedAt: new Date(),
+        })
+        commit('updateById', { id: act._id, data })
       } catch (error) {
         return Promise.reject(error)
       }
@@ -255,8 +288,26 @@ export default {
           return
         }
         const saveData = prepareData(actsData, outlay, data)
-        const response = await axios.put(`/act/${id}`, saveData)
+        const response = await ActService.update(saveData)
         commit('updateById', { id, data: response.data })
+        return response
+      } catch (error) {
+        return Promise.reject(error)
+      }
+    },
+    async updateLocalData({ commit }, { id, data }) {
+      try {
+        const response = await ActService.update({ _id: id, ...data })
+        commit('updateById', { id, data: response.data })
+        return response
+      } catch (error) {
+        return Promise.reject(error)
+      }
+    },
+    async createLocalData({ commit }, act) {
+      try {
+        const response = await axios.post('/act', act)
+        commit('pushAct', response.data)
         return response
       } catch (error) {
         return Promise.reject(error)
@@ -264,8 +315,10 @@ export default {
     },
     async remove({ commit, dispatch, state }, payload) {
       try {
-        const response = await axios.delete(`/act/${payload}`)
-        if (state.act._id === payload) {
+        const { acts } = state
+        const act = acts.find(a => a._id === payload)
+        const response = await ActService.remove(act)
+        if (state.act && state.act._id === payload) {
           dispatch('setAct', null)
         }
         commit('removeById', payload)

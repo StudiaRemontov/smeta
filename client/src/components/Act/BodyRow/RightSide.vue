@@ -75,6 +75,15 @@ export default {
         const room = JSON.parse(JSON.stringify(this.activeRoom))
         return [this.getRoomWithSum(room, values)]
       }
+      if (this.activeTab === 'completed') {
+        const reversed = [...this.rooms]
+        return reversed.map(room => {
+          const values = JSON.parse(
+            JSON.stringify(this.actsData[this.act._id][room.id]),
+          )
+          return this.getRoomWithSum(room, values)
+        })
+      }
       const roomsClone = this.getDataWithRoom()
       if (this.changeView) {
         const room = JSON.parse(JSON.stringify(this.rooms[0]))

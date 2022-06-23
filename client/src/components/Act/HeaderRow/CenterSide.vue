@@ -35,8 +35,7 @@ export default {
       const canCreate = this.canCreate()
       if (!canCreate) {
         return this.$toast.add({
-          severity: 'error',
-          summary: 'Ошибка',
+          severity: 'warn',
           detail: 'Предыдущий акт должен быть согласован или отклонен',
           life: 3000,
         })

@@ -1,5 +1,5 @@
 <script>
-import { mapGetters, mapMutations } from 'vuex'
+import { mapActions, mapGetters, mapMutations } from 'vuex'
 import { formatNumber } from '@/helpers/formatNumber'
 
 import InputNumber from '@/components/UI/InputNumber.vue'
@@ -20,7 +20,7 @@ export default {
   },
   data() {
     return {
-      interval: null,
+      timeout: null,
     }
   },
   computed: {
@@ -43,8 +43,14 @@ export default {
   },
   methods: {
     ...mapMutations('acts', ['updateById']),
+    ...mapActions('acts', ['saveLocaly']),
     changeHandler() {
-      //update local
+      if (this.timeout) {
+        clearTimeout(this.timeout)
+      }
+      this.timeout = setTimeout(async () => {
+        await this.saveLocaly()
+      }, 300)
     },
   },
 }

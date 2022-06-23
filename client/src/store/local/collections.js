@@ -15,4 +15,8 @@ export default {
     moduleName: 'outlays',
     variableNameInModule: 'outlays',
   },
+  acts: {
+    moduleName: 'acts',
+    variableNameInModule: 'acts',
+  },
 }
