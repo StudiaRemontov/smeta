@@ -2,6 +2,7 @@
 import CenterSide from './BodyRow/CenterSide.vue'
 import RightSide from './BodyRow/RightSide.vue'
 import LeftSide from './BodyRow/LeftSide.vue'
+import { mapGetters, mapMutations } from 'vuex'
 
 export default {
   components: {
@@ -9,10 +10,8 @@ export default {
     CenterSide,
     RightSide,
   },
-  data() {
-    return {
-      isMinimized: false,
-    }
+  computed: {
+    ...mapGetters('acts', ['maximized']),
   },
   mounted() {
     document.addEventListener('keydown', this.onKeyDown)
@@ -21,10 +20,11 @@ export default {
     document.removeEventListener('keydown', this.onKeyDown)
   },
   methods: {
+    ...mapMutations('acts', ['setMaximized']),
     onKeyDown(e) {
       const { ctrlKey, keyCode } = e
       if (ctrlKey && keyCode === 66) {
-        this.isMinimized = !this.isMinimized
+        this.setMaximized(!this.maximized)
       }
     },
   },
@@ -32,7 +32,7 @@ export default {
 </script>
 
 <template>
-  <div class="body-row" :class="{ minimized: isMinimized }">
+  <div class="body-row" :class="{ maximized }">
     <div class="left-side">
       <LeftSide />
     </div>
@@ -50,7 +50,7 @@ export default {
   padding-bottom: 17px;
   min-height: 0px;
 
-  &.minimized {
+  &.maximized {
     .left-side,
     .right-side {
       width: 50px;

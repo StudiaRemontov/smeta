@@ -17,9 +17,28 @@ export default {
   },
   computed: {
     ...mapGetters('outlay', ['rooms', 'keys', 'priceKey']),
-    ...mapGetters('acts', ['roomsData', 'showOnlyCompleted', 'actsData']),
+    ...mapGetters('acts', [
+      'roomsData',
+      'showOnlyCompleted',
+      'actsData',
+      'acts',
+      'act',
+    ]),
+    croppedActs() {
+      const index = this.acts.findIndex(a => a._id === this.act._id)
+      return [...this.acts].slice(0, index + 1)
+    },
     data() {
-      const roomsData = Object.values(this.actsData)
+      const roomsData = Object.entries(this.actsData).reduce(
+        (acc, [key, value]) => {
+          const isInCropped = this.croppedActs.find(a => a._id === key)
+          if (isInCropped) {
+            return [...acc, value]
+          }
+          return acc
+        },
+        [],
+      )
       const roomValues = roomsData
         .map(r => {
           const rooms = Object.entries(r).map(([key, value]) => {

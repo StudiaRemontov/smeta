@@ -54,7 +54,7 @@ export default {
           text: 'Согласование',
           handler: this.confirm,
           icon: 'DownloadIcon',
-          disabled: this.isInConfirmation,
+          disabled: this.act.status === actStatus.CONFIRMED,
           loading: this.isInConfirmation,
         },
       ]

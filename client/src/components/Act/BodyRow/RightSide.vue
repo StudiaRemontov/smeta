@@ -36,10 +36,34 @@ export default {
     ...mapGetters('acts', [
       'actsData',
       'act',
+      'acts',
       'activeRoom',
-      'completedValues',
+      'activeTab',
       'changeView',
     ]),
+    croppedActs() {
+      const index = this.acts.findIndex(a => a._id === this.act._id)
+      return [...this.acts].slice(0, index + 1)
+    },
+    completed() {
+      return this.rooms.reduce((acc, r) => {
+        const acts =
+          this.activeTab === 'completed' ? [this.act] : this.croppedActs
+        const values = acts
+          .map(act => {
+            const actRoomData = JSON.parse(
+              JSON.stringify(this.actsData[act._id][r.id]),
+            )
+            const filtered = actRoomData.filter(filterTreeByQuantity)
+            const keys = filtered.map(treeToListOnlyKeys).flat()
+            return keys
+          })
+          .flat()
+        const uniq = new Set(values)
+        acc[r.id] = [...uniq]
+        return acc
+      }, {})
+    },
     data() {
       if (this.rooms.length === 0) {
         return []
@@ -48,7 +72,6 @@ export default {
         const values = JSON.parse(
           JSON.stringify(this.actsData[this.act._id][this.activeRoom.id]),
         )
-
         const room = JSON.parse(JSON.stringify(this.activeRoom))
         return [this.getRoomWithSum(room, values)]
       }
@@ -122,7 +145,7 @@ export default {
       return values.reduce((acc, val) => (acc += +val.sum), 0)
     },
     getRoomWithSum(room, values) {
-      const selected = this.completedValues[this.act._id][room.id]
+      const selected = this.croppedActs.map(_ => this.completed[room.id]).flat()
       const nodes = this.getSelectedItems(values, selected)
       const vals = nodes.map(category => {
         const subCategories = this.getSelectedItems(category.children, selected)
@@ -202,9 +225,22 @@ export default {
       return node
     },
     getDataWithRoom() {
-      const roomsData = Object.values(this.actsData)
-      return roomsData.reduce((acc, room) => {
-        const roomValues = roomsData.map(r => r[room.id]).flat()
+      const roomsData = Object.entries(this.actsData).reduce(
+        (acc, [key, value]) => {
+          const isInCropped = this.croppedActs.find(a => a._id === key)
+          if (isInCropped) {
+            return [...acc, value]
+          }
+          return acc
+        },
+        [],
+      )
+      return this.rooms.reduce((acc, room) => {
+        const roomValues = roomsData
+          .reduce((acc, rData) => {
+            return [...acc, rData[room.id]]
+          }, [])
+          .flat()
 
         const values = roomValues.reduce((acc, data) => {
           const nodes = getValuesInside(data)
@@ -216,16 +252,35 @@ export default {
           acc[node.key].push(node)
           return acc
         }, {})
-        const summed = Object.values(groupped).map(this.sumQuantities)
+
+        const summed = Object.values(groupped).map(nodes => {
+          const node = nodes.reduce((acc, node) => {
+            if (!Object.keys(acc).length) {
+              return node
+            }
+            const { data: accData } = acc
+            const { data: nodeData } = node
+            const quantity = accData.quantity + nodeData.quantity
+            const newData = {
+              ...accData,
+              quantity,
+            }
+
+            return {
+              ...acc,
+              data: newData,
+            }
+          }, {})
+          return node
+        })
         const cloneJobs = JSON.parse(JSON.stringify(room.jobs))
         const children = cloneJobs
           .map(n => this.updateNodesInTree(n, summed))
           .flat()
-        const filtered = children.filter(filterTreeByQuantity)
 
-        acc[room.id] = filtered
+        acc[room.id] = children
         return acc
-      })
+      }, {})
     },
     getDataWithCategories(dataWithRooms) {
       const data = JSON.parse(JSON.stringify(dataWithRooms))

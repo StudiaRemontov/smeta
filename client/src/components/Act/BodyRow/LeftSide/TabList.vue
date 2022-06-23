@@ -40,7 +40,7 @@ export default {
           active: this.activeTab === 'acts',
         },
         {
-          text: 'Сводная редакции 2',
+          text: 'Смета редакции 2',
           handler: () => {
             this.setActiveTab('results')
           },

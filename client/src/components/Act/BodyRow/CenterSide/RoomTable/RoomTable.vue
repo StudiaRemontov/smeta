@@ -97,7 +97,11 @@ export default {
 </script>
 
 <template>
-  <div class="table-wrapper" :class="{ acts: actTable }">
+  <div
+    v-if="data && data[0].children.length > 0"
+    class="table-wrapper"
+    :class="{ acts: actTable }"
+  >
     <div class="tree-table" :class="{ acts: actTable }">
       <div class="table-grid" ref="wrapper">
         <TableGroup

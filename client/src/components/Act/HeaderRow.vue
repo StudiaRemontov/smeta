@@ -2,12 +2,22 @@
 import LeftSide from './HeaderRow/LeftSide.vue'
 import CenterSide from './HeaderRow/CenterSide.vue'
 import RightSide from '@/components/Layout/Header/RightSide.vue'
+import { mapGetters, mapMutations } from 'vuex'
 
 export default {
   components: {
     LeftSide,
     CenterSide,
     RightSide,
+  },
+  computed: {
+    ...mapGetters('acts', ['maximized']),
+  },
+  methods: {
+    ...mapMutations('acts', ['setMaximized']),
+    resize() {
+      this.setMaximized(!this.maximized)
+    },
   },
 }
 </script>
@@ -16,7 +26,12 @@ export default {
   <div class="header-row">
     <LeftSide />
     <CenterSide />
-    <RightSide class="right-side" />
+    <div class="right-side-wrapper">
+      <button class="button" @click="resize">
+        <i class="pi pi-arrows-h icon"></i>
+      </button>
+      <RightSide class="right-side" />
+    </div>
   </div>
 </template>
 
@@ -26,13 +41,24 @@ export default {
   grid-template-columns: min-content 1fr min-content;
 }
 
-.right-side {
+.right-side-wrapper {
+  display: flex;
   width: 270px;
-  padding: 10px;
-  padding-right: 30px;
-  justify-content: flex-end;
-  background-color: $color-dark;
+  align-items: center;
   border-radius: 0px 0px 0px 10px;
   box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+  background-color: $color-dark;
+  padding: 10px;
+  padding-right: 30px;
+}
+
+.right-side {
+  justify-content: flex-end;
+  flex: 1;
+}
+
+.icon {
+  color: #fff;
+  font-size: 20px;
 }
 </style>

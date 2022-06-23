@@ -17,10 +17,15 @@ export default {
       'acts',
       'completedValues',
       'changeView',
+      'act',
     ]),
+    croppedActs() {
+      const index = this.acts.findIndex(a => a._id === this.act._id)
+      return [...this.acts].slice(0, index + 1)
+    },
     completed() {
       return this.rooms.reduce((acc, r) => {
-        const values = this.acts
+        const values = this.croppedActs
           .map(act => {
             return this.completedValues[act._id][r.id]
           })
@@ -95,7 +100,16 @@ export default {
       })
     },
     getDataWithRooms() {
-      const roomsData = Object.values(this.actsData)
+      const roomsData = Object.entries(this.actsData).reduce(
+        (acc, [key, value]) => {
+          const isInCropped = this.croppedActs.find(a => a._id === key)
+          if (isInCropped) {
+            return [...acc, value]
+          }
+          return acc
+        },
+        [],
+      )
       const rooms = [...this.rooms].reverse()
       return rooms.map(room => {
         const roomValues = roomsData.map(r => r[room.id]).flat()

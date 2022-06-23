@@ -76,6 +76,7 @@ const prepareData = (actsData, outlay, act) => {
 export default {
   namespaced: true,
   state: {
+    loading: false,
     acts: [],
     activeTab: null,
     activeRoom: null,
@@ -86,6 +87,7 @@ export default {
     showOnlyCompleted: false,
     actsData: {},
     changeView: false,
+    maximized: false,
   },
   mutations: {
     setActs(state, payload) {
@@ -113,6 +115,10 @@ export default {
     },
     setActiveRoom(state, payload) {
       state.activeRoom = payload
+      const tabBefore = state.activeTab
+      if (tabBefore === 'completed') {
+        state.showOnlyCompleted = false
+      }
       state.activeTab = 'room'
     },
     setContentLoaded(state, payload) {
@@ -138,7 +144,6 @@ export default {
     setShowOnlyCompleted(state, payload) {
       state.showOnlyCompleted = payload
       if (!payload) return
-
       const { act, actsData, outlay } = state
       if (!act) return
 
@@ -157,6 +162,9 @@ export default {
     },
     setChangeView(state, payload) {
       state.changeView = payload
+    },
+    setMaximized(state, payload) {
+      state.maximized = payload
     },
   },
   actions: {
@@ -193,10 +201,11 @@ export default {
       state.actsData = actsData
     },
     async fetchAll({ state, commit }) {
-      const { contentLoaded } = state
-      if (contentLoaded) {
+      const { contentLoaded, loading } = state
+      if (contentLoaded || loading) {
         return
       }
+      state.loading = true
       try {
         const response = await axios.get('/act')
         commit('setActs', response.data)
@@ -204,6 +213,8 @@ export default {
         return response
       } catch (error) {
         return Promise.reject(error)
+      } finally {
+        state.loading = false
       }
     },
     async create({ commit, state, dispatch }) {
@@ -309,5 +320,6 @@ export default {
     },
     actsData: s => s.actsData,
     changeView: s => s.changeView,
+    maximized: s => s.maximized,
   },
 }

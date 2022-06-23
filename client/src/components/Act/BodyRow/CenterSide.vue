@@ -290,7 +290,7 @@ export default {
             </div>
             <span>Чередовние цветов</span>
           </div>
-          <div class="switch-wrapper">
+          <div v-if="activeTab === 'results'" class="switch-wrapper">
             <div class="switch">
               <InputSwitch v-model="changeView" />
             </div>

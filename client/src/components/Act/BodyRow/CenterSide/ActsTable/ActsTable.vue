@@ -17,9 +17,13 @@ export default {
   computed: {
     ...mapGetters('outlay', ['priceKey', 'rooms']),
     ...mapGetters('acts', ['actsData', 'act', 'acts']),
+    croppedActs() {
+      const index = this.acts.findIndex(a => a._id === this.act._id)
+      return [...this.acts].slice(0, index + 1)
+    },
     completed() {
       return this.rooms.reduce((acc, r) => {
-        const values = this.acts
+        const values = this.croppedActs
           .map(act => {
             const actRoomData = JSON.parse(
               JSON.stringify(this.actsData[act._id][r.id]),
@@ -86,7 +90,7 @@ export default {
   <div class="acts-table">
     <RoomTable
       v-for="room in tableData"
-      :acts="acts"
+      :acts="croppedActs"
       :key="room.id"
       :room="room"
       actTable
