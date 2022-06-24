@@ -12,6 +12,7 @@ export default {
   data() {
     return {
       interval: null,
+      loading: true,
     }
   },
   computed: {
@@ -26,14 +27,18 @@ export default {
     },
   },
   async mounted() {
+    this.loading = true
+    await this.setOutlay(null)
     this.interval = setInterval(this.save, 1000 * 60)
+    this.loading = false
   },
   unmounted() {
     clearInterval(this.interval)
+    this.setOutlay(null)
   },
   methods: {
     ...mapActions('outlays', ['fetchAll', 'uploadFromServer']),
-    ...mapActions('outlay', ['update', 'saveLocaly']),
+    ...mapActions('outlay', ['update', 'saveLocaly', 'setOutlay']),
     async save() {
       if (!this.isOffline) {
         await this.update()
@@ -54,7 +59,7 @@ export default {
 <template>
   <main class="main">
     <HeaderRow />
-    <BodyRow v-if="outlay" />
+    <BodyRow v-if="outlay && !loading" />
   </main>
   <div id="print" class="print"></div>
 </template>

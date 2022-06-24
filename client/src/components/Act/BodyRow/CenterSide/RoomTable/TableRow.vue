@@ -1,10 +1,13 @@
 <script>
-import { mapGetters } from 'vuex'
+import { mapGetters, mapMutations } from 'vuex'
 import { formatNumber } from '@/helpers/formatNumber'
 import actsTable from '@/mixins/actsTable.mixin'
 
+import TableRowWrapper from '../CommonTable/TableRowWrapper.vue'
+
 export default {
   name: 'TableRow',
+  components: { TableRowWrapper },
   mixins: [actsTable],
   props: {
     node: {
@@ -17,7 +20,13 @@ export default {
   },
   computed: {
     ...mapGetters('outlay', ['keys', 'quantityKey', 'priceKey', 'striped']),
-    ...mapGetters('acts', ['showOnlyCompleted', 'completedValues']),
+    ...mapGetters('acts', [
+      'showOnlyCompleted',
+      'completedValues',
+      'hoveredItem',
+      'selectedItem',
+      'showLeftQuantity',
+    ]),
     data() {
       return this.node.data
     },
@@ -37,31 +46,76 @@ export default {
       const price = this.node.data[this.priceKey.id]
       return formatNumber(quantity * price)
     },
+    hovered() {
+      if (!this.hoveredItem) {
+        return false
+      }
+      return (
+        this.node.key === this.hoveredItem.id &&
+        this.room === this.hoveredItem.room
+      )
+    },
+    selected() {
+      if (!this.selectedItem) {
+        return false
+      }
+      return (
+        this.node.key === this.selectedItem.id &&
+        this.room === this.selectedItem.room
+      )
+    },
+    rowData() {
+      return this.keys.map(key => {
+        if (key.id === this.quantityKey.id && this.showLeftQuantity) {
+          const diff = this.data[key.id] - this.data.quantity
+          const value = diff < 0 ? 0 : diff
+          return {
+            key: key.id,
+            value,
+          }
+        }
+        return {
+          key: key.id,
+          value: this.data[key.id],
+        }
+      })
+    },
+  },
+  methods: {
+    ...mapMutations('acts', ['setHoveredItem']),
+    mouseEnterHandler() {
+      this.setHoveredItem({ id: this.node.key, room: this.room })
+    },
+    mouseLeaveHandler() {
+      this.setHoveredItem(null)
+    },
   },
 }
 </script>
 
 <template>
-  <div
+  <TableRowWrapper
     class="table-row"
-    :class="{ category: isCategory, striped }"
+    :class="{ category: isCategory, striped, hovered, selected }"
     :data-id="node.key"
     :data-level="level"
     :data-room="room"
     :style="rowStyle"
+    @mouseenter="mouseEnterHandler"
+    @mouseleave="mouseLeaveHandler"
   >
-    <div
-      v-for="key in keys"
-      :key="key.id"
-      class="table-cell"
-      :title="data[key.id]"
-    >
-      {{ data[key.id] }}
-    </div>
+    <template v-for="(row, index) in rowData" :key="row.key">
+      <div v-if="index === 0" class="table-cell" v-tooltip.top="row.value">
+        {{ row.value }}
+      </div>
+      <div v-else class="table-cell" :title="row.value">
+        {{ row.value }}
+      </div>
+    </template>
     <div v-if="!isCategory" class="table-cell">
       {{ sum }}
     </div>
-  </div>
+  </TableRowWrapper>
   <template v-if="isCategory">
     <TableRow
       v-for="child in children"
@@ -75,12 +129,6 @@ export default {
 
 <style lang="scss" scoped>
 .table-row {
-  display: grid;
-  background-color: #fff;
-  align-items: center;
-  overflow: hidden;
-  height: 32px;
-
   &.category {
     font-weight: 700;
     position: sticky;

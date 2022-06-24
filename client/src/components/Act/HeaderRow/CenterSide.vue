@@ -29,14 +29,14 @@ export default {
       }
       const { status } = lastAct
 
-      return status !== actStatus.NEW
+      return status === actStatus.CONFIRMED
     },
     async createAct() {
       const canCreate = this.canCreate()
       if (!canCreate) {
         return this.$toast.add({
           severity: 'warn',
-          detail: 'Предыдущий акт должен быть согласован или отклонен',
+          detail: 'Предыдущий акт должен быть согласован',
           life: 3000,
         })
       }

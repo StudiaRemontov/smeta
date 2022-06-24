@@ -28,8 +28,8 @@ export default {
 
         return isObjectId(id)
       })
-
-      return list.map(j => ({
+      const filtered = list.filter(i => i.sum)
+      return filtered.map(j => ({
         ...j,
         sum: formatNumber(j.sum),
       }))

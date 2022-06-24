@@ -89,6 +89,9 @@ export default {
     actsData: {},
     changeView: false,
     maximized: false,
+    hoveredItem: null,
+    selectedItem: null,
+    showLeftQuantity: false,
   },
   mutations: {
     setActs(state, payload) {
@@ -167,6 +170,15 @@ export default {
     setMaximized(state, payload) {
       state.maximized = payload
     },
+    setHoveredItem(state, payload) {
+      state.hoveredItem = payload
+    },
+    setSelectedItem(state, payload) {
+      state.selectedItem = payload
+    },
+    setShowLeftQuantity(state, payload) {
+      state.showLeftQuantity = payload
+    },
   },
   actions: {
     setOutlay({ state }, payload) {
@@ -239,7 +251,8 @@ export default {
     async create({ commit, state, dispatch }) {
       try {
         const { acts, outlay } = state
-        const nameWithNumber = getNameWithNumber(acts)
+        const filteredActs = acts.filter(a => a.outlay === outlay._id)
+        const nameWithNumber = getNameWithNumber(filteredActs)
         const response = await ActService.create(nameWithNumber, outlay._id)
         commit('pushAct', response.data)
         dispatch('setAct', response.data)
@@ -329,7 +342,13 @@ export default {
     },
   },
   getters: {
-    acts: s => s.acts,
+    acts: state => {
+      const { outlay, acts } = state
+      if (!outlay) {
+        return []
+      }
+      return acts.filter(act => act.outlay === outlay._id)
+    },
     activeTab: s => s.activeTab,
     activeRoom: s => s.activeRoom,
     act: s => s.act,
@@ -374,5 +393,8 @@ export default {
     actsData: s => s.actsData,
     changeView: s => s.changeView,
     maximized: s => s.maximized,
+    hoveredItem: s => s.hoveredItem,
+    selectedItem: s => s.selectedItem,
+    showLeftQuantity: s => s.showLeftQuantity,
   },
 }

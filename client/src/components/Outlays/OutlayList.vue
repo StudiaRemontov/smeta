@@ -1,26 +1,27 @@
 <script>
+import { mapGetters } from 'vuex'
 import OutlayItem from './OutlayItem.vue'
 
 export default {
   components: {
     OutlayItem,
   },
-  props: {
-    items: {
-      type: Array,
+  computed: {
+    ...mapGetters('outlays', ['outlays']),
+    reversedOutlays() {
+      return [...this.outlays]
     },
-  },
-  data() {
-    return {
-      formVisible: false,
-    }
   },
 }
 </script>
 
 <template>
-  <ul class="outlay-list">
-    <OutlayItem />
+  <ul v-if="reversedOutlays && reversedOutlays.length > 0" class="outlay-list">
+    <OutlayItem
+      v-for="outlay in reversedOutlays"
+      :key="outlay._id"
+      :outlay="outlay"
+    />
   </ul>
 </template>
 

@@ -2,12 +2,16 @@
 import { mapActions, mapGetters, mapMutations } from 'vuex'
 import { formatNumber } from '@/helpers/formatNumber'
 
+import { actStatus } from '../../../../../enum/actStatus'
+
 import InputNumber from '@/components/UI/InputNumber.vue'
+import TableRowWrapper from '../CommonTable/TableRowWrapper.vue'
 
 export default {
   name: 'TableRow',
   components: {
     InputNumber,
+    TableRowWrapper,
   },
   props: {
     node: {
@@ -25,7 +29,7 @@ export default {
   },
   computed: {
     ...mapGetters('outlay', ['priceKey', 'striped']),
-    ...mapGetters('acts', ['act']),
+    ...mapGetters('acts', ['act', 'hoveredItem', 'selectedItem']),
     data() {
       return this.node.data
     },
@@ -40,9 +44,30 @@ export default {
       const price = this.data[this.priceKey.id]
       return formatNumber(quantity * price)
     },
+    isEditable() {
+      return this.act.status !== actStatus.CONFIRMED
+    },
+    hovered() {
+      if (!this.hoveredItem) {
+        return false
+      }
+      return (
+        this.node.key === this.hoveredItem.id &&
+        this.room === this.hoveredItem.room
+      )
+    },
+    selected() {
+      if (!this.selectedItem) {
+        return false
+      }
+      return (
+        this.node.key === this.selectedItem.id &&
+        this.room === this.selectedItem.room
+      )
+    },
   },
   methods: {
-    ...mapMutations('acts', ['updateById']),
+    ...mapMutations('acts', ['updateById', 'setHoveredItem']),
     ...mapActions('acts', ['saveLocaly']),
     changeHandler() {
       if (this.timeout) {
@@ -52,28 +77,37 @@ export default {
         await this.saveLocaly()
       }, 300)
     },
+    mouseEnterHandler() {
+      this.setHoveredItem({ id: this.node.key, room: this.room })
+    },
+    mouseLeaveHandler() {
+      this.setHoveredItem(null)
+    },
   },
 }
 </script>
 
 <template>
-  <div
+  <TableRowWrapper
     class="table-row"
-    :class="{ category: isCategory, striped }"
+    :class="{ category: isCategory, striped, hovered, selected }"
     :data-id="node.key"
     :data-level="level"
     :data-room="room"
+    @mouseenter="mouseEnterHandler"
+    @mouseleave="mouseLeaveHandler"
   >
     <div class="table-cell">
       <InputNumber
         v-model="data.quantity"
         class="input"
+        :disabled="!isEditable"
         :min="0"
         @change="changeHandler"
       />
     </div>
     <div class="table-cell">{{ sum }}</div>
-  </div>
+  </TableRowWrapper>
   <template v-if="isCategory">
     <TableRow
       v-for="child in children"
@@ -87,11 +121,6 @@ export default {
 
 <style lang="scss" scoped>
 .table-row {
-  display: grid;
-  background-color: #fff;
-  align-items: center;
-  height: 32px;
-  overflow: hidden;
   grid-template-columns: 1fr 1fr;
 
   &.category {

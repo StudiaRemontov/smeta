@@ -1,9 +1,12 @@
 <script>
-import { mapGetters } from 'vuex'
+import { mapGetters, mapMutations } from 'vuex'
 import { formatNumber } from '@/helpers/formatNumber'
+
+import TableRowWrapper from '../../CommonTable/TableRowWrapper.vue'
 
 export default {
   name: 'TableRow',
+  components: { TableRowWrapper },
   props: {
     node: {
       type: Object,
@@ -15,6 +18,7 @@ export default {
   },
   computed: {
     ...mapGetters('outlay', ['priceKey', 'striped']),
+    ...mapGetters('acts', ['hoveredItem', 'selectedItem']),
     data() {
       return this.node.data
     },
@@ -29,23 +33,52 @@ export default {
       const price = this.data[this.priceKey.id]
       return formatNumber(quantity * price)
     },
+    hovered() {
+      if (!this.hoveredItem) {
+        return false
+      }
+      return (
+        this.node.key === this.hoveredItem.id &&
+        this.room === this.hoveredItem.room
+      )
+    },
+    selected() {
+      if (!this.selectedItem) {
+        return false
+      }
+      return (
+        this.node.key === this.selectedItem.id &&
+        this.room === this.selectedItem.room
+      )
+    },
+  },
+  methods: {
+    ...mapMutations('acts', ['setHoveredItem']),
+    mouseEnterHandler() {
+      this.setHoveredItem({ id: this.node.key, room: this.room })
+    },
+    mouseLeaveHandler() {
+      this.setHoveredItem(null)
+    },
   },
 }
 </script>
 
 <template>
-  <div
+  <TableRowWrapper
     class="table-row"
-    :class="{ category: isCategory, striped }"
+    :class="{ category: isCategory, striped, hovered, selected }"
     :data-id="node.key"
     :data-level="level"
     :data-room="room"
+    @mouseenter="mouseEnterHandler"
+    @mouseleave="mouseLeaveHandler"
   >
     <div class="table-cell">
       {{ data.quantity }}
     </div>
     <div class="table-cell">{{ sum }}</div>
-  </div>
+  </TableRowWrapper>
   <template v-if="isCategory">
     <TableRow
       v-for="child in children"
@@ -59,11 +92,6 @@ export default {
 
 <style lang="scss" scoped>
 .table-row {
-  display: grid;
-  background-color: #fff;
-  align-items: center;
-  height: 32px;
-  overflow: hidden;
   grid-template-columns: 1fr 1fr;
 
   &.category {

@@ -152,9 +152,7 @@ export default {
       const { wrapper } = this.$refs
       if (!wrapper) return
       const tableData = wrapper.getBoundingClientRect()
-      const row = wrapper.querySelector(
-        `.table-row[data-room="${roomId}"][data-id="${nodeKey}"]`,
-      )
+      const row = this.getRow(roomId, nodeKey)
       if (!row) {
         return
       }
@@ -166,6 +164,15 @@ export default {
         top: offsetFromTable + wrapper.scrollTop,
         behavior: 'smooth',
       })
+    },
+    getRow(roomId, nodeKey) {
+      const { wrapper } = this.$refs
+      if (this.changeView) {
+        return wrapper.querySelector(`.table-row[data-id="${nodeKey}"]`)
+      }
+      return wrapper.querySelector(
+        `.table-row[data-room="${roomId}"][data-id="${nodeKey}"]`,
+      )
     },
   },
 }

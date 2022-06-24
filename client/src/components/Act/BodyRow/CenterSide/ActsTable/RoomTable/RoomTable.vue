@@ -62,9 +62,18 @@ export default {
     scrollTo(roomId, nodeKey) {
       const { wrapper } = this.$refs
       if (!wrapper) return
+      const top = this.getCordsOfRow(roomId, nodeKey)
+      wrapper.scrollTo({
+        top,
+        behavior: 'smooth',
+      })
+    },
+    getCordsOfRow(roomId, key) {
+      const { wrapper } = this.$refs
+      if (!wrapper) return
       const tableData = wrapper.getBoundingClientRect()
       const row = wrapper.querySelector(
-        `.table-row[data-room="${roomId}"][data-id="${nodeKey}"]`,
+        `.table-row[data-room="${roomId}"][data-id="${key}"]`,
       )
       if (!row) {
         return
@@ -73,10 +82,7 @@ export default {
       const level = +row.dataset.level
       const stickyRowsHeight = level * 32
       const offsetFromTable = rowData.top - tableData.top - stickyRowsHeight
-      wrapper.scrollTo({
-        top: offsetFromTable + wrapper.scrollTop,
-        behavior: 'smooth',
-      })
+      return offsetFromTable + wrapper.scrollTop
     },
     filterByCompleted(node, completed) {
       const { children, key } = node

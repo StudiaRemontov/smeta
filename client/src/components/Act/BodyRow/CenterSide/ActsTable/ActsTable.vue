@@ -82,37 +82,32 @@ export default {
       }
       return completed.includes(key)
     },
+    scrollTo(room, key) {
+      const { table, wrapper } = this.$refs
+      const foundTable = table.find(r => r.room.id === room)
+      if (!foundTable) {
+        return
+      }
+      const top = foundTable.getCordsOfRow(room, key)
+      wrapper.scrollTo({
+        top,
+        behavior: 'smooth',
+      })
+    },
   },
 }
 </script>
 
 <template>
-  <div class="acts-table">
+  <div class="acts-table" ref="wrapper">
     <RoomTable
       v-for="room in tableData"
+      ref="table"
       :acts="croppedActs"
       :key="room.id"
       :room="room"
       actTable
     />
-    <!-- MB IN FUTURE -->
-    <!-- <div class="results-row">
-      <div class="table-row table-row--sticky" :style="rowStyle">
-        <div class="table-cell"></div>
-      </div>
-      <div class="acts">
-        <div
-          v-for="act in acts"
-          :key="act._id"
-          class="table-row table-row--result"
-        >
-          <div class="act-table-cell">Итого</div>
-          <div class="act-table-cell">
-            {{ sum }}
-          </div>
-        </div>
-      </div>
-    </div> -->
   </div>
 </template>
 

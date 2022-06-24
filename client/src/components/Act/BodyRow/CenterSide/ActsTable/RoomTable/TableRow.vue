@@ -1,10 +1,15 @@
 <script>
-import { mapGetters } from 'vuex'
+import { mapGetters, mapMutations } from 'vuex'
 import { formatNumber } from '@/helpers/formatNumber'
 import actsTable from '@/mixins/actsTable.mixin'
 
+import TableRowWrapper from '../../CommonTable/TableRowWrapper.vue'
+
 export default {
   name: 'TableRow',
+  components: {
+    TableRowWrapper,
+  },
   mixins: [actsTable],
   props: {
     node: {
@@ -17,6 +22,7 @@ export default {
   },
   computed: {
     ...mapGetters('outlay', ['keys', 'quantityKey', 'priceKey', 'striped']),
+    ...mapGetters('acts', ['hoveredItem', 'selectedItem']),
     data() {
       return this.node.data
     },
@@ -31,31 +37,60 @@ export default {
       const price = this.node.data[this.priceKey.id]
       return formatNumber(quantity * price)
     },
+    hovered() {
+      if (!this.hoveredItem) {
+        return false
+      }
+      return (
+        this.node.key === this.hoveredItem.id &&
+        this.room === this.hoveredItem.room
+      )
+    },
+    selected() {
+      if (!this.selectedItem) {
+        return false
+      }
+      return (
+        this.node.key === this.selectedItem.id &&
+        this.room === this.selectedItem.room
+      )
+    },
+  },
+  methods: {
+    ...mapMutations('acts', ['setHoveredItem']),
+    mouseEnterHandler() {
+      this.setHoveredItem({ id: this.node.key, room: this.room })
+    },
+    mouseLeaveHandler() {
+      this.setHoveredItem(null)
+    },
   },
 }
 </script>
 
 <template>
-  <div
+  <TableRowWrapper
     class="table-row"
-    :class="{ category: isCategory, striped }"
+    :class="{ category: isCategory, striped, hovered, selected }"
     :data-id="node.key"
     :data-level="level"
     :data-room="room"
     :style="rowStyle"
+    @mouseenter="mouseEnterHandler"
+    @mouseleave="mouseLeaveHandler"
   >
-    <div
-      v-for="key in keys"
-      :key="key.id"
-      class="table-cell"
-      :title="data[key.id]"
-    >
-      {{ data[key.id] }}
-    </div>
+    <template v-for="(key, index) in keys" :key="key.id">
+      <div v-if="index === 0" class="table-cell" v-tooltip.top="data[key.id]">
+        {{ data[key.id] }}
+      </div>
+      <div v-else class="table-cell" :title="data[key.id]">
+        {{ data[key.id] }}
+      </div>
+    </template>
     <div v-if="!isCategory" class="table-cell">
       {{ sum }}
     </div>
-  </div>
+  </TableRowWrapper>
   <template v-if="isCategory">
     <TableRow
       v-for="child in children"
@@ -69,12 +104,6 @@ export default {
 
 <style lang="scss" scoped>
 .table-row {
-  display: grid;
-  background-color: #fff;
-  align-items: center;
-  overflow: hidden;
-  height: 32px;
-
   &.category {
     font-weight: 700;
     position: sticky;

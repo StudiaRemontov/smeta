@@ -4,6 +4,7 @@ import { mapGetters } from 'vuex'
 import TableGroup from './TableGroup.vue'
 import ActTable from '../ActTable/ActTable.vue'
 import actsTable from '@/mixins/actsTable.mixin'
+import { getValuesInside } from '@/store/modules/outlay.module'
 
 export default {
   components: { TableGroup, ActTable },
@@ -14,11 +15,6 @@ export default {
       type: Object,
       default: () => ({}),
     },
-    acts: {
-      required: true,
-      type: Array,
-      default: () => [],
-    },
     actTable: Boolean,
   },
   computed: {
@@ -28,13 +24,72 @@ export default {
       'completedValues',
       'actsData',
       'act',
+      'acts',
     ]),
+    croppedActs() {
+      const index = this.acts.findIndex(a => a._id === this.act._id)
+      return [...this.acts].slice(0, index + 1)
+    },
     data() {
+      const roomsData = Object.entries(this.actsData).reduce(
+        (acc, [key, value]) => {
+          const isInCropped = this.croppedActs.find(a => a._id === key)
+          if (isInCropped) {
+            return [...acc, value]
+          }
+          return acc
+        },
+        [],
+      )
+      const roomValues = roomsData
+        .map(r => {
+          const rooms = Object.entries(r).map(([key, value]) => {
+            return {
+              roomId: key,
+              value,
+            }
+          })
+          const room = rooms.find(r => r.roomId === this.room.id)
+          return room.value
+        })
+        .flat()
+      const values = roomValues.reduce((acc, data) => {
+        const nodes = getValuesInside(data)
+        return [...acc, ...nodes]
+      }, [])
+      const groupped = values.reduce((acc, node) => {
+        acc[node.key] = acc[node.key] || []
+        acc[node.key].push(node)
+        return acc
+      }, {})
+      const summed = Object.values(groupped).map(nodes => {
+        const node = nodes.reduce((acc, node) => {
+          if (!Object.keys(acc).length) {
+            return node
+          }
+          const { data: accData } = acc
+          const { data: nodeData } = node
+          const quantity = accData.quantity + nodeData.quantity
+          const newData = {
+            ...accData,
+            quantity,
+          }
+
+          return {
+            ...acc,
+            data: newData,
+          }
+        }, {})
+        return node
+      })
+
+      const cloneJobs = JSON.parse(JSON.stringify(this.room.jobs))
+      const data = cloneJobs.map(n => this.updateNodesInTree(n, summed)).flat()
       const children = this.showOnlyCompleted
-        ? this.actsData[this.act._id][this.room.id].filter(n =>
+        ? data.filter(n =>
             this.completedValues[this.act._id][this.room.id].includes(n.key),
           )
-        : this.actsData[this.act._id][this.room.id]
+        : data
       return [
         {
           key: this.room.id,
@@ -48,7 +103,8 @@ export default {
       ]
     },
     actData() {
-      return this.acts.map(act => {
+      const acts = [this.act]
+      return acts.map(act => {
         const children = this.showOnlyCompleted
           ? this.actsData[act._id][this.room.id].filter(n =>
               this.completedValues[act._id][this.room.id].includes(n.key),
@@ -73,13 +129,20 @@ export default {
     },
   },
   methods: {
-    scrollTo(roomId, nodeKey) {
+    scrollTo(nodeKey) {
+      const { wrapper } = this.$refs
+      if (!wrapper) return
+      const top = this.getCordsOfRow(nodeKey)
+      wrapper.scrollTo({
+        top,
+        behavior: 'smooth',
+      })
+    },
+    getCordsOfRow(key) {
       const { wrapper } = this.$refs
       if (!wrapper) return
       const tableData = wrapper.getBoundingClientRect()
-      const row = wrapper.querySelector(
-        `.table-row[data-room="${roomId}"][data-id="${nodeKey}"]`,
-      )
+      const row = wrapper.querySelector(`.table-row[data-id="${key}"]`)
       if (!row) {
         return
       }
@@ -87,10 +150,18 @@ export default {
       const level = +row.dataset.level
       const stickyRowsHeight = level * 32
       const offsetFromTable = rowData.top - tableData.top - stickyRowsHeight
-      wrapper.scrollTo({
-        top: offsetFromTable + wrapper.scrollTop,
-        behavior: 'smooth',
-      })
+      return offsetFromTable + wrapper.scrollTop
+    },
+    updateNodesInTree(node, newNodes) {
+      const { key, children } = node
+      const isInNewNode = newNodes.find(n => n.key === key)
+      if (isInNewNode) {
+        return isInNewNode
+      }
+      if (children && children.length > 0) {
+        node.children = children.map(n => this.updateNodesInTree(n, newNodes))
+      }
+      return node
     },
   },
 }
@@ -99,11 +170,12 @@ export default {
 <template>
   <div
     v-if="data && data[0].children.length > 0"
+    ref="wrapper"
     class="table-wrapper"
     :class="{ acts: actTable }"
   >
     <div class="tree-table" :class="{ acts: actTable }">
-      <div class="table-grid" ref="wrapper">
+      <div class="table-grid">
         <TableGroup
           v-for="node in data"
           ref="table"

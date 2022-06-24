@@ -34,16 +34,31 @@ export default {
       return formatNumber(total)
     },
   },
+  methods: {
+    scrollTo(room, key) {
+      const { table, wrapper } = this.$refs
+      const foundTable = table.find(r => r.room.id === room)
+      if (!foundTable) {
+        return
+      }
+      const top = foundTable.getCordsOfRow(key)
+      wrapper.scrollTo({
+        top,
+        behavior: 'smooth',
+      })
+    },
+  },
 }
 </script>
 
 <template>
-  <div class="completed-table">
+  <div class="completed-table" ref="wrapper">
     <RoomTable
       v-for="room in roomList"
       :acts="[act]"
       :key="room.id"
       :room="room"
+      ref="table"
     />
     <div class="results-row">
       <div class="table-row table-row--stretched" :style="rowStyle">

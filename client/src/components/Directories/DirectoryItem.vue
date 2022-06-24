@@ -1,13 +1,13 @@
 <script>
 import ThreeDotsIcon from '../UI/Icons/ThreeDotsIcon.vue'
-import AppDropdowm from '@/components/UI/AppDropdown.vue'
+import AppDropdown from '@/components/UI/AppDropdown.vue'
 import rootGetters from '@/mixins/rootGetters.mixin'
 import { mapActions, mapGetters, mapMutations } from 'vuex'
 
 export default {
   components: {
     ThreeDotsIcon,
-    AppDropdowm,
+    AppDropdown,
   },
   mixins: [rootGetters],
   props: {
@@ -202,9 +202,9 @@ export default {
         @focus="isEditing = true"
         @blur="isEditing = false"
       />
-      <AppDropdowm v-if="!isEditing" ref="dropdown" :items="items">
+      <AppDropdown v-if="!isEditing" ref="dropdown" :items="items">
         <ThreeDotsIcon />
-      </AppDropdowm>
+      </AppDropdown>
     </div>
     <span v-if="!isEditing" class="directory-item__counter">
       {{ counter }}

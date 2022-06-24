@@ -12,14 +12,14 @@ export default {
     },
   },
   computed: {
-    ...mapGetters('acts', ['activeRoom', 'selectedRoom', 'changeView']),
+    ...mapGetters('acts', ['activeRoom', 'changeView']),
     categoryList() {
       if (this.changeView) {
         return this.categories[0].jobs
       }
       if (this.activeRoom) {
         const room = this.categories.find(r => r.id === this.activeRoom.id)
-        return room.jobs
+        return room.jobs.filter(r => r.sum)
       }
       return [...this.categories].reverse()
     },

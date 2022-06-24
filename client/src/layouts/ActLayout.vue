@@ -9,6 +9,11 @@ export default {
     HeaderRow,
     BodyRow,
   },
+  data() {
+    return {
+      loading: true,
+    }
+  },
   computed: {
     ...mapGetters('outlays', ['outlays']),
     ...mapGetters('acts', ['act']),
@@ -20,13 +25,22 @@ export default {
     if (!this.id) {
       return
     }
-    await this.fetchAll()
-    const outlay = this.outlays.find(o => o._id === this.id)
-    if (!outlay) {
-      return
+    try {
+      await this.fetchAll()
+      const outlay = this.outlays.find(o => o._id === this.id)
+      if (!outlay) {
+        return
+      }
+      await this.prepateOutlay(outlay)
+      this.setOutlay(outlay)
+    } catch (error) {
+      console.log(error)
+    } finally {
+      this.loading = false
     }
-    await this.prepateOutlay(outlay)
-    this.setOutlay(outlay)
+  },
+  unmounted() {
+    this.setOutlay(null)
   },
   methods: {
     ...mapActions('acts', ['fetchAll', 'setOutlay']),
@@ -40,7 +54,7 @@ export default {
 <template>
   <main class="main">
     <HeaderRow />
-    <BodyRow v-if="act" />
+    <BodyRow v-if="act && !loading" />
   </main>
   <div id="print" class="print"></div>
 </template>

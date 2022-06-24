@@ -42,7 +42,13 @@ export default {
       'selectedValues',
       'showResults',
     ]),
-    ...mapGetters('acts', ['activeTab', 'activeRoom', 'act']),
+    ...mapGetters('acts', [
+      'activeTab',
+      'activeRoom',
+      'act',
+      'actsData',
+      'showOnlyCompleted',
+    ]),
     striped: {
       get() {
         return this.$store.getters['outlay/striped']
@@ -59,11 +65,29 @@ export default {
         this.setChangeView(value)
       },
     },
+    showLeftQuantity: {
+      get() {
+        return this.$store.getters['acts/showLeftQuantity']
+      },
+      set(value) {
+        this.setShowLeftQuantity(value)
+      },
+    },
     scrollHeight() {
       return `${this.screenHeight - 100}px`
     },
     jobs() {
-      if (!this.selectedRoom) {
+      if (!this.activeTab) {
+        return []
+      }
+      if (!this.activeRoom) {
+        const roomsData = JSON.parse(JSON.stringify(this.act.rooms)).reduce(
+          (acc, room) => {
+            acc[room.id] = room.jobs
+            return acc
+          },
+          {},
+        )
         const reversed = [...this.rooms].reverse()
         const rooms = reversed.map(r => ({
           key: r.id,
@@ -71,16 +95,27 @@ export default {
             [this.keys[0].id]: r.name,
           },
           name: r.name,
-          children: this.roomsData[r.id],
+          children: roomsData[r.id],
         }))
         return rooms.map(r => this.getGroupsWithRoom(r, null, r.key)).flat()
       }
-      return this.roots.map(r => this.getGroups(r, null)).flat()
+      if (this.showOnlyCompleted) {
+        const room = this.act.rooms.find(r => r.id === this.activeRoom.id)
+        const { jobs } = JSON.parse(JSON.stringify(room))
+        return jobs.map(r => this.getGroups(r, null)).flat()
+      }
+      const jobs = this.actsData[this.act._id][this.activeRoom.id].flat()
+      const clone = JSON.parse(JSON.stringify(jobs))
+      return clone.map(r => this.getGroups(r, null)).flat()
     },
   },
   watch: {
-    selectedRoom() {
+    activeTab() {
       this.windowResize()
+      this.setSelectedItem(null)
+    },
+    activeRoom() {
+      this.setSelectedItem(null)
     },
     outlay() {
       this.windowResize()
@@ -95,9 +130,13 @@ export default {
   },
   methods: {
     ...mapMutations('outlay', ['setStriped']),
-    ...mapMutations('acts', ['setChangeView']),
+    ...mapMutations('acts', [
+      'setChangeView',
+      'setSelectedItem',
+      'setShowLeftQuantity',
+    ]),
     async windowResize() {
-      if (!this.outlay || this.showResults) {
+      if (!this.outlay) {
         return
       }
       await this.$nextTick()
@@ -119,20 +158,16 @@ export default {
         const childrenGroups = node.children
           .map(c => this.getGroupsWithRoom(c, key, roomId))
           .flat()
-        const selectedGroups = childrenGroups.filter(g =>
-          this.selectedValues[roomId].includes(g.key),
-        )
+
         if (isObjectId(children[0].key)) {
           return [
             {
               ...returnData,
             },
-            ...selectedGroups,
+            ...childrenGroups,
           ]
         }
-        const selectedItems = node.children.filter(n =>
-          this.selectedValues[roomId].includes(n.key),
-        )
+        const selectedItems = node.children
         return [
           {
             ...returnData,
@@ -142,7 +177,7 @@ export default {
               roomId,
             })),
           },
-          ...selectedGroups,
+          ...childrenGroups,
         ]
       }
       return []
@@ -245,16 +280,27 @@ export default {
         await this.$nextTick()
         input.blur()
       }
-      if (!this.selectedRoom) {
-        return table.scrollTo(room, key)
+      if (this.activeRoom) {
+        return table.scrollTo(key)
       }
-      table.scrollToAndSelect(e.value)
+      table.scrollTo(room, key)
     },
     autoCompleteClickHanler() {
       this.selectedJob = null
     },
     autocompleteInput() {
       this.$refs.autocomplete.hideOverlay()
+    },
+    selectRow(e) {
+      const { target } = e
+      const row = target.closest('.table-row')
+      if (!row) {
+        return
+      }
+      const {
+        dataset: { id, room },
+      } = row
+      this.setSelectedItem({ id, room })
     },
   },
 }
@@ -290,6 +336,15 @@ export default {
             </div>
             <span>Чередовние цветов</span>
           </div>
+          <div
+            v-if="activeTab === 'room' || activeTab === 'completed'"
+            class="switch-wrapper"
+          >
+            <div class="switch">
+              <InputSwitch v-model="showLeftQuantity" />
+            </div>
+            <span>Всего / Осталось</span>
+          </div>
           <div v-if="activeTab === 'results'" class="switch-wrapper">
             <div class="switch">
               <InputSwitch v-model="changeView" />
@@ -298,18 +353,20 @@ export default {
           </div>
         </div>
       </div>
-      <template v-if="activeTab === 'completed'">
-        <CompletedTable ref="completed" />
-      </template>
-      <template v-else-if="activeTab === 'acts'">
-        <ActsTable ref="acts" />
-      </template>
-      <template v-else-if="activeTab === 'results'">
-        <OutlayTable ref="outlay" />
-      </template>
-      <template v-else-if="activeTab === 'room' && activeRoom">
-        <RoomTable :room="activeRoom" :acts="[act]" ref="table" />
-      </template>
+      <div class="tables-wrapper" @click="selectRow">
+        <template v-if="activeTab === 'completed'">
+          <CompletedTable ref="table" />
+        </template>
+        <template v-else-if="activeTab === 'acts'">
+          <ActsTable ref="table" />
+        </template>
+        <template v-else-if="activeTab === 'results'">
+          <OutlayTable ref="table" />
+        </template>
+        <template v-else-if="activeTab === 'room' && activeRoom">
+          <RoomTable :room="activeRoom" ref="table" />
+        </template>
+      </div>
     </div>
   </OutlayBlock>
 </template>
@@ -365,5 +422,11 @@ export default {
   display: flex;
   align-items: center;
   gap: 5px;
+}
+
+.tables-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 0px;
 }
 </style>
