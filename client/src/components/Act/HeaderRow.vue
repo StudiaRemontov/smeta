@@ -2,7 +2,7 @@
 import LeftSide from './HeaderRow/LeftSide.vue'
 import CenterSide from './HeaderRow/CenterSide.vue'
 import RightSide from '@/components/Layout/Header/RightSide.vue'
-import { mapGetters, mapMutations } from 'vuex'
+import { mapMutations } from 'vuex'
 
 export default {
   components: {
@@ -10,14 +10,8 @@ export default {
     CenterSide,
     RightSide,
   },
-  computed: {
-    ...mapGetters('acts', ['maximized']),
-  },
   methods: {
-    ...mapMutations('acts', ['setMaximized']),
-    resize() {
-      this.setMaximized(!this.maximized)
-    },
+    ...mapMutations('acts', ['toggleSides']),
   },
 }
 </script>
@@ -27,7 +21,7 @@ export default {
     <LeftSide />
     <CenterSide />
     <div class="right-side-wrapper">
-      <button class="button" @click="resize">
+      <button class="button" @click="toggleSides">
         <i class="pi pi-arrows-h icon"></i>
       </button>
       <RightSide class="right-side" />

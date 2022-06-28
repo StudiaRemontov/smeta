@@ -15,7 +15,7 @@ export default {
     }
   },
   computed: {
-    ...mapGetters('outlays', ['outlays']),
+    ...mapGetters('outlays', ['serverOutlays']),
     ...mapGetters('acts', ['act']),
     id() {
       return this.$route.params.id
@@ -27,7 +27,7 @@ export default {
     }
     try {
       await this.fetchAll()
-      const outlay = this.outlays.find(o => o._id === this.id)
+      const outlay = this.serverOutlays.find(o => o._id === this.id)
       if (!outlay) {
         return
       }

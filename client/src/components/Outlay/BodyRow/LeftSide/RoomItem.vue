@@ -5,8 +5,6 @@ import { mapGetters, mapMutations } from 'vuex'
 
 import emitter from '@/modules/eventBus'
 
-import { getAllValues } from '@/helpers/treeMethods'
-
 export default {
   components: {
     ViewListIcon,
@@ -17,6 +15,10 @@ export default {
       required: true,
     },
     active: Boolean,
+    disabled: {
+      type: Boolean,
+      default: true,
+    },
   },
   emits: ['edit', 'remove', 'open-menu'],
   data() {
@@ -41,7 +43,12 @@ export default {
     }
   },
   computed: {
-    ...mapGetters('outlay', ['showOnlyChecked', 'quantityKey']),
+    ...mapGetters('outlay', [
+      'showOnlyChecked',
+      'quantityKey',
+      'invalidJobs',
+      'selectedRoom',
+    ]),
     textColor() {
       return this.active ? '#545454' : '#c8c8c8'
     },
@@ -50,8 +57,15 @@ export default {
         return this.showOnlyChecked && this.active
       },
       set(value) {
+        const invalidNodes = this.invalidJobs[this.selectedRoom?.id] || []
+        if (this.room.id !== this.selectedRoom?.id && invalidNodes.length > 0) {
+          return
+        }
         this.setViewMode(value)
       },
+    },
+    invalidNodes() {
+      return this.invalidJobs[this.room.id]
     },
   },
   methods: {
@@ -59,30 +73,50 @@ export default {
     openContext(e) {
       this.$emit('open-menu', e, this.room)
     },
-    getInvalidJobs() {
-      const nodes = this.room.jobs.map(getAllValues).flat()
-      return nodes.filter(n => n.data[this.quantityKey.id] === 0)
-    },
     async setViewMode(value) {
       this.setSelectedRoom(this.room)
       if (value) {
         await this.$nextTick()
-        const invalidNodes = this.getInvalidJobs()
-        if (invalidNodes.length > 0) {
-          const invalidNode = invalidNodes[0]
+        if (this.invalidNodes.length > 0) {
+          const invalidNode = this.invalidNodes[0]
           return emitter.$emit('scrollTo', invalidNode.key)
         }
       }
       this.setShowOnlyChecked(value)
+    },
+    clickHandler() {
+      const invalidNodes = this.invalidJobs[this.selectedRoom?.id]
+      if (
+        this.selectedRoom &&
+        this.selectedRoom.id !== this.room.id &&
+        invalidNodes &&
+        invalidNodes.length > 0
+      ) {
+        return this.$toast.add({
+          severity: 'warn',
+          detail: 'Заполните количество у выбранных работ',
+          life: 3000,
+        })
+      }
+      this.setSelectedRoom(this.room)
     },
   },
 }
 </script>
 
 <template>
-  <div class="room-item" :class="{ active }" @click="setSelectedRoom(room)">
+  <div class="room-item" :class="{ active }" @click="clickHandler">
     <div class="room-item__text">
-      <span class="room-item__title" :title="room.name"> {{ room.name }} </span>
+      <span class="room-item__title" :title="room.name">
+        {{ room.name }}
+      </span>
+      <span
+        v-if="invalidNodes && invalidNodes.length > 0"
+        v-tooltip.top="`незаполненных работ`"
+        class="room-item__counter"
+      >
+        {{ invalidNodes.length }}
+      </span>
     </div>
     <div class="room-item__actions" @click.stop>
       <button class="button" @click="viewMode = !viewMode">
@@ -102,6 +136,7 @@ export default {
 .room-item {
   display: flex;
   justify-content: space-between;
+  gap: 5px;
   padding: 4px 15px;
   border-radius: 4px;
   cursor: pointer;
@@ -116,6 +151,8 @@ export default {
     display: flex;
     align-items: center;
     overflow: hidden;
+    justify-content: space-between;
+    flex: 1;
   }
 
   &__title {
@@ -128,6 +165,16 @@ export default {
   &__actions {
     display: flex;
     border-left: 1px solid v-bind(textColor);
+  }
+
+  &__counter {
+    font-size: 12px;
+    color: #fff;
+    background-color: #de4848;
+    border-radius: 10px;
+    padding: 5px;
+    line-height: 3px;
+    font-weight: 700;
   }
 
   .icon {

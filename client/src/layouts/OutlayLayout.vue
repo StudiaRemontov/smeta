@@ -22,34 +22,68 @@ export default {
   watch: {
     isOffline(value) {
       if (!value) {
-        this.syncData()
+        this.getServerData()
       }
+    },
+    outlay() {
+      clearInterval(this.interval)
+      this.interval = setInterval(this.save, 1000 * 60)
     },
   },
   async mounted() {
     this.loading = true
     await this.setOutlay(null)
     this.interval = setInterval(this.save, 1000 * 60)
-    this.loading = false
+    try {
+      await this.syncData()
+    } catch (error) {
+      console.error(error)
+      this.$toast.add({
+        severity: 'error',
+        summary: 'Ошибка',
+        detail: 'Ошибка снихронизации данных',
+        life: 3000,
+      })
+    } finally {
+      this.loading = false
+    }
   },
   unmounted() {
     clearInterval(this.interval)
     this.setOutlay(null)
   },
   methods: {
-    ...mapActions('outlays', ['fetchAll', 'uploadFromServer']),
+    ...mapActions('outlays', ['fetchAll', 'uploadFromServer', 'syncData']),
     ...mapActions('outlay', ['update', 'saveLocaly', 'setOutlay']),
     async save() {
       if (!this.isOffline) {
-        await this.update()
-        await this.saveLocaly()
+        try {
+          await this.update()
+          await this.saveLocaly()
+        } catch (error) {
+          const { response } = error
+          const message = response ? response.data.message : error.message
+          return this.$toast.add({
+            severity: 'warn',
+            summary: 'Предупреждение',
+            detail: message,
+            life: 3000,
+          })
+        }
       }
     },
-    async syncData() {
+    async getServerData() {
       try {
         await this.uploadFromServer()
       } catch (error) {
-        console.log(error)
+        const { response } = error
+        const message = response ? response.data.message : error.message
+        return this.$toast.add({
+          severity: 'error',
+          summary: 'Ошибка',
+          detail: message,
+          life: 3000,
+        })
       }
     },
   },

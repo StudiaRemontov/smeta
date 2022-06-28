@@ -36,7 +36,8 @@ export default {
   flex-direction: column;
   gap: 10px;
   flex: 1;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   min-height: 40px;
   padding: 0px 12px;
   max-width: 100%;

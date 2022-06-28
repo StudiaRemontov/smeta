@@ -4,12 +4,16 @@ import idb from '../local/idb'
 import OutlayService from '../../api/OutlayService'
 import Outlay from '../../models/Outlay'
 
+import { getAllValues } from '@/helpers/treeMethods'
+import { InputType } from '../../enum/InputType'
+
 export default {
   namespaced: true,
   state: {
     contentLoaded: false,
     outlays: [],
     loading: false,
+    serverOutlays: [],
   },
   mutations: {
     setContentLoaded(state, payload) {
@@ -39,7 +43,7 @@ export default {
     },
   },
   actions: {
-    async fetchAll({ commit, state, dispatch, rootGetters }) {
+    async fetchAll({ commit, state, rootGetters, dispatch }) {
       if (state.contentLoaded || state.loading) {
         return
       }
@@ -54,6 +58,19 @@ export default {
           return Promise.resolve(data)
         }
         commit('setOutlays', data)
+        state.serverOutlays = JSON.parse(JSON.stringify(data))
+        await dispatch('syncData')
+        commit('setContentLoaded', true)
+        return Promise.resolve(data)
+      } catch (error) {
+        return Promise.reject(error)
+      } finally {
+        state.loading = false
+      }
+    },
+    async syncData({ dispatch, state }) {
+      try {
+        const data = state.outlays
         const localData = await idb.getCollectionData('outlays')
         const diff = OutlayService.getLocalDifference(data, localData)
         const { created, updated, removed } = diff
@@ -62,24 +79,16 @@ export default {
           created.map(async o => {
             return await dispatch('clone', o)
           }),
-        )
-        await Promise.all(
           updated.map(async o => {
             const { _id: id, ...data } = o
             return await dispatch('update', { id, data })
           }),
-        )
-        await Promise.all(
           removed.map(async o => {
             return await dispatch('removeLocal', o)
           }),
         )
-        commit('setContentLoaded', true)
-        return Promise.resolve(data)
       } catch (error) {
         return Promise.reject(error)
-      } finally {
-        state.loading = false
       }
     },
     async uploadFromServer({ rootGetters, commit, dispatch }) {
@@ -178,8 +187,34 @@ export default {
         return Promise.reject(error)
       }
     },
-    async update({ commit }, { id, data }) {
+    getQuantityKey({ rootState, rootGetters }, outlay) {
+      const { quantityKey } = rootState.outlay
+      if (quantityKey) {
+        return quantityKey
+      }
+      const edition = rootGetters['edition/editions'].find(
+        e => e._id === outlay.edition,
+      )
+      const directory = rootGetters['directory/directories'].find(
+        d => d._id === edition.dirId,
+      )
+      const key = directory.keys.find(k => k.type === InputType.QUANTITY)
+      return key
+    },
+    async update({ commit, dispatch }, { id, data }) {
       try {
+        const { rooms } = data
+        const quantityKey = await dispatch('getQuantityKey', data)
+        const isValid = rooms.every(room => {
+          const nodes = room.jobs.map(getAllValues).flat()
+          const invalid = nodes.filter(n => n.data[quantityKey.id] === 0)
+          return invalid.length === 0
+        })
+        if (!isValid) {
+          const newData = { _id: id, ...data }
+          await idb.saveDataInCollection('outlays', newData)
+          return commit('updateById', { id, data: newData })
+        }
         const response = await OutlayService.update({ _id: id, ...data })
         commit('updateById', { id, data: response.data })
         return response
@@ -190,5 +225,6 @@ export default {
   },
   getters: {
     outlays: s => s.outlays,
+    serverOutlays: s => s.serverOutlays,
   },
 }

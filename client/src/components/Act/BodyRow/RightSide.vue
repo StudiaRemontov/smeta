@@ -1,10 +1,11 @@
 <script>
-import { mapGetters, mapState } from 'vuex'
+import { mapGetters, mapMutations, mapState } from 'vuex'
 
 import CategoryList from './RightSide/CategoryList.vue'
 import ResultsForm from './RightSide/ResultsForm.vue'
 import ParameterList from './RightSide/ParameterList.vue'
 import OutlayBlock from '@/components/Layout/OutlayBlock.vue'
+import CollapseBlock from './LeftSide/CollapseBlock.vue'
 
 import {
   getValuesInside,
@@ -20,6 +21,7 @@ export default {
     ResultsForm,
     ParameterList,
     OutlayBlock,
+    CollapseBlock,
   },
   computed: {
     ...mapState('outlay', ['selectedValues']),
@@ -41,6 +43,14 @@ export default {
       'activeTab',
       'changeView',
     ]),
+    showRightSide: {
+      get() {
+        return this.$store.getters['acts/showRightSide']
+      },
+      set(value) {
+        return this.setShowRightSide(value)
+      },
+    },
     croppedActs() {
       const index = this.acts.findIndex(a => a._id === this.act._id)
       return [...this.acts].slice(0, index + 1)
@@ -98,6 +108,7 @@ export default {
     },
   },
   methods: {
+    ...mapMutations('acts', ['setShowRightSide']),
     mergeChildren(nodes) {
       const groupped = nodes.reduce((acc, node) => {
         acc[node.key] = acc[node.key] || []
@@ -303,6 +314,7 @@ export default {
 
 <template>
   <div class="wrapper">
+    <CollapseBlock v-model="showRightSide" :position="'right'" />
     <ParameterList class="wrapper__parameters" />
     <OutlayBlock class="wrapper__results">
       <CategoryList :categories="data" />

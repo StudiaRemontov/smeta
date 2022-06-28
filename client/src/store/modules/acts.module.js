@@ -88,10 +88,11 @@ export default {
     showOnlyCompleted: false,
     actsData: {},
     changeView: false,
-    maximized: false,
     hoveredItem: null,
     selectedItem: null,
     showLeftQuantity: false,
+    showLeftSide: true,
+    showRightSide: true,
   },
   mutations: {
     setActs(state, payload) {
@@ -167,9 +168,6 @@ export default {
     setChangeView(state, payload) {
       state.changeView = payload
     },
-    setMaximized(state, payload) {
-      state.maximized = payload
-    },
     setHoveredItem(state, payload) {
       state.hoveredItem = payload
     },
@@ -178,6 +176,22 @@ export default {
     },
     setShowLeftQuantity(state, payload) {
       state.showLeftQuantity = payload
+    },
+    setShowLeftSide(state, payload) {
+      state.showLeftSide = payload
+    },
+    setShowRightSide(state, payload) {
+      state.showRightSide = payload
+    },
+    toggleSides(state) {
+      const { showLeftSide, showRightSide } = state
+      if (showLeftSide === showRightSide) {
+        state.showLeftSide = !showLeftSide
+        state.showRightSide = !showRightSide
+        return
+      }
+      state.showLeftSide = true
+      state.showRightSide = true
     },
   },
   actions: {
@@ -294,15 +308,18 @@ export default {
         return Promise.reject(error)
       }
     },
-    async update({ state, commit }, { id, data }) {
+    async update({ state, commit, dispatch }, { id, data }) {
       try {
-        const { actsData, outlay } = state
+        const { actsData, outlay, act } = state
         if (!data) {
           return
         }
         const saveData = prepareData(actsData, outlay, data)
         const response = await ActService.update(saveData)
         commit('updateById', { id, data: response.data })
+        if (act._id === id) {
+          await dispatch('setAct', response.data)
+        }
         return response
       } catch (error) {
         return Promise.reject(error)
@@ -392,9 +409,10 @@ export default {
     },
     actsData: s => s.actsData,
     changeView: s => s.changeView,
-    maximized: s => s.maximized,
     hoveredItem: s => s.hoveredItem,
     selectedItem: s => s.selectedItem,
     showLeftQuantity: s => s.showLeftQuantity,
+    showLeftSide: s => s.showLeftSide,
+    showRightSide: s => s.showRightSide,
   },
 }

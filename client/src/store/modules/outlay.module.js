@@ -6,6 +6,7 @@ import OutlayService from '../../api/OutlayService'
 import roomParametersMixin from '../../mixins/roomParameters.mixin'
 
 import { InputType } from '../../enum/InputType'
+import { getAllValues } from '@/helpers/treeMethods'
 
 const { methods } = roomParametersMixin
 
@@ -507,10 +508,16 @@ export default {
         return Promise.reject(error)
       }
     },
-    async update({ state, commit }) {
+    async update({ state, commit, getters }) {
       if (!state.outlay) return
       const { _id } = state.outlay
+      const { invalidJobs } = getters
       try {
+        const values = Object.values(invalidJobs)
+        const isValid = values.every(v => v.length === 0)
+        if (!isValid) {
+          throw new Error(`Заполните все работы. Данные сохранены локально`)
+        }
         const response = await OutlayService.update(state.outlay)
         commit(
           'outlays/updateById',
@@ -576,5 +583,18 @@ export default {
     sale: s => s.outlay.sale,
     currentNode: s => s.currentNode,
     showResults: s => s.showResults,
+    invalidJobs: s => {
+      const { outlay, quantityKey } = s
+      if (!outlay) {
+        return {}
+      }
+      const { rooms } = outlay
+      return rooms.reduce((acc, room) => {
+        const nodes = room.jobs.map(getAllValues).flat()
+        const invalid = nodes.filter(n => n.data[quantityKey.id] === 0)
+        acc[room.id] = invalid
+        return acc
+      }, {})
+    },
   },
 }

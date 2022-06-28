@@ -28,7 +28,12 @@ export default {
     }
   },
   computed: {
-    ...mapGetters('outlay', ['outlay']),
+    ...mapGetters('outlay', ['outlay', 'invalidJobs', 'selectedRoom']),
+    isActionsDisabled() {
+      const values = Object.values(this.invalidJobs)
+      const isValid = values.every(v => v.length === 0)
+      return !isValid
+    },
     actions() {
       return [
         {
@@ -47,7 +52,7 @@ export default {
             this.save()
           },
           icon: 'SaveIcon',
-          disabled: this.isSaving,
+          disabled: this.isSaving || this.isActionsDisabled,
           loading: this.isSaving,
         },
         {
@@ -56,7 +61,7 @@ export default {
             this.download()
           },
           icon: 'DownloadIcon',
-          disabled: this.isDownloading,
+          disabled: this.isDownloading || this.isActionsDisabled,
           loading: this.isDownloading,
         },
         {
@@ -66,7 +71,7 @@ export default {
             this.isPrinting = true
           },
           icon: 'PrintIcon',
-          disabled: false,
+          disabled: this.isActionsDisabled,
           loading: false,
         },
       ]

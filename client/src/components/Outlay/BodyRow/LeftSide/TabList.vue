@@ -21,7 +21,12 @@ export default {
     OutlayBlock,
   },
   computed: {
-    ...mapGetters('outlay', ['selectedRoom', 'showResults']),
+    ...mapGetters('outlay', [
+      'selectedRoom',
+      'showResults',
+      'quantityKey',
+      'invalidJobs',
+    ]),
     mainTabs() {
       return [
         {
@@ -41,6 +46,10 @@ export default {
           active: this.showResults,
         },
       ]
+    },
+    invalidNodes() {
+      const values = Object.values(this.invalidJobs)
+      return values.some(v => v.length > 0)
     },
   },
   methods: {
@@ -87,7 +96,11 @@ export default {
   <RoomModal ref="room-modal" />
   <OutlayBlock class="tab-list">
     <div class="rooms">
-      <button class="button create" @click="openCreateModal">
+      <button
+        class="button create"
+        :disabled="invalidNodes"
+        @click="openCreateModal"
+      >
         <CirclePlusIcon />
         Помещение
       </button>
@@ -99,6 +112,7 @@ export default {
         :key="tab.text"
         class="button main-tab"
         :class="{ active: tab.active }"
+        :disabled="invalidNodes"
         @click="tab.handler"
       >
         <component class="main-tab__icon" :is="tab.icon" />

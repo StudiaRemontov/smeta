@@ -281,8 +281,10 @@ export default {
         input.blur()
       }
       if (this.activeRoom) {
+        this.setSelectedItem({ id: key, room: this.activeRoom.id })
         return table.scrollTo(key)
       }
+      this.setSelectedItem({ id: key, room })
       table.scrollTo(room, key)
     },
     autoCompleteClickHanler() {

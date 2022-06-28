@@ -11,7 +11,7 @@ export default {
     RightSide,
   },
   computed: {
-    ...mapGetters('acts', ['maximized']),
+    ...mapGetters('acts', ['showLeftSide', 'showRightSide']),
   },
   mounted() {
     document.addEventListener('keydown', this.onKeyDown)
@@ -20,11 +20,11 @@ export default {
     document.removeEventListener('keydown', this.onKeyDown)
   },
   methods: {
-    ...mapMutations('acts', ['setMaximized']),
+    ...mapMutations('acts', ['toggleSides']),
     onKeyDown(e) {
       const { ctrlKey, keyCode } = e
       if (ctrlKey && keyCode === 66) {
-        this.setMaximized(!this.maximized)
+        this.toggleSides()
       }
     },
   },
@@ -32,12 +32,12 @@ export default {
 </script>
 
 <template>
-  <div class="body-row" :class="{ maximized }">
-    <div class="left-side">
+  <div class="body-row">
+    <div class="left-side" :class="{ hidden: !showLeftSide }">
       <LeftSide />
     </div>
     <CenterSide />
-    <div class="right-side">
+    <div class="right-side" :class="{ hidden: !showRightSide }">
       <RightSide />
     </div>
   </div>
@@ -47,24 +47,27 @@ export default {
 .body-row {
   display: grid;
   grid-template-columns: min-content 1fr min-content;
+  gap: 15px;
   padding-bottom: 17px;
   min-height: 0px;
-
-  &.maximized {
-    .left-side,
-    .right-side {
-      width: 50px;
-    }
-  }
+  padding: 0px 15px 15px;
 }
 
 .left-side,
 .right-side {
   width: 270px;
-  padding: 0px 15px;
   display: flex;
   min-height: 0px;
   transition: all 0.2s ease-in-out;
+  position: relative;
+
+  &.hidden {
+    width: 50px;
+
+    .wrapper {
+      overflow: hidden;
+    }
+  }
 }
 
 .center {
