@@ -52,10 +52,6 @@ const schema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    date: {
-      type: Date,
-      default: () => Date.now(),
-    },
     edition: {
       type: mongoose.SchemaTypes.ObjectId,
       required: true,
@@ -76,6 +72,8 @@ const schema = new mongoose.Schema(
     versionKey: false,
   }
 )
+
+schema.set('timestamps', true)
 
 const Outlay = mongoose.model('Outlay', schema)
 

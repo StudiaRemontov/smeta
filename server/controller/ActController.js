@@ -1,10 +1,10 @@
-const OutlayService = require('../services/OutlayService')
+const ActService = require('../services/ActService')
 const PDF = require('../utils/PDF')
 
-class OutlayController {
+class ActController {
   static async getAll(req, res, next) {
     try {
-      const response = await OutlayService.get()
+      const response = await ActService.get()
       return res.json(response)
     } catch (error) {
       next(error)
@@ -15,7 +15,7 @@ class OutlayController {
     try {
       const data = req.body
 
-      const response = await OutlayService.create(data)
+      const response = await ActService.create(data)
 
       return res.json(response)
     } catch (error) {
@@ -27,20 +27,9 @@ class OutlayController {
     try {
       const id = req.params.id
       const data = req.body
-      const response = await OutlayService.update(id, data)
+      const response = await ActService.update(id, data)
 
       return res.json(response)
-    } catch (error) {
-      next(error)
-    }
-  }
-
-  static async setActive(req, res, next) {
-    try {
-      const id = req.params.id
-      const response = await OutlayService.setActive(id)
-
-      return res.json({ updated: response })
     } catch (error) {
       next(error)
     }
@@ -49,7 +38,7 @@ class OutlayController {
   static async delete(req, res, next) {
     try {
       const id = req.params.id
-      const response = await OutlayService.delete(id)
+      const response = await ActService.delete(id)
       return res.json(response)
     } catch (error) {
       next(error)
@@ -60,8 +49,8 @@ class OutlayController {
     try {
       const { domain } = req.body
       const { id } = req.params
-      const path = `${domain}/print/${id}`
-      await PDF.generate(path, 'smeta')
+      const path = `${domain}/print/act/${id}`
+      await PDF.generate(path, 'act')
       res.json({ message: 'finished' })
     } catch (error) {
       next(error)
@@ -69,4 +58,4 @@ class OutlayController {
   }
 }
 
-module.exports = OutlayController
+module.exports = ActController

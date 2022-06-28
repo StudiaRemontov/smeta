@@ -14,6 +14,7 @@ const directory = require('./router/directory')
 const edition = require('./router/edition')
 const pricelist = require('./router/priceList')
 const outlay = require('./router/outlay')
+const act = require('./router/act')
 
 //middleware
 const errorMiddleware = require('./middleware/error-middleware')
@@ -42,6 +43,7 @@ app.use('/api/directory', directory)
 app.use('/api/edition', edition)
 app.use('/api/pricelist', pricelist)
 app.use('/api/outlay', outlay)
+app.use('/api/act', act)
 app.use('/pdf', express.static(__dirname + '/pdf'))
 
 //middleware

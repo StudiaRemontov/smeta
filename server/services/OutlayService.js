@@ -7,32 +7,32 @@ class OutlayService {
   }
 
   static async getById(id) {
-    const edition = await Outlay.findById(id)
+    const outlay = await Outlay.findById(id)
 
-    if (!edition) {
+    if (!outlay) {
       throw ApiError.BadRequest('Outlay not found')
     }
 
-    return edition
+    return outlay
   }
 
   static async create(data) {
-    const edition = new Outlay({ ...data })
-    await edition.save()
-    return edition
+    const outlay = new Outlay({ ...data })
+    await outlay.save()
+    return outlay
   }
 
   static async update(id, data) {
-    const edition = await Outlay.findByIdAndUpdate(id, data, {
+    const outlay = await Outlay.findByIdAndUpdate(id, data, {
       new: true,
       runValidators: true,
     })
 
-    if (!edition) {
+    if (!outlay) {
       throw ApiError.BadRequest('Outlay not found')
     }
 
-    return edition
+    return outlay
   }
 
   static async setActive(id) {
@@ -49,11 +49,11 @@ class OutlayService {
   }
 
   static async delete(id) {
-    const edition = await Outlay.findByIdAndDelete(id)
-    if (!edition) {
+    const outlay = await Outlay.findByIdAndDelete(id)
+    if (!outlay) {
       throw ApiError.BadRequest('Outlay not found')
     }
-    return edition
+    return outlay
   }
 }
 
