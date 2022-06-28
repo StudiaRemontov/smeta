@@ -3,13 +3,15 @@ import BackIcon from '@/components/UI/Icons/ArrowRight.vue'
 import SaveIcon from '@/components/UI/Icons/SaveIcon.vue'
 import DownloadIcon from '@/components/UI/Icons/DownloadIcon.vue'
 import PrintIcon from '@/components/UI/Icons/PrintIcon.vue'
-import PrintPage from '@/components/Print/PrintPage.vue'
+import ConfirmIcon from '@/components/UI/Icons/ConfirmIcon.vue'
+import PrintPage from '@/components/PrintAct/PrintPage.vue'
 
 import { mapActions, mapGetters } from 'vuex'
 
 import OutlayBlock from '@/components/Layout/OutlayBlock.vue'
 
 import { actStatus } from '../../../../enum/actStatus'
+import { downloadFile } from '../../../../helpers/downloadFile'
 
 export default {
   components: {
@@ -19,11 +21,14 @@ export default {
     PrintIcon,
     PrintPage,
     OutlayBlock,
+    ConfirmIcon,
   },
   data() {
     return {
       isSaving: false,
       isInConfirmation: false,
+      isDownloading: false,
+      isPrinting: false,
     }
   },
   computed: {
@@ -53,15 +58,38 @@ export default {
         {
           text: 'Согласование',
           handler: this.confirm,
-          icon: 'DownloadIcon',
+          icon: 'ConfirmIcon',
           disabled: this.act.status === actStatus.CONFIRMED,
           loading: this.isInConfirmation,
+        },
+        {
+          text: 'Скачать',
+          handler: this.download,
+          icon: 'DownloadIcon',
+          disabled:
+            this.isDownloading || this.act.status !== actStatus.CONFIRMED,
+          loading: this.isDownloading,
+        },
+        {
+          text: 'Распечатать',
+          handler: this.printHandler,
+          icon: 'PrintIcon',
+          disabled: this.isPrinting,
+          loading: false,
         },
       ]
     },
   },
+  mounted() {
+    window.addEventListener('afterprint', this.afterPrint)
+    window.addEventListener('keydown', this.keydownHandler)
+  },
+  unmounted() {
+    window.removeEventListener('afterprint', this.afterPrint)
+    window.removeEventListener('keydown', this.keydownHandler)
+  },
   methods: {
-    ...mapActions('acts', ['save', 'setAct', 'update']),
+    ...mapActions('acts', ['save', 'setAct', 'update', 'print']),
     async saveHandler() {
       try {
         this.isSaving = true
@@ -100,6 +128,46 @@ export default {
         this.isInConfirmation = false
       }
     },
+    async download() {
+      if (!this.act) {
+        return
+      }
+      this.isDownloading = true
+      try {
+        await this.save()
+        await this.print(this.act._id)
+        await downloadFile('act', this.act.name)
+      } catch (error) {
+        const { response } = error
+        const message = response ? response.data.message : error.message
+        this.$toast.add({
+          severity: 'error',
+          summary: 'Ошибка',
+          detail: message,
+          life: 3000,
+        })
+      } finally {
+        this.isDownloading = false
+      }
+    },
+    keydownHandler(e) {
+      const { ctrlKey, code } = e
+      if (!ctrlKey || code !== 'KeyP') {
+        return
+      }
+      e.preventDefault()
+      this.printHandler()
+    },
+    async printHandler() {
+      await this.$nextTick()
+      this.isPrinting = true
+    },
+    afterPrint() {
+      this.isPrinting = false
+    },
+    readyForPrint() {
+      window.print()
+    },
   },
 }
 </script>
@@ -119,6 +187,9 @@ export default {
         <i v-if="action.loading" class="pi pi-spin pi-spinner"></i>
       </button>
     </div>
+    <Teleport to="#act-print">
+      <PrintPage v-if="act && isPrinting" :act="act" @mounted="readyForPrint" />
+    </Teleport>
   </OutlayBlock>
 </template>
 
@@ -140,6 +211,10 @@ export default {
   &__icon {
     width: 15px;
     height: 15px;
+  }
+
+  &:disabled &__icon {
+    opacity: 0.5;
   }
 }
 </style>

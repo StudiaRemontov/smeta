@@ -1,36 +1,22 @@
 <template>
   <div class="wrapper">
-    <RouterView v-if="!loading" />
+    <RouterView v-if="contentLoaded" />
   </div>
 </template>
 
 <script>
-import { mapActions } from 'vuex'
+import { mapState } from 'vuex'
 export default {
-  data() {
-    return {
-      loading: true,
-    }
-  },
-
-  async mounted() {
-    try {
-      // await this.fetchAll()
-    } catch (error) {
-      const { response } = error
-      const message = response ? response.data.message : error.message
-      this.$toast.add({
-        severity: 'error',
-        summary: 'Ошибка',
-        detail: message,
-        life: 3000,
-      })
-    } finally {
-      this.loading = false
-    }
-  },
-  methods: {
-    ...mapActions('outlays', ['fetchAll']),
+  computed: {
+    ...mapState('acts', {
+      actsLoaded: 'contentLoaded',
+    }),
+    ...mapState('outlays', {
+      outlaysLoaded: 'contentLoaded',
+    }),
+    contentLoaded() {
+      return this.actsLoaded && this.outlaysLoaded
+    },
   },
 }
 </script>

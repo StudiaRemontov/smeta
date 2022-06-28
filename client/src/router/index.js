@@ -15,6 +15,7 @@ import OutlayIndexView from '@/views/Outlay/IndexView.vue'
 
 import OutlayView from '@/views/OutlayView.vue'
 import PrintView from '@/views/PrintView.vue'
+import PrintActView from '@/views/PrintActView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -99,6 +100,14 @@ const router = createRouter({
       path: '/print/:id',
       name: 'printView',
       component: PrintView,
+      meta: {
+        layout: 'PrintLayout',
+      },
+    },
+    {
+      path: '/print/act/:id',
+      name: 'printActView',
+      component: PrintActView,
       meta: {
         layout: 'PrintLayout',
       },

@@ -13,7 +13,6 @@ export default {
     contentLoaded: false,
     outlays: [],
     loading: false,
-    serverOutlays: [],
   },
   mutations: {
     setContentLoaded(state, payload) {
@@ -58,7 +57,6 @@ export default {
           return Promise.resolve(data)
         }
         commit('setOutlays', data)
-        state.serverOutlays = JSON.parse(JSON.stringify(data))
         await dispatch('syncData')
         commit('setContentLoaded', true)
         return Promise.resolve(data)
@@ -225,6 +223,5 @@ export default {
   },
   getters: {
     outlays: s => s.outlays,
-    serverOutlays: s => s.serverOutlays,
   },
 }

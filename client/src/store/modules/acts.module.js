@@ -357,6 +357,19 @@ export default {
         return Promise.reject(error)
       }
     },
+    async print(_, id) {
+      try {
+        if (!id) {
+          throw new Error('id is required')
+        }
+        const response = await axios.post(`/act/pdf/${id}`, {
+          domain: window.location.origin,
+        })
+        return response
+      } catch (error) {
+        return Promise.reject(error)
+      }
+    },
   },
   getters: {
     acts: state => {

@@ -1,6 +1,5 @@
 const OutlayService = require('../services/OutlayService')
-const { chromium } = require('playwright')
-const config = require('../config')
+const PDF = require('../utils/PDF')
 
 class OutlayController {
   static async getAll(req, res, next) {
@@ -61,24 +60,8 @@ class OutlayController {
     try {
       const { domain } = req.body
       const { id } = req.params
-      const browser = await chromium.launch()
-      const page = await browser.newPage()
-      await page.goto(`${domain}/print/${id}`, {
-        waitUntil: 'domcontentloaded',
-      })
-      await page.waitForFunction(() => !!document.querySelector('.wrapper'))
-      const fileName = `smeta.pdf`
-      await page.pdf({
-        path: `pdf/${fileName}`,
-        format: 'A4',
-        margin: {
-          top: 40,
-          left: 40,
-          right: 40,
-          bottom: 40,
-        },
-      })
-      await browser.close()
+      const path = `${domain}/print/${id}`
+      await PDF.generate(path, 'smeta')
       res.json({ message: 'finished' })
     } catch (error) {
       next(error)

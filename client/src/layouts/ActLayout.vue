@@ -15,7 +15,7 @@ export default {
     }
   },
   computed: {
-    ...mapGetters('outlays', ['serverOutlays']),
+    ...mapGetters('outlays', ['outlays']),
     ...mapGetters('acts', ['act']),
     id() {
       return this.$route.params.id
@@ -27,7 +27,7 @@ export default {
     }
     try {
       await this.fetchAll()
-      const outlay = this.serverOutlays.find(o => o._id === this.id)
+      const outlay = this.outlays.find(o => o._id === this.id)
       if (!outlay) {
         return
       }
@@ -56,7 +56,7 @@ export default {
     <HeaderRow />
     <BodyRow v-if="act && !loading" />
   </main>
-  <div id="print" class="print"></div>
+  <div id="act-print" class="print"></div>
 </template>
 
 <style lang="scss" scoped>

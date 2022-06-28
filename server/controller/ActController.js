@@ -1,4 +1,5 @@
 const ActService = require('../services/ActService')
+const PDF = require('../utils/PDF')
 
 class ActController {
   static async getAll(req, res, next) {
@@ -39,6 +40,18 @@ class ActController {
       const id = req.params.id
       const response = await ActService.delete(id)
       return res.json(response)
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  static async createPDF(req, res, next) {
+    try {
+      const { domain } = req.body
+      const { id } = req.params
+      const path = `${domain}/print/act/${id}`
+      await PDF.generate(path, 'act')
+      res.json({ message: 'finished' })
     } catch (error) {
       next(error)
     }

@@ -2,6 +2,7 @@
 import CenterSide from './BodyRow/CenterSide.vue'
 import RightSide from './BodyRow/RightSide.vue'
 import LeftSide from './BodyRow/LeftSide.vue'
+import { mapGetters, mapMutations } from 'vuex'
 
 export default {
   components: {
@@ -9,16 +10,34 @@ export default {
     CenterSide,
     RightSide,
   },
+  computed: {
+    ...mapGetters('outlay', ['showLeftSide', 'showRightSide']),
+  },
+  mounted() {
+    document.addEventListener('keydown', this.onKeyDown)
+  },
+  unmounted() {
+    document.removeEventListener('keydown', this.onKeyDown)
+  },
+  methods: {
+    ...mapMutations('outlay', ['toggleSides']),
+    onKeyDown(e) {
+      const { ctrlKey, keyCode } = e
+      if (ctrlKey && keyCode === 66) {
+        this.toggleSides()
+      }
+    },
+  },
 }
 </script>
 
 <template>
   <div class="body-row">
-    <div class="left-side">
+    <div class="left-side" :class="{ hidden: !showLeftSide }">
       <LeftSide />
     </div>
     <CenterSide />
-    <div class="right-side">
+    <div class="right-side" :class="{ hidden: !showRightSide }">
       <RightSide />
     </div>
   </div>
@@ -28,18 +47,27 @@ export default {
 .body-row {
   display: grid;
   grid-template-columns: min-content 1fr min-content;
+  gap: 15px;
   padding-bottom: 17px;
   min-height: 0px;
+  padding: 0px 15px 15px;
 }
 
 .left-side,
 .right-side {
   width: 270px;
-  padding: 0px 15px;
   display: flex;
-  flex-direction: column;
-  gap: 13px;
   min-height: 0px;
+  transition: all 0.2s ease-in-out;
+  position: relative;
+
+  &.hidden {
+    width: 50px;
+
+    .wrapper {
+      overflow: hidden;
+    }
+  }
 }
 
 .center {

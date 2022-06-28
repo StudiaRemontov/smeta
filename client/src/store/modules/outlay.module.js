@@ -167,6 +167,8 @@ export default {
     striped: false,
     currentNode: null,
     showResults: false,
+    showLeftSide: true,
+    showRightSide: true,
   },
   mutations: {
     setOutlay(state) {
@@ -267,6 +269,22 @@ export default {
       state.roomsData = null
       state.selectedValues = null
       state.showResults = false
+    },
+    setShowLeftSide(state, payload) {
+      state.showLeftSide = payload
+    },
+    setShowRightSide(state, payload) {
+      state.showRightSide = payload
+    },
+    toggleSides(state) {
+      const { showLeftSide, showRightSide } = state
+      if (showLeftSide === showRightSide) {
+        state.showLeftSide = !showLeftSide
+        state.showRightSide = !showRightSide
+        return
+      }
+      state.showLeftSide = true
+      state.showRightSide = true
     },
   },
   actions: {
@@ -508,16 +526,10 @@ export default {
         return Promise.reject(error)
       }
     },
-    async update({ state, commit, getters }) {
+    async update({ state, commit }) {
       if (!state.outlay) return
       const { _id } = state.outlay
-      const { invalidJobs } = getters
       try {
-        const values = Object.values(invalidJobs)
-        const isValid = values.every(v => v.length === 0)
-        if (!isValid) {
-          throw new Error(`Заполните все работы. Данные сохранены локально`)
-        }
         const response = await OutlayService.update(state.outlay)
         commit(
           'outlays/updateById',
@@ -596,5 +608,7 @@ export default {
         return acc
       }, {})
     },
+    showLeftSide: s => s.showLeftSide,
+    showRightSide: s => s.showRightSide,
   },
 }

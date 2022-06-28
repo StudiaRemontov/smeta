@@ -1,10 +1,11 @@
 <script>
-import { mapGetters, mapState } from 'vuex'
+import { mapGetters, mapMutations, mapState } from 'vuex'
 
 import CategoryList from './RightSide/CategoryList.vue'
 import ResultsForm from './RightSide/ResultsForm.vue'
 import ParameterList from './RightSide/ParameterList.vue'
 import OutlayBlock from '@/components/Layout/OutlayBlock.vue'
+import CollapseBlock from '../../Act/BodyRow/LeftSide/CollapseBlock.vue'
 
 import { isObjectId } from '@/helpers/isObjectId'
 
@@ -14,6 +15,7 @@ export default {
     ResultsForm,
     ParameterList,
     OutlayBlock,
+    CollapseBlock,
   },
   computed: {
     ...mapState('outlay', ['selectedValues']),
@@ -27,6 +29,14 @@ export default {
       'selectedRoom',
       'currentRoomData',
     ]),
+    showRightSide: {
+      get() {
+        return this.$store.getters['outlay/showRightSide']
+      },
+      set(value) {
+        return this.setShowRightSide(value)
+      },
+    },
     data() {
       if (this.selectedRoom) {
         const values = JSON.parse(JSON.stringify(this.currentRoomData))
@@ -42,6 +52,7 @@ export default {
     },
   },
   methods: {
+    ...mapMutations('outlay', ['setShowRightSide']),
     treeToListOnlyValues(node) {
       const { children, key } = node
       const childs = children.map(this.treeToListOnlyValues).flat()
@@ -106,6 +117,7 @@ export default {
 
 <template>
   <div class="wrapper">
+    <CollapseBlock v-model="showRightSide" :position="'right'" />
     <ParameterList class="wrapper__parameters" />
     <OutlayBlock class="wrapper__results">
       <CategoryList :categories="data" />

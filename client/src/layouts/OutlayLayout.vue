@@ -26,7 +26,7 @@ export default {
       }
     },
     outlay() {
-      clearInterval(this.interval)
+      this.interval = clearInterval(this.interval)
       this.interval = setInterval(this.save, 1000 * 60)
     },
   },
@@ -57,19 +57,8 @@ export default {
     ...mapActions('outlay', ['update', 'saveLocaly', 'setOutlay']),
     async save() {
       if (!this.isOffline) {
-        try {
-          await this.update()
-          await this.saveLocaly()
-        } catch (error) {
-          const { response } = error
-          const message = response ? response.data.message : error.message
-          return this.$toast.add({
-            severity: 'warn',
-            summary: 'Предупреждение',
-            detail: message,
-            life: 3000,
-          })
-        }
+        await this.update()
+        await this.saveLocaly()
       }
     },
     async getServerData() {

@@ -11,6 +11,10 @@ export default {
       type: Object,
       required: true,
     },
+    act: {
+      type: Object,
+      required: true,
+    },
   },
   computed: {
     options() {
@@ -55,21 +59,16 @@ export default {
     </div>
     <div class="row">
       <div class="row-text">
-        <span class="application"
-          >Приложение к №1 к договору № КС
-          <div class="application__underline"></div>
-          от
-          <div class="application__underline"></div>
-          2022г.</span
-        >
+        <span class="application">По договору №КС 62190 от 30.11.2021г.</span>
         <span class="date">
-          Смета от "
+          {{ act.name }} от "
           <div class="date__space"></div>
           "
           <div class="date__underline"></div>
           2022
         </span>
       </div>
+
       <div class="parameters">
         <table class="parameters-table">
           <tr class="parameters-table__row">

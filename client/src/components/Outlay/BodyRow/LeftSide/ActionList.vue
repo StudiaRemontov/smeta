@@ -9,7 +9,7 @@ import { mapActions, mapGetters, mapMutations } from 'vuex'
 
 import OutlayBlock from '@/components/Layout/OutlayBlock.vue'
 
-import axios from 'axios'
+import { downloadFile } from '../../../../helpers/downloadFile'
 
 export default {
   components: {
@@ -66,12 +66,9 @@ export default {
         },
         {
           text: 'Распечатать',
-          handler: async () => {
-            await this.$nextTick()
-            this.isPrinting = true
-          },
+          handler: this.printHandler,
           icon: 'PrintIcon',
-          disabled: this.isActionsDisabled,
+          disabled: this.isPrinting || this.isActionsDisabled,
           loading: false,
         },
       ]
@@ -79,9 +76,11 @@ export default {
   },
   mounted() {
     window.addEventListener('afterprint', this.afterPrint)
+    window.addEventListener('keydown', this.keydownHandler)
   },
   unmounted() {
     window.removeEventListener('afterprint', this.afterPrint)
+    window.removeEventListener('keydown', this.keydownHandler)
   },
   methods: {
     ...mapMutations('outlay', {
@@ -115,20 +114,7 @@ export default {
       try {
         await this.update()
         await this.print(this.outlay._id)
-        const apiUrl = import.meta.env.VITE_BASE_URL
-        const urlParts = apiUrl.split('/')
-        urlParts.pop()
-        const serverDomain = urlParts.join('/')
-        const response = await axios.get(`${serverDomain}/pdf/smeta.pdf`, {
-          responseType: 'blob',
-        })
-        const url = window.URL.createObjectURL(new Blob([response.data]))
-        const link = document.createElement('a')
-        link.href = url
-        link.setAttribute('download', `${this.outlay.name}.pdf`)
-        document.body.appendChild(link)
-        link.click()
-        link.remove()
+        await downloadFile('smeta', this.outlay.name)
       } catch (error) {
         const { response } = error
         const message = response ? response.data.message : error.message
@@ -141,6 +127,18 @@ export default {
       } finally {
         this.isDownloading = false
       }
+    },
+    keydownHandler(e) {
+      const { ctrlKey, code } = e
+      if (!ctrlKey || code !== 'KeyP') {
+        return
+      }
+      e.preventDefault()
+      this.printHandler()
+    },
+    async printHandler() {
+      await this.$nextTick()
+      this.isPrinting = true
     },
     afterPrint() {
       this.isPrinting = false
@@ -195,6 +193,10 @@ export default {
   &__icon {
     width: 15px;
     height: 15px;
+  }
+
+  &:disabled &__icon {
+    opacity: 0.5;
   }
 }
 </style>
