@@ -37,7 +37,7 @@ export default {
 
 .right-side-wrapper {
   display: flex;
-  width: 270px;
+  width: 300px;
   align-items: center;
   border-radius: 0px 0px 0px 10px;
   box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);

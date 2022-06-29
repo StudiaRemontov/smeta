@@ -15,7 +15,7 @@ export default {
 <style lang="scss" scoped>
 .left-side {
   padding: 10px;
-  width: 270px;
+  width: 300px;
   display: flex;
   align-items: center;
   justify-content: center;

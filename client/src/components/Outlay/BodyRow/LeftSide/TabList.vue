@@ -153,6 +153,10 @@ export default {
   align-items: center;
   gap: 13px;
 
+  &:disabled {
+    opacity: 0.5;
+  }
+
   &.active {
     background-color: #00afec;
     color: $color-light;
@@ -182,5 +186,9 @@ export default {
   align-items: center;
   gap: 6px;
   color: $color-light;
+
+  &:disabled {
+    opacity: 0.5;
+  }
 }
 </style>

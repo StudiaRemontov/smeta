@@ -47,10 +47,10 @@ export default {
 .body-row {
   display: grid;
   grid-template-columns: min-content 1fr min-content;
-  gap: 15px;
+  gap: 10px;
   padding-bottom: 17px;
   min-height: 0px;
-  padding: 0px 15px 15px;
+  padding: 0px 10px 10px;
 }
 
 .left-side,

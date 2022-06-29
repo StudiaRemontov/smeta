@@ -65,7 +65,7 @@ export default {
   width: 100vw;
   display: grid;
   grid-template-rows: 60px 1fr;
-  gap: 15px;
+  gap: 10px;
   font-family: $outlay-font-family;
 }
 

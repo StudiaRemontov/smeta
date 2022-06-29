@@ -34,28 +34,37 @@ export default class OutlayService {
     })
   }
 
+  //сравниваю локальные и серверные данные.
+  //метод возвразает объект с массивами: created, updated, removed.
+  //В этих массивах сметы, которые нужно создать/изменить/удалить т.е. отправить запрос на бек.
   static getLocalDifference(server, local) {
+    //созданные
     const created = local.filter(lo => {
+      //те, что не удалены локально
       if (lo.removedAt) {
         return false
       }
+      //и те, которых нету на сервере
       return !server.find(so => so._id === lo._id)
     })
-
+    //измененные
     const updated = local.filter(lo => {
       const serverOutlay = server.find(so => so._id === lo._id)
+      //те, то есть на севере
       if (!serverOutlay) {
         return false
       }
       const serverUpdatedAt = new Date(serverOutlay.updatedAt).getTime()
       const localUpdatedAt = new Date(lo.updatedAt).getTime()
+      //если дата изменения локальной больше серверной, то она считается измененой
       return localUpdatedAt > serverUpdatedAt
     })
-
+    //получаю все удаленный локальные сметы
     const removedOutlays = local.filter(lo => lo.removedAt)
 
     const removed = removedOutlays.filter(lo => {
       const serverOutlay = server.find(so => so._id === lo._id)
+      //проверяю есть ли на сервере. Если нету, то запрос на сервер отправлять не нужно.
       if (!serverOutlay) {
         return false
       }

@@ -18,6 +18,9 @@ export default {
     date() {
       return new Date(this.outlay.createdAt).toLocaleDateString()
     },
+    color() {
+      return this.isSelected ? '#00afec' : '#808080'
+    },
   },
   methods: {
     ...mapActions('outlay', ['setOutlay']),
@@ -57,13 +60,12 @@ $dot-size: 7px;
 
 .outlay-item {
   position: relative;
-  border: 1px solid #a7a7a7;
+  border: 1px solid v-bind(color);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 5px;
-  border: 1px solid #808080;
   border-radius: 10px;
   min-width: 130px;
   max-width: 130px;
@@ -71,17 +73,8 @@ $dot-size: 7px;
   padding: 7px 15px;
   padding-left: 7px;
 
-  &.selected {
-    color: #28c430;
-    border: 1px #28c430 solid;
-  }
-
   .icon {
-    color: #808080;
-  }
-
-  &.selected .icon {
-    color: #28c430;
+    color: v-bind(color);
   }
 
   &__text {
@@ -110,12 +103,12 @@ $dot-size: 7px;
     overflow: hidden;
     font-weight: 400;
     line-height: 15px;
-    color: #808080;
+    color: v-bind(color);
   }
 
   &__date {
     font-size: 11px;
-    color: #808080;
+    color: v-bind(color);
   }
 }
 </style>

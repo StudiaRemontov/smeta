@@ -131,7 +131,7 @@ export default {
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 10px;
 
   &__results {
     flex: 1;

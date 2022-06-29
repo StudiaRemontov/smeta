@@ -83,7 +83,7 @@ export default {
 .center {
   display: flex;
   gap: 10px;
-  padding: 0 15px;
+  padding: 0 10px;
   overflow: auto;
 
   &__info {

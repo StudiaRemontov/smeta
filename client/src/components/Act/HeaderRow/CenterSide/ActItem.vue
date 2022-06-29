@@ -37,7 +37,7 @@ export default {
       return new Date(this.act.createdAt).toLocaleDateString()
     },
     color() {
-      return this.isSelected ? '#3ca1ff' : '#808080'
+      return this.isSelected ? '#00afec' : '#808080'
     },
   },
   methods: {
@@ -78,7 +78,6 @@ $dot-size: 7px;
   align-items: center;
   justify-content: space-between;
   gap: 5px;
-  border: 1px solid v-bind(color);
   border-radius: 10px;
   min-width: 130px;
   max-width: 130px;

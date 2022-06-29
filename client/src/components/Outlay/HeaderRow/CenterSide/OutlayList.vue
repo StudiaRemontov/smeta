@@ -151,5 +151,9 @@ export default {
   overflow-x: auto;
   overflow-y: hidden;
   @include darkScroll;
+
+  &::-webkit-scrollbar {
+    height: 5px;
+  }
 }
 </style>

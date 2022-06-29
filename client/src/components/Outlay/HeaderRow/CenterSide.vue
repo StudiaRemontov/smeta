@@ -5,7 +5,7 @@ import InfoModal from './CenterSide/Modals/InfoModal.vue'
 import CreateModal from './CenterSide/Modals/CreateModal.vue'
 import OutlayBlock from '@/components/Layout/OutlayBlock.vue'
 
-import { mapActions } from 'vuex'
+import { mapActions, mapGetters } from 'vuex'
 
 export default {
   components: {
@@ -14,6 +14,13 @@ export default {
     InfoModal,
     CreateModal,
     OutlayBlock,
+  },
+  computed: {
+    ...mapGetters('outlay', ['invalidJobs']),
+    invalidNodes() {
+      const values = Object.values(this.invalidJobs)
+      return values.some(v => v.length > 0)
+    },
   },
   methods: {
     ...mapActions('outlays', ['create']),
@@ -71,7 +78,7 @@ export default {
 .center {
   display: flex;
   gap: 10px;
-  padding: 0 15px;
+  padding: 0 10px;
   overflow: auto;
 
   &__info {
