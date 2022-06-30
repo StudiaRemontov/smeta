@@ -189,6 +189,7 @@ export default {
         v-if="!isEditing"
         @dblclick.stop="focusInput"
         class="directory-item__name"
+        :title="directory.name"
       >
         {{ directory.name }}
       </span>
@@ -225,6 +226,7 @@ export default {
   &__header {
     display: flex;
     justify-content: space-between;
+    overflow: hidden;
   }
 
   &__name {
@@ -232,6 +234,7 @@ export default {
     font-weight: 700;
     word-break: break-word;
     user-select: auto;
+    overflow: hidden;
   }
 
   &__input {

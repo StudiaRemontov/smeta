@@ -29,8 +29,8 @@ export default (server, local) => {
   //измененные
   const updated = local.filter(localData => {
     const serverData = server.find(s => s._id === localData._id)
-    //те, то есть на севере
-    if (!serverData) {
+    //измененные - это те, то есть на севере и не были удалены
+    if (!serverData || (serverData && serverData.removedAt)) {
       return false
     }
     const serverUpdatedAt = new Date(serverData.updatedAt).getTime()

@@ -237,6 +237,11 @@ export default {
       try {
         const data = await ActService.getAll()
         commit('setActs', data)
+        const { act } = state
+        if (act) {
+          const newestAct = data.find(a => a._id === act._id)
+          await dispatch('setAct', newestAct)
+        }
         await dispatch('syncData')
         commit('setContentLoaded', true)
         return Promise.resolve(data)
@@ -271,9 +276,10 @@ export default {
         return Promise.reject(error)
       }
     },
-    async create({ commit, state, dispatch }) {
+    async create({ commit, state, dispatch, getters }) {
       try {
-        const { acts, outlay } = state
+        const { outlay } = state
+        const { acts } = getters
         const filteredActs = acts.filter(a => a.outlay === outlay._id)
         const nameWithNumber = getNameWithNumber(filteredActs)
         const response = await ActService.create(nameWithNumber, outlay._id)
@@ -326,7 +332,7 @@ export default {
         const saveData = prepareData(actsData, outlay, data)
         const response = await ActService.update(saveData)
         commit('updateById', { id, data: response.data })
-        if (act._id === id) {
+        if (act && act._id === id) {
           await dispatch('setAct', response.data)
         }
         return response
@@ -334,10 +340,14 @@ export default {
         return Promise.reject(error)
       }
     },
-    async updateLocalData({ commit }, { id, data }) {
+    async updateLocalData({ commit, state, dispatch }, { id, data }) {
       try {
+        const { act } = state
         const response = await ActService.update({ _id: id, ...data })
         commit('updateById', { id, data: response.data })
+        if (act && act._id === id) {
+          await dispatch('setAct', response.data)
+        }
         return response
       } catch (error) {
         return Promise.reject(error)
@@ -386,7 +396,7 @@ export default {
       if (!outlay) {
         return []
       }
-      return acts.filter(act => act.outlay === outlay._id)
+      return acts.filter(act => act.outlay === outlay._id && !act.removedAt)
     },
     activeTab: s => s.activeTab,
     activeRoom: s => s.activeRoom,

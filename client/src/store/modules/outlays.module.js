@@ -49,7 +49,6 @@ export default {
       }
       state.loading = true
       const { isOffline } = rootGetters
-
       try {
         const data = await OutlayService.getAll()
         if (isOffline) {
@@ -58,6 +57,11 @@ export default {
           return Promise.resolve(data)
         }
         commit('setOutlays', data)
+        const outlay = rootGetters['outlay/outlay']
+        if (outlay) {
+          const newestOutlay = data.find(o => o._id === outlay._id)
+          await dispatch('outlay/setOutlay', newestOutlay, { root: true })
+        }
         await dispatch('syncData')
         commit('setContentLoaded', true)
         return Promise.resolve(data)
@@ -145,7 +149,7 @@ export default {
         if (rootGetters['outlay/outlay']?._id === id) {
           dispatch('outlay/setOutlay', null, { root: true })
         }
-        commit('removeById', id)
+        commit('updateById', { id, data: response.data })
         return response
       } catch (error) {
         return Promise.reject(error)
@@ -199,7 +203,7 @@ export default {
       const key = directory.keys.find(k => k.type === InputType.QUANTITY)
       return key
     },
-    async update({ commit, dispatch }, { id, data }) {
+    async update({ commit, dispatch, rootGetters }, { id, data }) {
       try {
         const { rooms } = data
         const quantityKey = await dispatch('getQuantityKey', data)
@@ -215,6 +219,10 @@ export default {
         }
         const response = await OutlayService.update({ _id: id, ...data })
         commit('updateById', { id, data: response.data })
+        const outlay = rootGetters['outlay/outlay']
+        if (outlay && outlay._id === id) {
+          await dispatch('outlay/setOutlay', response.data, { root: true })
+        }
         return response
       } catch (error) {
         return Promise.reject(error)
@@ -222,6 +230,9 @@ export default {
     },
   },
   getters: {
-    outlays: s => s.outlays,
+    outlays: s => {
+      const { outlays } = s
+      return outlays.filter(o => !o.removedAt)
+    },
   },
 }

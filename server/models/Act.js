@@ -38,6 +38,9 @@ const schema = new mongoose.Schema(
       type: String,
       default: actStatus.NEW,
     },
+    removedAt: {
+      type: Date,
+    },
   },
   {
     versionKey: false,

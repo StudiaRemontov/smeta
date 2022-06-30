@@ -63,9 +63,12 @@ export default class OutlayService {
       if (OutlayService.isOffline) {
         outlay.removedAt = new Date()
         await idb.saveDataInCollection(COLLECTION_NAME, outlay)
-        return Promise.resolve(outlay)
+        return Promise.resolve({ data: outlay })
       }
-      const response = await axios.delete(`/outlay/${outlay._id}`)
+      const response = await axios.put(`/outlay/${outlay._id}`, {
+        ...outlay,
+        removedAt: new Date(),
+      })
       await idb.removeDataInCollection(COLLECTION_NAME, outlay._id)
       return response
     } catch (error) {

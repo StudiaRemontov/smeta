@@ -59,7 +59,10 @@ export default class ActService {
         return Promise.resolve({ data: act })
       }
       const { _id: id } = act
-      const response = await axios.delete(`/act/${id}`)
+      const response = await axios.put(`/act/${id}`, {
+        ...act,
+        removedAt: new Date(),
+      })
       await idb.removeDataInCollection(COLLECTION_NAME, id)
       return response
     } catch (error) {

@@ -67,6 +67,9 @@ const schema = new mongoose.Schema(
       required: true,
       default: false,
     },
+    removedAt: {
+      type: Date,
+    },
   },
   {
     versionKey: false,
