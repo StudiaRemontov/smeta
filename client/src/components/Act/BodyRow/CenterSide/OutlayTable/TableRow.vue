@@ -3,10 +3,11 @@ import { mapGetters, mapMutations } from 'vuex'
 import { formatNumber } from '@/helpers/formatNumber'
 
 import TableRowWrapper from '../CommonTable/TableRowWrapper.vue'
+import TableRowData from '../CommonTable/TableRowData.vue'
 
 export default {
   name: 'TableRow',
-  components: { TableRowWrapper },
+  components: { TableRowWrapper, TableRowData },
   props: {
     node: {
       type: Object,
@@ -95,17 +96,7 @@ export default {
     @mouseenter="mouseEnterHandler"
     @mouseleave="mouseLeaveHandler"
   >
-    <template v-for="(key, index) in visibleKeys" :key="key.id">
-      <div v-if="index === 0" class="table-cell" v-tooltip.top="data[key.id]">
-        {{ data[key.id] }}
-      </div>
-      <div v-else class="table-cell">
-        {{ data[key.id] }}
-      </div>
-    </template>
-    <div v-if="!isCategory" class="table-cell">
-      {{ sum }}
-    </div>
+    <TableRowData :data="data" :isCategory="isCategory" />
   </TableRowWrapper>
   <template v-if="isCategory">
     <TableRow
@@ -135,9 +126,5 @@ export default {
   &:not(.category).striped:nth-child(even) {
     background-color: rgb(232, 232, 232);
   }
-}
-
-.table-cell {
-  @include table-cell;
 }
 </style>

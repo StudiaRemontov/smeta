@@ -1,7 +1,7 @@
 <script>
 import { mapGetters } from 'vuex'
 
-import TableGroup from './TableGroup.vue'
+import TableGroup from './Common/TableGroup.vue'
 
 import { formatNumber } from '@/helpers/formatNumber'
 import {
@@ -11,6 +11,11 @@ import {
 
 export default {
   components: { TableGroup },
+  provide() {
+    return {
+      bold: false,
+    }
+  },
   props: {
     data: {
       type: Array,

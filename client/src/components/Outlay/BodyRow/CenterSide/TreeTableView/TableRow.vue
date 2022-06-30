@@ -35,6 +35,21 @@ export default {
       const price = this.node.data[this.priceKey.id]
       return formatNumber(quantity * price)
     },
+    viewData() {
+      const formattedKeys = [this.quantityKey.id, this.priceKey.id, 'quantity']
+      return this.keys.map(k => {
+        if (formattedKeys.includes(k.id)) {
+          return {
+            key: k.id,
+            value: formatNumber(this.data[k.id]),
+          }
+        }
+        return {
+          key: k.id,
+          value: this.data[k.id],
+        }
+      })
+    },
   },
 }
 </script>
@@ -48,8 +63,8 @@ export default {
     :data-room="room"
     :style="headerStyle"
   >
-    <div v-for="key in keys" :key="key.id" class="table-cell">
-      {{ data[key.id] }}
+    <div v-for="item in viewData" :key="item.key" class="table-cell">
+      {{ item.value }}
     </div>
     <div v-if="!isCategory" class="table-cell">
       {{ sum }}

@@ -30,6 +30,7 @@ export default {
 
   &.category {
     background-color: #e4e4e4;
+    height: 32px;
   }
 }
 </style>

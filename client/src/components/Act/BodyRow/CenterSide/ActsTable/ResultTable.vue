@@ -1,13 +1,18 @@
 <script>
 import { mapGetters } from 'vuex'
 
-import TableGroup from './TableGroup.vue'
+import TableGroup from './Common/TableGroup.vue'
 
 import { formatNumber } from '@/helpers/formatNumber'
 import { getValuesInside } from '@/store/modules/outlay.module'
 
 export default {
   components: { TableGroup },
+  provide() {
+    return {
+      bold: true,
+    }
+  },
   props: {
     room: {
       required: true,

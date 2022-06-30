@@ -4,10 +4,11 @@ import { formatNumber } from '@/helpers/formatNumber'
 import actsTable from '@/mixins/actsTable.mixin'
 
 import TableRowWrapper from '../CommonTable/TableRowWrapper.vue'
+import TableRowData from '../CommonTable/TableRowData.vue'
 
 export default {
   name: 'TableRow',
-  components: { TableRowWrapper },
+  components: { TableRowWrapper, TableRowData },
   mixins: [actsTable],
   props: {
     node: {
@@ -65,20 +66,15 @@ export default {
       )
     },
     rowData() {
-      return this.keys.map(key => {
-        if (key.id === this.quantityKey.id && this.showLeftQuantity) {
-          const diff = this.data[key.id] - this.data.quantity
-          const value = diff < 0 ? 0 : diff
-          return {
-            key: key.id,
-            value,
-          }
-        }
-        return {
-          key: key.id,
-          value: this.data[key.id],
-        }
-      })
+      const cloneData = JSON.parse(JSON.stringify(this.data))
+      if (this.showLeftQuantity) {
+        const diff = cloneData[this.quantityKey.id] - cloneData.quantity
+        const quantity = diff < 0 ? 0 : diff
+        cloneData.quantity = quantity
+        return cloneData
+      }
+      cloneData.quantity = cloneData[this.quantityKey.id]
+      return cloneData
     },
   },
   methods: {
@@ -104,17 +100,7 @@ export default {
     @mouseenter="mouseEnterHandler"
     @mouseleave="mouseLeaveHandler"
   >
-    <template v-for="(row, index) in rowData" :key="row.key">
-      <div v-if="index === 0" class="table-cell" v-tooltip.top="row.value">
-        {{ row.value }}
-      </div>
-      <div v-else class="table-cell" :title="row.value">
-        {{ row.value }}
-      </div>
-    </template>
-    <div v-if="!isCategory" class="table-cell">
-      {{ sum }}
-    </div>
+    <TableRowData :data="rowData" :isCategory="isCategory" />
   </TableRowWrapper>
   <template v-if="isCategory">
     <TableRow

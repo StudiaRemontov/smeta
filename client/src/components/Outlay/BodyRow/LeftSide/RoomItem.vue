@@ -73,13 +73,20 @@ export default {
     openContext(e) {
       this.$emit('open-menu', e, this.room)
     },
+    async scrollToInvalid() {
+      if (!this.active) {
+        this.setSelectedRoom(this.room)
+      }
+      await this.$nextTick()
+      const invalidNode = this.invalidNodes[0]
+      return emitter.$emit('scrollTo', invalidNode.key)
+    },
     async setViewMode(value) {
       this.setSelectedRoom(this.room)
       if (value) {
         await this.$nextTick()
         if (this.invalidNodes.length > 0) {
-          const invalidNode = this.invalidNodes[0]
-          return emitter.$emit('scrollTo', invalidNode.key)
+          return this.scrollToInvalid()
         }
       }
       this.setShowOnlyChecked(value)
@@ -105,18 +112,21 @@ export default {
 </script>
 
 <template>
-  <div class="room-item" :class="{ active }" @click="clickHandler">
+  <div class="room-item" :class="{ active }">
     <div class="room-item__text">
-      <span class="room-item__title" :title="room.name">
+      <span class="room-item__title" :title="room.name" @click="clickHandler">
         {{ room.name }}
       </span>
-      <span
-        v-if="invalidNodes && invalidNodes.length > 0"
-        v-tooltip.top="`незаполненных работ`"
-        class="room-item__counter"
-      >
-        {{ invalidNodes.length }}
-      </span>
+      <div class="room-item__counter-wrapper">
+        <span
+          v-if="invalidNodes && invalidNodes.length > 0"
+          v-tooltip.top="`незаполненных работ`"
+          class="room-item__counter"
+          @click="scrollToInvalid"
+        >
+          {{ invalidNodes.length }}
+        </span>
+      </div>
     </div>
     <div class="room-item__actions" @click.stop>
       <button class="button" @click="viewMode = !viewMode">
@@ -160,6 +170,11 @@ export default {
     overflow: hidden;
     text-overflow: ellipsis;
     font-weight: 600;
+    flex: 1;
+
+    &:hover {
+      text-decoration: underline;
+    }
   }
 
   &__actions {

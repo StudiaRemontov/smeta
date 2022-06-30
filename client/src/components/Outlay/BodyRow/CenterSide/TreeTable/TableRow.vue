@@ -92,8 +92,11 @@ export default {
       'toggleNodeEditing',
       'setCurrentNode',
     ]),
-    ...mapActions('outlay', ['selectJob', 'unSelectJob']),
+    ...mapActions('outlay', ['selectJob', 'unSelectJob', 'toggleCategoryJobs']),
     rowClickHandler(e) {
+      if (this.isCategory) {
+        return this.toggleCategoryJobs(this.node)
+      }
       const { target } = e
       const { cellindex } = target.dataset
       const index = parseInt(cellindex)
@@ -208,6 +211,12 @@ export default {
   background-color: #fff;
 
   @include table-row;
+
+  &.parent {
+    position: sticky;
+    top: calc(32px * v-bind(level));
+    z-index: calc(10 - v-bind(level));
+  }
 
   &.parent &__cell {
     color: #fff;

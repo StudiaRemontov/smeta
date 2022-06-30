@@ -66,6 +66,13 @@ export default {
       )
     },
   },
+  watch: {
+    selected(value) {
+      if (value) {
+        this.selectInput()
+      }
+    },
+  },
   methods: {
     ...mapMutations('acts', ['updateById', 'setHoveredItem']),
     ...mapActions('acts', ['saveLocaly']),
@@ -76,6 +83,10 @@ export default {
       this.timeout = setTimeout(async () => {
         await this.saveLocaly()
       }, 300)
+    },
+    selectInput() {
+      const { input } = this.$refs
+      input.$el.select()
     },
     mouseEnterHandler() {
       this.setHoveredItem({ id: this.node.key, room: this.room })
@@ -100,10 +111,12 @@ export default {
     <div class="table-cell">
       <InputNumber
         v-model="data.quantity"
+        ref="input"
         class="input"
         :disabled="!isEditable"
         :min="0"
         @change="changeHandler"
+        @focus="selectInput"
       />
     </div>
     <div class="table-cell">{{ sum }}</div>

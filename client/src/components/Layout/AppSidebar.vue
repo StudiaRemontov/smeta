@@ -23,12 +23,6 @@ export default {
   background-color: $color-dark;
   width: 260px;
 
-  //later: animation
-  // transition: width 0.3s;
-  // &.some class {
-  //   width: value;
-  // }
-
   &__header {
     display: flex;
     justify-content: center;

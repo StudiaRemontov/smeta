@@ -1,12 +1,12 @@
 <script>
 import { mapGetters, mapMutations } from 'vuex'
 import { formatNumber } from '@/helpers/formatNumber'
-
 import TableRowWrapper from '../../CommonTable/TableRowWrapper.vue'
 
 export default {
   name: 'TableRow',
   components: { TableRowWrapper },
+  inject: ['bold'],
   props: {
     node: {
       type: Object,
@@ -51,6 +51,9 @@ export default {
         this.room === this.selectedItem.room
       )
     },
+    quantity() {
+      return formatNumber(this.data.quantity)
+    },
   },
   methods: {
     ...mapMutations('acts', ['setHoveredItem']),
@@ -67,7 +70,7 @@ export default {
 <template>
   <TableRowWrapper
     class="table-row"
-    :class="{ category: isCategory, striped, hovered, selected }"
+    :class="{ category: isCategory, striped, hovered, selected, bold }"
     :data-id="node.key"
     :data-level="level"
     :data-room="room"
@@ -75,7 +78,7 @@ export default {
     @mouseleave="mouseLeaveHandler"
   >
     <div class="table-cell">
-      {{ data.quantity }}
+      {{ quantity }}
     </div>
     <div class="table-cell">{{ sum }}</div>
   </TableRowWrapper>
@@ -101,6 +104,9 @@ export default {
     height: 32px;
   }
 
+  &.bold .table-cell {
+    font-weight: 700;
+  }
   &:not(.category).striped:nth-child(even) {
     background-color: rgb(232, 232, 232);
   }
@@ -110,13 +116,6 @@ export default {
   white-space: nowrap;
   text-overflow: ellipsis;
   text-align: center;
-  font-weight: 700;
   @include act-table-cell;
-}
-
-.input {
-  max-width: 100%;
-  width: 100%;
-  text-align: center;
 }
 </style>

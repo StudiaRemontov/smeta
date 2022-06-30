@@ -7,6 +7,7 @@ import roomParametersMixin from '../../mixins/roomParameters.mixin'
 
 import { InputType } from '../../enum/InputType'
 import { getAllValues } from '@/helpers/treeMethods'
+import { deepEqual } from '@/helpers/deepEqual'
 
 const { methods } = roomParametersMixin
 
@@ -476,21 +477,27 @@ export default {
         r => r.id !== state.selectedRoom.id,
       )
       state.outlay.rooms = rooms.map(r => {
-        if (r.id === state.selectedRoom.id) {
-          if (r.name !== payload.name) {
-            payload.name = getNameWithNumber(
-              payload.name,
-              roomsForNewName,
-              room => {
-                room.name = `${room.name} №1`
-              },
-            )
-          }
-          const data = {
-            ...r,
-            ...payload,
-          }
-          commit('setSelectedRoom', data)
+        if (r.id !== state.selectedRoom.id) {
+          return r
+        }
+        if (r.name !== payload.name) {
+          payload.name = getNameWithNumber(
+            payload.name,
+            roomsForNewName,
+            room => {
+              room.name = `${room.name} №1`
+            },
+          )
+        }
+        const { options } = r
+        const { options: newOptions } = payload
+        const isOptionsEqual = deepEqual(options, newOptions)
+        const data = {
+          ...r,
+          ...payload,
+        }
+        commit('setSelectedRoom', data)
+        if (!isOptionsEqual) {
           const clone = setQuantity(
             data,
             state.roomsData[state.selectedRoom.id],
@@ -498,9 +505,8 @@ export default {
             state.formulaKey.id,
           )
           state.roomsData[r.id] = clone
-          return data
         }
-        return r
+        return data
       })
       return await dispatch('saveLocaly')
     },

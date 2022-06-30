@@ -33,8 +33,26 @@ export default {
       })
     },
     calculatedParameters() {
-      const { computed } = this.calculateAllParameters(this.options)
-      return computed
+      return this.calculateAllParameters(this.options)
+    },
+    calculated() {
+      if (!this.calculatedParameters) {
+        return {}
+      }
+      return this.calculatedParameters.computed
+    },
+    calculatedOptions() {
+      if (!this.calculatedParameters) {
+        return {}
+      }
+      const { options } = this.calculatedParameters
+      return Object.entries(options).reduce((acc, [key, value]) => {
+        const newKey = Object.keys(this.roomOptions).find(
+          k => this.roomOptions[k] === key,
+        )
+        acc[newKey] = value
+        return acc
+      }, {})
     },
   },
 }
@@ -87,14 +105,14 @@ export default {
               :key="parameter.key"
               class="parameters-table__cell"
             >
-              {{ options[parameter.key] }}
+              {{ calculatedOptions[parameter.key] }}
             </td>
           </tr>
         </table>
         <table class="parameters-table">
           <tr class="parameters-table__row">
             <td
-              v-for="(val, key) in calculatedParameters"
+              v-for="(val, key) in calculated"
               :key="key"
               class="parameters-table__cell"
             >
@@ -103,7 +121,7 @@ export default {
           </tr>
           <tr class="parameters-table__row">
             <td
-              v-for="(val, key) in calculatedParameters"
+              v-for="(val, key) in calculated"
               :key="key"
               class="parameters-table__cell"
             >

@@ -4,9 +4,10 @@ import { mapGetters } from 'vuex'
 import PrintTable from './PrintTable.vue'
 import PageHeader from './Room/PageHeader.vue'
 import ResultsTable from '@/components/Outlay/BodyRow/CenterSide/Results/ResultsTable.vue'
+import AppLogo from '@/components/UI/AppLogo.vue'
 
 export default {
-  components: { PrintTable, PageHeader, ResultsTable },
+  components: { PrintTable, PageHeader, ResultsTable, AppLogo },
   props: {
     outlay: {
       required: true,
@@ -56,8 +57,18 @@ export default {
         </div>
       </div>
     </div>
-    <span class="title results-table"> Сводная таблица </span>
-    <ResultsTable />
+    <div class="results-table">
+      <div class="top">
+        <AppLogo class="top__logo" />
+        <div class="top__text">
+          <span class="top__phone"> 8 (495) 104-51-21 </span>
+          <span class="top__subtext">служба технического контроля</span>
+        </div>
+      </div>
+      <span class="title"> Сводная таблица </span>
+
+      <ResultsTable />
+    </div>
   </div>
 </template>
 
@@ -113,6 +124,34 @@ export default {
 
 .results-table {
   page-break-before: always;
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  &__text {
+    color: #00afec;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  &__phone {
+    font-weight: 700;
+    font-size: 27px;
+  }
+
+  &__subtext {
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  &__logo {
+    max-width: 150px;
+    width: 100%;
+  }
 }
 </style>
 

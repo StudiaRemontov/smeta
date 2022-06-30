@@ -1,7 +1,7 @@
 <script>
 import TableGroup from './TableGroup.vue'
-import ActTable from '../ActTable/ActTable.vue'
-import ResultTable from '../ResultTable/ResultTable.vue'
+import ActTable from '../ActTable.vue'
+import ResultTable from '../ResultTable.vue'
 import actsTable from '@/mixins/actsTable.mixin'
 import { getValuesInside } from '@/store/modules/outlay.module'
 

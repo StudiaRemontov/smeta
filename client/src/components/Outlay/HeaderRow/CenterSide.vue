@@ -57,7 +57,7 @@ export default {
     <OutlayBlock class="center__info">
       <div class="center__info-wrapper">
         <div class="center__info-text">
-          <span class="center__info-id"> 423423432 </span>
+          <span class="center__info-id"> 12345 </span>
           <span class="center__info-name">Сергей Алексеевич</span>
         </div>
         <button class="button" @click="showInfo">

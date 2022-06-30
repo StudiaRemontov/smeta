@@ -55,6 +55,21 @@ export default {
         this.room === this.selectedItem.room
       )
     },
+    viewData() {
+      const formattedKeys = [this.quantityKey.id, this.priceKey.id, 'quantity']
+      return this.keys.map(k => {
+        if (formattedKeys.includes(k.id)) {
+          return {
+            key: k.id,
+            value: formatNumber(this.data[k.id]),
+          }
+        }
+        return {
+          key: k.id,
+          value: this.data[k.id],
+        }
+      })
+    },
   },
   methods: {
     ...mapMutations('acts', ['setHoveredItem']),
@@ -79,12 +94,22 @@ export default {
     @mouseenter="mouseEnterHandler"
     @mouseleave="mouseLeaveHandler"
   >
-    <template v-for="(key, index) in keys" :key="key.id">
-      <div v-if="index === 0" class="table-cell" v-tooltip.top="data[key.id]">
-        {{ data[key.id] }}
+    <template v-for="(item, index) in viewData" :key="item.key">
+      <div
+        v-if="index === 0"
+        v-tooltip.top="item.value"
+        class="table-cell"
+        :class="{ quantity: item.key === quantityKey.id }"
+      >
+        {{ item.value }}
       </div>
-      <div v-else class="table-cell" :title="data[key.id]">
-        {{ data[key.id] }}
+      <div
+        v-else
+        class="table-cell"
+        :class="{ quantity: item.key === quantityKey.id }"
+        :title="item.value"
+      >
+        {{ item.value }}
       </div>
     </template>
     <div v-if="!isCategory" class="table-cell">
@@ -125,5 +150,9 @@ export default {
   white-space: nowrap;
   text-overflow: ellipsis;
   @include table-cell;
+
+  &.quantity {
+    font-weight: 700;
+  }
 }
 </style>

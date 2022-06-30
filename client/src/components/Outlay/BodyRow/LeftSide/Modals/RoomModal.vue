@@ -5,6 +5,7 @@ import Dropdown from 'primevue/dropdown'
 
 import roomParameters from '@/mixins/roomParameters.mixin'
 import { mapGetters } from 'vuex'
+import { roomNames } from '@/enum/roomNames'
 
 const getInitState = () => ({
   title: undefined,
@@ -23,20 +24,7 @@ const getInitState = () => ({
     length: null,
     spaces: null,
   },
-  roomTypes: [
-    {
-      label: 'Ванна',
-    },
-    {
-      label: 'Комната',
-    },
-    {
-      label: 'Кухня',
-    },
-    {
-      label: 'Гостинная',
-    },
-  ],
+  roomTypes: roomNames,
 })
 
 export default {
@@ -46,7 +34,7 @@ export default {
     return getInitState()
   },
   computed: {
-    ...mapGetters('outlay', ['selectedRoom']),
+    ...mapGetters('outlay', ['selectedRoom', 'rooms']),
     calculatedWidth() {
       return this.calculate(this.width)
     },
@@ -85,6 +73,20 @@ export default {
         this.isCorrectField(this.calculatedLength) &&
         this.isCorrectField(this.calculatedHeight)
       )
+    },
+    placeholders() {
+      const placeholders = {
+        width: null,
+        height: null,
+        length: null,
+        spaces: null,
+      }
+      const firstRoom = this.rooms[0]
+      if (!firstRoom) {
+        return placeholders
+      }
+      const { options } = firstRoom
+      return Object.assign(placeholders, options)
     },
   },
   watch: {
@@ -141,19 +143,16 @@ export default {
       this.resolvePromise(data)
       this.reset()
     },
-
     _cancel() {
       this.$refs.popup.close()
       this.resolvePromise(false)
       this.reset()
     },
-
     _remove() {
       this.$refs.popup.close()
       this.resolvePromise({ remove: true })
       this.reset()
     },
-
     reset() {
       Object.assign(this.$data, getInitState())
     },
@@ -197,8 +196,6 @@ export default {
             v-model.trim="name"
             :options="roomTypes"
             :editable="true"
-            optionLabel="label"
-            optionValue="label"
             ref="input"
           />
         </div>
@@ -210,6 +207,7 @@ export default {
               v-model="length"
               class="input"
               type="text"
+              :placeholder="placeholders['length']"
               @input="inputHandler($event, 'length')"
             />
           </div>
@@ -219,6 +217,7 @@ export default {
               v-model="width"
               class="input"
               type="text"
+              :placeholder="placeholders['width']"
               @input="inputHandler($event, 'width')"
             />
           </div>
@@ -228,6 +227,7 @@ export default {
               v-model="height"
               class="input"
               type="text"
+              :placeholder="placeholders['height']"
               @input="inputHandler($event, 'height')"
             />
           </div>
@@ -237,6 +237,7 @@ export default {
               v-model="spaces"
               class="input"
               type="text"
+              :placeholder="placeholders['spaces']"
               @input="inputHandler($event, 'spaces')"
             />
           </div>
