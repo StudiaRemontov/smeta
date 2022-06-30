@@ -6,6 +6,7 @@ import Outlay from '../../models/Outlay'
 
 import { getAllValues } from '@/helpers/treeMethods'
 import { InputType } from '../../enum/InputType'
+import getLocalDifference from '../../helpers/getLocalDifference'
 
 export default {
   namespaced: true,
@@ -70,7 +71,7 @@ export default {
       try {
         const data = state.outlays
         const localData = await idb.getCollectionData('outlays')
-        const diff = OutlayService.getLocalDifference(data, localData)
+        const diff = getLocalDifference(data, localData)
         const { created, updated, removed } = diff
         await idb.setArrayToCollection('outlays', data)
         await Promise.all(
@@ -113,9 +114,9 @@ export default {
         return Promise.reject(error)
       }
     },
-    async create({ commit, dispatch }, { name, edition }) {
+    async create({ commit, dispatch }, outlay) {
       try {
-        const response = await OutlayService.create(name, edition)
+        const response = await OutlayService.create(outlay)
         commit('pushOutlay', response.data)
         await dispatch('outlay/setOutlay', response.data, { root: true })
         await idb.saveDataInCollection('outlays', response.data)
@@ -128,7 +129,6 @@ export default {
       try {
         const clone = Outlay.getClone(cloningOutlay)
         const response = await dispatch('create', clone)
-
         return response
       } catch (error) {
         return Promise.reject(error)

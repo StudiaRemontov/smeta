@@ -7,43 +7,6 @@ const COLLECTION_NAME = 'acts'
 export default class ActService {
   static isOffline = false
 
-  static getLocalDifference(server, local) {
-    const created = local.filter(lo => {
-      if (lo.removedAt) {
-        return false
-      }
-      return !server.find(so => so._id === lo._id)
-    })
-
-    const updated = local.filter(lo => {
-      const serverOutlay = server.find(so => so._id === lo._id)
-      if (!serverOutlay) {
-        return false
-      }
-      const serverUpdatedAt = new Date(serverOutlay.updatedAt).getTime()
-      const localUpdatedAt = new Date(lo.updatedAt).getTime()
-      return localUpdatedAt > serverUpdatedAt
-    })
-
-    const removedOutlays = local.filter(lo => lo.removedAt)
-
-    const removed = removedOutlays.filter(lo => {
-      const serverOutlay = server.find(so => so._id === lo._id)
-      if (!serverOutlay) {
-        return false
-      }
-      const serverUpdatedAt = new Date(serverOutlay.updatedAt).getTime()
-      const localRemovedAt = new Date(lo.removedAt).getTime()
-      return localRemovedAt > serverUpdatedAt
-    })
-
-    return {
-      created,
-      updated,
-      removed,
-    }
-  }
-
   static async getAll() {
     try {
       const localData = await idb.getCollectionData(COLLECTION_NAME)

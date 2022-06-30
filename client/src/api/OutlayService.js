@@ -1,84 +1,10 @@
 import Outlay from '../models/Outlay'
 import axios from '../modules/axios'
 import idb from '../store/local/idb'
-
 const COLLECTION_NAME = 'outlays'
 
 export default class OutlayService {
   static isOffline = false
-
-  static mergeData(serverData, localData) {
-    const mergedOutlays = [...serverData, ...localData]
-    const grouped = mergedOutlays.reduce((acc, outlay) => {
-      acc[outlay._id] = acc[outlay._id] || []
-      acc[outlay._id].push(outlay)
-      return acc
-    }, {})
-    return Object.values(grouped).map(outlays => {
-      return outlays.reduce((acc, outlay) => {
-        if (!acc) {
-          return outlay
-        }
-
-        const removedTime = outlay.removedAt
-          ? new Date(outlay.removedAt).getTime()
-          : 0
-        const timeA = new Date(outlay.updatedAt).getTime()
-        const timeB = new Date(acc.updatedAt).getTime()
-        if (removedTime > timeB) {
-          return outlay
-        }
-
-        return timeA > timeB ? outlay : acc
-      }, null)
-    })
-  }
-
-  //сравниваю локальные и серверные данные.
-  //метод возвразает объект с массивами: created, updated, removed.
-  //В этих массивах сметы, которые нужно создать/изменить/удалить т.е. отправить запрос на бек.
-  static getLocalDifference(server, local) {
-    //созданные
-    const created = local.filter(lo => {
-      //те, что не удалены локально
-      if (lo.removedAt) {
-        return false
-      }
-      //и те, которых нету на сервере
-      return !server.find(so => so._id === lo._id)
-    })
-    //измененные
-    const updated = local.filter(lo => {
-      const serverOutlay = server.find(so => so._id === lo._id)
-      //те, то есть на севере
-      if (!serverOutlay) {
-        return false
-      }
-      const serverUpdatedAt = new Date(serverOutlay.updatedAt).getTime()
-      const localUpdatedAt = new Date(lo.updatedAt).getTime()
-      //если дата изменения локальной больше серверной, то она считается измененой
-      return localUpdatedAt > serverUpdatedAt
-    })
-    //получаю все удаленный локальные сметы
-    const removedOutlays = local.filter(lo => lo.removedAt)
-
-    const removed = removedOutlays.filter(lo => {
-      const serverOutlay = server.find(so => so._id === lo._id)
-      //проверяю есть ли на сервере. Если нету, то запрос на сервер отправлять не нужно.
-      if (!serverOutlay) {
-        return false
-      }
-      const serverUpdatedAt = new Date(serverOutlay.updatedAt).getTime()
-      const localRemovedAt = new Date(lo.removedAt).getTime()
-      return localRemovedAt > serverUpdatedAt
-    })
-
-    return {
-      created,
-      updated,
-      removed,
-    }
-  }
 
   static async getAll() {
     try {
@@ -94,15 +20,20 @@ export default class OutlayService {
     }
   }
 
-  static async create(name, edition) {
+  static async create(outlay) {
     try {
-      const outlay = new Outlay(name, edition)
-      if (OutlayService.isOffline) {
-        await idb.saveDataInCollection(COLLECTION_NAME, outlay)
-        return Promise.resolve({ data: outlay })
+      const { name, edition, ...additionalData } = outlay
+      const instance = new Outlay(name, edition)
+      const data = {
+        ...instance,
+        ...additionalData,
       }
-      const response = await axios.post('/outlay', outlay)
-      await idb.saveDataInCollection(COLLECTION_NAME, outlay)
+      if (OutlayService.isOffline) {
+        await idb.saveDataInCollection(COLLECTION_NAME, data)
+        return Promise.resolve({ data })
+      }
+      const response = await axios.post('/outlay', data)
+      await idb.saveDataInCollection(COLLECTION_NAME, data)
       return response
     } catch (error) {
       return Promise.reject(error)

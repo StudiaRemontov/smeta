@@ -147,7 +147,7 @@ export default {
       :index="index"
     />
   </template>
-  <td
+  <div
     v-else
     v-for="key in keysWithType"
     ref="cell"
@@ -178,7 +178,7 @@ export default {
       v-model="data[key.id]"
       :options="options[key.id]"
     />
-  </td>
+  </div>
   <ViewCell :value="sum" :isSum="true" />
   <CloneActions
     :isEditing="isEditing"

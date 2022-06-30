@@ -2,6 +2,7 @@ import axios from '../../modules/axios'
 import { getValuesInside, treeToListOnlyKeys } from './outlay.module'
 import ActService from '../../api/ActService'
 import idb from '../local/idb'
+import getLocalDifference from '../../helpers/getLocalDifference'
 
 const getNameWithNumber = acts => {
   const number = acts.reduce((acc, act) => {
@@ -236,12 +237,24 @@ export default {
       try {
         const data = await ActService.getAll()
         commit('setActs', data)
+        await dispatch('syncData')
+        commit('setContentLoaded', true)
+        return Promise.resolve(data)
+      } catch (error) {
+        return Promise.reject(error)
+      } finally {
+        state.loading = false
+      }
+    },
+    async syncData({ dispatch, state }) {
+      try {
+        const acts = state.acts
         const localData = await idb.getCollectionData('acts')
-        const { updated, created, removed } = ActService.getLocalDifference(
-          data,
+        const { updated, created, removed } = getLocalDifference(
+          acts,
           localData,
         )
-        await idb.setArrayToCollection('acts', data)
+        await idb.setArrayToCollection('acts', acts)
         await Promise.all(
           updated.map(async a => {
             const { _id: id, ...data } = a
@@ -254,12 +267,8 @@ export default {
             return await dispatch('remove', a._id)
           }),
         )
-        commit('setContentLoaded', true)
-        return Promise.resolve(data)
       } catch (error) {
         return Promise.reject(error)
-      } finally {
-        state.loading = false
       }
     },
     async create({ commit, state, dispatch }) {

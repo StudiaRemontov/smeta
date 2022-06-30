@@ -458,15 +458,19 @@ export default {
       const clonedValues = JSON.parse(
         JSON.stringify(selectedValues[cloningRoomId]),
       )
-
-      const cloneData = setQuantity(
-        room,
-        clonedRoomsData,
-        quantityKey.id,
-        formulaKey.id,
-      )
-      state.roomsData[room.id] = cloneData
+      const { options: oldOptions } = cloningRoomData
+      const isOptionsEqual = deepEqual(options, oldOptions)
+      state.roomsData[room.id] = clonedRoomsData
       state.selectedValues[room.id] = clonedValues
+      if (!isOptionsEqual) {
+        const cloneData = setQuantity(
+          room,
+          clonedRoomsData,
+          quantityKey.id,
+          formulaKey.id,
+        )
+        state.roomsData[room.id] = cloneData
+      }
       commit('setSelectedRoom', room)
       return await dispatch('saveLocaly')
     },

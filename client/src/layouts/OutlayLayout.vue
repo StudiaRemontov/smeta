@@ -20,11 +20,6 @@ export default {
     ...mapGetters(['isOffline']),
   },
   watch: {
-    isOffline(value) {
-      if (!value) {
-        this.getServerData()
-      }
-    },
     outlay() {
       this.interval = clearInterval(this.interval)
       this.interval = setInterval(this.save, 1000 * 60)
@@ -34,45 +29,18 @@ export default {
     this.loading = true
     await this.setOutlay(null)
     this.interval = setInterval(this.save, 1000 * 60)
-    try {
-      await this.syncData()
-    } catch (error) {
-      console.error(error)
-      this.$toast.add({
-        severity: 'error',
-        summary: 'Ошибка',
-        detail: 'Ошибка снихронизации данных',
-        life: 3000,
-      })
-    } finally {
-      this.loading = false
-    }
+    this.loading = false
   },
   unmounted() {
     clearInterval(this.interval)
     this.setOutlay(null)
   },
   methods: {
-    ...mapActions('outlays', ['fetchAll', 'uploadFromServer', 'syncData']),
     ...mapActions('outlay', ['update', 'saveLocaly', 'setOutlay']),
     async save() {
       if (!this.isOffline) {
         await this.update()
         await this.saveLocaly()
-      }
-    },
-    async getServerData() {
-      try {
-        await this.uploadFromServer()
-      } catch (error) {
-        const { response } = error
-        const message = response ? response.data.message : error.message
-        return this.$toast.add({
-          severity: 'error',
-          summary: 'Ошибка',
-          detail: message,
-          life: 3000,
-        })
       }
     },
   },

@@ -134,10 +134,10 @@ export default {
       const data = {
         name: this.name,
         options: {
-          width: this.width || 0,
-          height: this.height || 0,
-          length: this.length || 0,
-          spaces: this.spaces || 0,
+          width: this.width || '0',
+          height: this.height || '0',
+          length: this.length || '0',
+          spaces: this.spaces || '0',
         },
       }
       this.resolvePromise(data)

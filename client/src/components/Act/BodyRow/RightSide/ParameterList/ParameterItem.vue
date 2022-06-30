@@ -17,7 +17,7 @@ export default {
     <label class="parameter__name">
       {{ name }}
     </label>
-    <input :value="value" class="parameter__input" />
+    <input :value="value" disabled class="parameter__input" />
   </div>
 </template>
 
@@ -35,13 +35,17 @@ export default {
   }
 
   &__input {
-    pointer-events: none;
     max-width: 100%;
     width: 100%;
     border: 1px solid #c8c8c8;
     border-radius: 5px;
     text-align: center;
     padding: 5px;
+
+    &:disabled {
+      background-color: unset;
+      color: unset;
+    }
   }
 }
 </style>

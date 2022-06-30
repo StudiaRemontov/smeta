@@ -52,7 +52,7 @@ export default {
             this.save()
           },
           icon: 'SaveIcon',
-          disabled: this.isSaving || this.isActionsDisabled,
+          disabled: this.isSaving,
           loading: this.isSaving,
         },
         {

@@ -65,8 +65,12 @@ export default {
         </button>
       </div>
     </OutlayBlock>
-    <OutlayBlock class="center__outlays">
-      <button class="button create" @click="createOutlay">
+    <OutlayBlock class="center__outlays" :class="{ disabled: invalidNodes }">
+      <button
+        class="button create"
+        :disabled="invalidNodes"
+        @click="createOutlay"
+      >
         <i class="pi pi-plus create__icon" />
       </button>
       <OutlayList />
@@ -129,6 +133,11 @@ export default {
     display: flex;
     gap: 15px;
     overflow: auto;
+
+    &.disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
   }
 }
 
