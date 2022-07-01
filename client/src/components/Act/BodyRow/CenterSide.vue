@@ -7,6 +7,7 @@ import CompletedTable from './CenterSide/CompletedTable/CompletedTable.vue'
 import ActsTable from './CenterSide/ActsTable/ActsTable.vue'
 import OutlayTable from './CenterSide/OutlayTable/OutlayTable.vue'
 import OutlayBlock from '@/components/Layout/OutlayBlock.vue'
+import AddModal from './CenterSide/Modals/AddModal.vue'
 
 import { isObjectId } from '@/helpers/isObjectId'
 
@@ -23,12 +24,14 @@ export default {
     CompletedTable,
     ActsTable,
     OutlayTable,
+    AddModal,
   },
   data() {
     return {
       screenHeight: null,
       selectedJob: null,
       filteredJobs: [],
+      displayModal: false,
     }
   },
   computed: {
@@ -304,6 +307,9 @@ export default {
       } = row
       this.setSelectedItem({ id, room })
     },
+    openModal() {
+      this.displayModal = true
+    },
   },
 }
 </script>
@@ -311,25 +317,31 @@ export default {
 <template>
   <OutlayBlock class="center">
     <div v-if="outlay" class="center__body">
+      <AddModal v-model="displayModal" />
       <div v-if="!showResults" class="body-actions">
-        <div class="search-wrapper">
-          <i class="pi pi-search"></i>
-          <AutoComplete
-            v-model="selectedJob"
-            ref="autocomplete"
-            class="search"
-            field="name"
-            optionGroupLabel="name"
-            optionGroupChildren="items"
-            :scrollHeight="scrollHeight"
-            :suggestions="filteredJobs"
-            placeholder="Поиск"
-            :delay="300"
-            @input="autocompleteInput"
-            @complete="searchJob($event)"
-            @item-select="findJob"
-            @click="autoCompleteClickHanler"
-          />
+        <div class="body-actions__top">
+          <div class="search-wrapper">
+            <i class="pi pi-search"></i>
+            <AutoComplete
+              v-model="selectedJob"
+              ref="autocomplete"
+              class="search"
+              field="name"
+              optionGroupLabel="name"
+              optionGroupChildren="items"
+              :scrollHeight="scrollHeight"
+              :suggestions="filteredJobs"
+              placeholder="Поиск"
+              :delay="300"
+              @input="autocompleteInput"
+              @complete="searchJob($event)"
+              @item-select="findJob"
+              @click="autoCompleteClickHanler"
+            />
+          </div>
+          <button class="body-actions__button button" @click="openModal">
+            Добавить работу
+          </button>
         </div>
         <div class="body-actions__group">
           <div class="switch-wrapper">
@@ -347,7 +359,7 @@ export default {
             </div>
             <span>Всего / Осталось</span>
           </div>
-          <div v-if="activeTab === 'results'" class="switch-wrapper">
+          <div v-else-if="activeTab === 'results'" class="switch-wrapper">
             <div class="switch">
               <InputSwitch v-model="changeView" />
             </div>
@@ -390,15 +402,32 @@ export default {
 
 .body-actions {
   display: flex;
+  flex-direction: column;
   gap: 10px;
-  align-items: center;
   padding: 20px;
-  flex-wrap: wrap;
+
+  &__top {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  &__button {
+    background: #28c430;
+    padding: 7px 15px;
+    border: 1px solid #28c430;
+    color: #fff;
+    border-radius: 5px;
+    flex-basis: 150px;
+    flex-grow: 1;
+    justify-content: center;
+  }
 
   &__group {
     display: flex;
     gap: 10px;
     align-items: center;
+    align-self: flex-end;
   }
 }
 
@@ -407,7 +436,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 10px;
-  flex: 1 1 auto;
+  flex: 1 1 70%;
 }
 
 ::v-deep(.p-autocomplete) {

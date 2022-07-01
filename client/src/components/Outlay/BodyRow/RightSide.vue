@@ -132,6 +132,7 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  overflow: auto;
 
   &__results {
     flex: 1;

@@ -18,7 +18,7 @@ import AppButton from '@/components/UI/AppButton.vue'
 import AppInput from '@/components/UI/AppInput.vue'
 
 const app = createApp(App)
-
+app.config.unwrapInjectedRef = true
 //global components
 app.component('AppButton', AppButton)
 app.component('AppInput', AppInput)

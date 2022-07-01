@@ -36,7 +36,7 @@ if (!config.IS_PRODUCTION) {
 
   app.use(cors(corsOptions))
 }
-app.use(express.json())
+app.use(express.json({ limit: '50mb' }))
 
 //routes
 app.use('/api/directory', directory)

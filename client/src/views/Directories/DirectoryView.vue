@@ -194,7 +194,6 @@ export default {
         }
       }
       const { keys, values } = this.replacedData(rows)
-
       await this.updateArchitecture(keys)
       await this.updateValues(values)
     },
@@ -242,7 +241,7 @@ export default {
     },
     getExcelKeysAndValues(rows) {
       const clearedRows = rows.filter(row => {
-        const isEmptyRow = row.some(item => {
+        const isEmptyRow = row.every(item => {
           if (!item) {
             return true
           }
@@ -336,6 +335,7 @@ export default {
     replacedData(rows) {
       //generate keys
       const { keys, values } = this.getExcelKeysAndValues(rows)
+
       //формирование ключей таблицы
       const newKeys = keys.map((key, index) => {
         const isExists = this.root.keys.find(({ name }) => name === key.name)

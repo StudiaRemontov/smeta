@@ -27,7 +27,7 @@ export const treeToListOnlyKeys = node => {
   return [node.key, ...children.map(treeToListOnlyKeys)].flat()
 }
 
-const treeToListOnlyValues = node => {
+export const treeToListOnlyValues = node => {
   const { children } = node
   if (children && children.length > 0) {
     return [node.key, ...node.children.map(treeToListOnlyValues)].flat()
