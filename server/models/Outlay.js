@@ -24,6 +24,7 @@ const roomSchema = new mongoose.Schema(
       type: String,
     },
     jobs: [jobsSchema],
+    newJobs: [jobsSchema],
     options: {
       width: {
         type: String,
@@ -66,6 +67,9 @@ const schema = new mongoose.Schema(
       type: Boolean,
       required: true,
       default: false,
+    },
+    removedAt: {
+      type: Date,
     },
   },
   {
