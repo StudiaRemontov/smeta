@@ -1,18 +1,19 @@
 <script>
+import { computed } from 'vue'
 import { mapActions, mapGetters, mapMutations } from 'vuex'
 import TableGroup from '../TreeTableView/TableGroup.vue'
-import rowColors from '@/mixins/tableRowColors.mixin'
 
 import emitter from '@/modules/eventBus'
+import { opacityGenerator } from '@/helpers/opacityGenerator'
 
 export default {
   components: {
     TableGroup,
   },
-  mixins: [rowColors],
   provide() {
     return {
       editable: true,
+      opacities: computed(() => this.opacities),
     }
   },
   data() {
@@ -23,6 +24,7 @@ export default {
       currentCategory: null,
       currentSubCategory: null,
       currentNodeIndex: 0,
+      opacities: [],
     }
   },
   computed: {
@@ -112,6 +114,10 @@ export default {
     })
     emitter.$on('selectNode', this.setCurrentNodeByKey)
     document.addEventListener('keydown', this.keyHandler)
+    const depths = this.tableData.map(d => this.getTreeDepth(d, 0))
+    const maxDepth = Math.max(...depths)
+    const depth = maxDepth
+    this.opacities = opacityGenerator(depth)
   },
   unmounted() {
     emitter.$off('scrollTo')
@@ -127,6 +133,16 @@ export default {
     ]),
     ...mapMutations('outlays', ['updateById']),
     ...mapActions('outlay', ['saveLocaly', 'selectJob']),
+    getTreeDepth(node, depth) {
+      const { children } = node
+      let result = depth
+      if (children && children.length > 0) {
+        const depths = children.map(c => this.getTreeDepth(c, depth + 1))
+        const max = Math.max(...depths)
+        result = max
+      }
+      return result
+    },
     isObjectId(id) {
       return /^[0-9a-fA-F]{24}$/.test(id)
     },

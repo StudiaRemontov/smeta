@@ -3,7 +3,6 @@ import { mapGetters } from 'vuex'
 
 import TableGroup from './TableGroup.vue'
 
-import tableRowColors from '@/mixins/tableRowColors.mixin'
 import {
   getValuesInside,
   treeToListOnlyKeys,
@@ -12,7 +11,6 @@ import { filterTreeByQuantity } from '@/store/modules/acts.module'
 
 export default {
   components: { TableGroup },
-  mixins: [tableRowColors],
   computed: {
     ...mapGetters('outlay', ['rooms', 'keys']),
     ...mapGetters('acts', [

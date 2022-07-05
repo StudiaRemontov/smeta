@@ -5,12 +5,10 @@ import DefaultRow from './TableRows/DefaultRow.vue'
 import SelectedRow from './TableRows/SelectedRow.vue'
 import CloneRow from './TableRows/CloneRow.vue'
 
-import rowColors from '@/mixins/tableRowColors.mixin'
-
 export default {
   name: 'TalbeRow',
   components: { StretchedRow, DefaultRow, SelectedRow, CloneRow },
-  mixins: [rowColors],
+  inject: ['opacities'],
   inheritAttrs: false,
   props: {
     node: {
@@ -62,14 +60,16 @@ export default {
         'data-level': this.level,
       }
     },
+    opacity() {
+      return this.opacities[this.level - 1] || 0
+    },
     rowStyle() {
       const keysLength = this.keys.length
       const style = {
         gridTemplateColumns: `4fr repeat(${keysLength}, minmax(100px, 1fr)) 50px`,
       }
       if (this.level > 2 && this.isCategory) {
-        style.color = '#000'
-        style.fontWeight = '700'
+        style.backgroundColor = `rgba(38, 138, 173, ${this.opacity})`
       }
       return style
     },

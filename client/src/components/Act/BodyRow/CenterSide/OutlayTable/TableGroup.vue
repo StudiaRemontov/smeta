@@ -6,15 +6,12 @@ import HeaderCells from './HeaderCells.vue'
 import { isObjectId } from '@/helpers/isObjectId'
 import { formatNumber } from '@/helpers/formatNumber'
 
-import tableRowColors from '@/mixins/tableRowColors.mixin'
-
 export default {
   name: 'TableGroup',
   components: {
     JobList,
     HeaderCells,
   },
-  mixins: [tableRowColors],
   props: {
     node: {
       type: Object,

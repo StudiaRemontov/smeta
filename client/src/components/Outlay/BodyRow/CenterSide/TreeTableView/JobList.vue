@@ -129,7 +129,6 @@ export default {
   background-color: #fff;
 
   &--category {
-    font-weight: 700;
     position: sticky;
     top: calc(32px * v-bind(level));
     z-index: calc(10 - v-bind(level));

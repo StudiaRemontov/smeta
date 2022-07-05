@@ -4,6 +4,7 @@ import { formatNumber } from '@/helpers/formatNumber'
 
 export default {
   name: 'TableRow',
+  inject: ['opacities'],
   props: {
     node: {
       type: Object,
@@ -24,11 +25,18 @@ export default {
     isCategory() {
       return this.children.length > 0
     },
+    opacity() {
+      return this.opacities[this.level - 1] || 0
+    },
     headerStyle() {
       const keysLength = this.keys.length
-      return {
+      const style = {
         gridTemplateColumns: `4fr repeat(${keysLength}, minmax(100px, 1fr))`,
       }
+      if (this.isCategory) {
+        style.backgroundColor = `rgba(38, 138, 173, ${this.opacity})`
+      }
+      return style
     },
     sum() {
       const quantity = this.node.data[this.quantityKey.id]
@@ -96,8 +104,8 @@ export default {
   align-items: center;
 
   &.category {
-    font-weight: 700;
     position: sticky;
+    color: #fff;
     top: calc(32px * v-bind(level));
     height: 32px;
   }

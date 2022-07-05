@@ -1,18 +1,23 @@
 <script>
+import { computed } from 'vue'
 import { mapGetters } from 'vuex'
 
 import TableGroup from './TableGroup.vue'
 
-import tableRowColors from '@/mixins/tableRowColors.mixin'
-
 import { filterNodes } from '@/store/modules/outlay.module'
+import { opacityGenerator } from '@/helpers/opacityGenerator'
 
 export default {
   components: { TableGroup },
-  mixins: [tableRowColors],
   provide() {
     return {
       editable: false,
+      opacities: computed(() => this.opacities),
+    }
+  },
+  data() {
+    return {
+      opacities: [],
     }
   },
   computed: {
@@ -54,7 +59,23 @@ export default {
       }
     },
   },
+  mounted() {
+    const depths = this.data.map(d => this.getTreeDepth(d, 0))
+    const maxDepth = Math.max(...depths)
+    const depth = maxDepth
+    this.opacities = opacityGenerator(depth)
+  },
   methods: {
+    getTreeDepth(node, depth) {
+      const { children } = node
+      let result = depth
+      if (children && children.length > 0) {
+        const depths = children.map(c => this.getTreeDepth(c, depth + 1))
+        const max = Math.max(...depths)
+        result = max
+      }
+      return result
+    },
     treeToList(node, list) {
       const { children } = node
       if (children && children.length > 0) {
