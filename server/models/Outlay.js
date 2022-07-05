@@ -24,6 +24,7 @@ const roomSchema = new mongoose.Schema(
       type: String,
     },
     jobs: [jobsSchema],
+    newJobs: [jobsSchema],
     options: {
       width: {
         type: String,

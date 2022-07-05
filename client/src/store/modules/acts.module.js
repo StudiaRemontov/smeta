@@ -75,6 +75,26 @@ const prepareData = (actsData, outlay, act) => {
   return data
 }
 
+export const mergeNodes = nodes => {
+  const groupped = nodes.reduce((acc, node) => {
+    acc[node.key] = acc[node.key] || []
+    const { children } = node
+    const data = children.length > 0 ? children : node
+    acc[node.key].push(data)
+    return acc
+  }, {})
+  return Object.entries(groupped).map(([key, values]) => {
+    const node = nodes.find(n => n.key === key)
+    const { children } = node
+    if (children && children.length > 0) {
+      const flatted = values.flat()
+      node.children = mergeNodes(flatted)
+      return node
+    }
+    return node
+  })
+}
+
 export default {
   namespaced: true,
   state: {
@@ -199,27 +219,84 @@ export default {
     setOutlay({ state }, payload) {
       state.outlay = payload
     },
-    setAct({ state, commit }, payload) {
-      if (!payload) {
-        return commit('resetAct')
-      }
-      if (state.act) {
-        commit('resetAct')
-      }
-      const { outlay: currentOutlay, acts } = state
-      state.act = acts.find(act => act._id === payload._id)
-      const clone = JSON.parse(JSON.stringify(currentOutlay.rooms))
-      const actsData = acts.reduce((acc, act) => {
-        const actRooms = clone.reduce((rooms, room) => {
-          const roomClone = JSON.parse(JSON.stringify(room))
+    setActsData({ state, rootGetters }) {
+      //структура данных актов:
+      /*
+        Из работ сметы,
+        Из Добавленных работ сметы
+        и из тех, что заполнены в акте, но удалены в добавленных
+        количество беру их заполненных работ 
+      */
+      const { acts, outlay, act } = state
+      const notRemoved = acts.filter(act => !act.removedAt)
+      const outlays = rootGetters['outlays/outlays']
+      const usedOutlay = outlays.find(o => o._id === outlay._id)
+      const outlayClone = JSON.parse(JSON.stringify(usedOutlay))
+      const { rooms: outlayRooms } = outlayClone
+      const actIndex = notRemoved.findIndex(a => a._id === act._id)
+      const croppedActs = [...notRemoved].slice(0, actIndex + 1)
+
+      const allOutlayRoomJobs = outlayRooms.map(room => {
+        const { jobs, newJobs, id } = room
+        const merged = mergeNodes([...jobs, ...newJobs])
+        return {
+          id,
+          jobs: merged,
+        }
+      })
+
+      const actsWithRooms = croppedActs.filter(act => act.rooms.length > 0)
+
+      const actRoomsData = actsWithRooms.map(croppedAct => {
+        const { rooms: actRooms } = croppedAct
+        return actRooms.reduce((acc, room) => {
+          const { jobs, id: roomId } = room
+          if (acc[roomId]) {
+            acc[roomId] = [...acc[roomId], ...jobs]
+            return acc
+          }
+          acc[roomId] = jobs
+          return acc
+        }, {})
+      })
+      const mergedActJobs = actRoomsData.map(roomObj => {
+        const [id, jobs] = Object.entries(roomObj).flat()
+        return {
+          id,
+          jobs,
+        }
+      })
+      const fullRoomData = [...allOutlayRoomJobs, ...mergedActJobs].reduce(
+        (acc, room) => {
+          if (acc[room.id]) {
+            acc[room.id] = [...acc[room.id], ...room.jobs]
+            return acc
+          }
+          acc[room.id] = room.jobs
+          return acc
+        },
+        {},
+      )
+
+      const mergedRoomData = Object.entries(fullRoomData).reduce(
+        (acc, [roomId, jobs]) => {
+          acc[roomId] = mergeNodes(jobs)
+          return acc
+        },
+        {},
+      )
+
+      const actsData = croppedActs.reduce((acc, act) => {
+        const actRooms = outlayRooms.reduce((rooms, room) => {
           const foundRoom = act.rooms.find(r => r.id === room.id)
           let jobs = []
+          //работы, которые могут быть в акте, но не могут быть в смете
           if (foundRoom) {
             jobs = foundRoom.jobs.map(getValuesInside).flat()
           }
-          const data = roomClone.jobs.map(n =>
-            setDefaultQuantityExcept(n, jobs),
-          )
+          const fullJobs = JSON.parse(JSON.stringify(mergedRoomData[room.id]))
+          const merged = mergeNodes(fullJobs)
+          const data = merged.map(n => setDefaultQuantityExcept(n, jobs))
           rooms[room.id] = data
           return rooms
         }, {})
@@ -227,6 +304,17 @@ export default {
         return acc
       }, {})
       state.actsData = actsData
+    },
+    async setAct({ state, commit, dispatch }, payload) {
+      if (!payload) {
+        return commit('resetAct')
+      }
+      const { act, acts } = state
+      if (act) {
+        commit('resetAct')
+      }
+      state.act = acts.find(act => act._id === payload._id)
+      await dispatch('setActsData')
     },
     async fetchAll({ state, commit, dispatch }) {
       const { contentLoaded, loading } = state

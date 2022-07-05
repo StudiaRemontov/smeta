@@ -1,1 +1,1 @@
-export default ['Спецмонтаж']
+export default ['Специальные работы']

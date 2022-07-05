@@ -38,7 +38,12 @@ export default {
 </script>
 
 <template>
-  <div v-for="cell in cells" :key="cell.id" class="table-cell">
+  <div
+    v-for="cell in cells"
+    :key="cell.id"
+    class="table-cell"
+    :class="{ nowrap: cells.length === 1 }"
+  >
     {{ cell.name }}
   </div>
 </template>
@@ -46,5 +51,10 @@ export default {
 <style lang="scss" scoped>
 .table-cell {
   @include table-cell;
+
+  &.nowrap {
+    overflow: visible;
+    white-space: nowrap;
+  }
 }
 </style>

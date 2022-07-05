@@ -89,32 +89,38 @@ export default {
 </script>
 
 <template>
-  <div v-if="title" class="table-row table-row--category" :style="headerStyle">
-    <div class="table-cell" @click="categoryClick">
-      {{ title }}
+  <div class="jobs-list">
+    <div
+      v-if="title"
+      class="table-row table-row--category"
+      :style="headerStyle"
+    >
+      <div class="table-cell" @click="categoryClick">
+        {{ title }}
+      </div>
     </div>
+    <template v-if="editable">
+      <EditableTableRow
+        v-for="(child, index) in children"
+        :key="child.key"
+        :node="child"
+        :level="level + 1"
+        :room="room"
+        :parent="node"
+        :index="index"
+        @select-node="select"
+      />
+    </template>
+    <template v-else>
+      <TableRow
+        v-for="child in children"
+        :key="child.key"
+        :node="child"
+        :level="level + 1"
+        :room="room"
+      />
+    </template>
   </div>
-  <template v-if="editable">
-    <EditableTableRow
-      v-for="(child, index) in children"
-      :key="child.key"
-      :node="child"
-      :level="level + 1"
-      :room="room"
-      :parent="node"
-      :index="index"
-      @select-node="select"
-    />
-  </template>
-  <template v-else>
-    <TableRow
-      v-for="child in children"
-      :key="child.key"
-      :node="child"
-      :level="level + 1"
-      :room="room"
-    />
-  </template>
 </template>
 
 <style lang="scss" scoped>

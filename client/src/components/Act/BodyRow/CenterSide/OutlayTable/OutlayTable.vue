@@ -4,7 +4,10 @@ import { mapGetters } from 'vuex'
 import TableGroup from './TableGroup.vue'
 
 import tableRowColors from '@/mixins/tableRowColors.mixin'
-import { getValuesInside } from '@/store/modules/outlay.module'
+import {
+  getValuesInside,
+  treeToListOnlyKeys,
+} from '@/store/modules/outlay.module'
 import { filterTreeByQuantity } from '@/store/modules/acts.module'
 
 export default {
@@ -25,12 +28,10 @@ export default {
     },
     completed() {
       return this.rooms.reduce((acc, r) => {
-        const values = this.croppedActs
-          .map(act => {
-            return this.completedValues[act._id][r.id]
-          })
-          .flat()
-        const uniq = new Set(values)
+        const data = JSON.parse(JSON.stringify(this.roomsData[r.id]))
+        const filtered = data.filter(filterTreeByQuantity)
+        const keys = filtered.map(treeToListOnlyKeys).flat()
+        const uniq = new Set(keys)
         acc[r.id] = [...uniq]
         return acc
       }, {})
@@ -43,6 +44,27 @@ export default {
         return this.getDataWithCategories()
       }
       return this.dataWithRooms
+    },
+    roomsData() {
+      const clone = JSON.parse(JSON.stringify(this.croppedActs))
+      const data = clone.reduce((acc, act) => {
+        this.rooms.forEach(room => {
+          const roomData = JSON.parse(
+            JSON.stringify(this.actsData[act._id][room.id]),
+          )
+          if (acc[room.id]) {
+            acc[room.id] = [...acc[room.id], ...roomData]
+            return
+          }
+          acc[room.id] = roomData
+        })
+        return acc
+      }, {})
+      return Object.entries(data).reduce((acc, [roomId, value]) => {
+        const merged = this.mergeChildren(value)
+        acc[roomId] = merged
+        return acc
+      }, {})
     },
   },
   methods: {
@@ -100,20 +122,10 @@ export default {
       })
     },
     getDataWithRooms() {
-      const roomsData = Object.entries(this.actsData).reduce(
-        (acc, [key, value]) => {
-          const isInCropped = this.croppedActs.find(a => a._id === key)
-          if (isInCropped) {
-            return [...acc, value]
-          }
-          return acc
-        },
-        [],
-      )
       const rooms = [...this.rooms].reverse()
-      return rooms.map(room => {
-        const roomValues = roomsData.map(r => r[room.id]).flat()
-
+      const clone = JSON.parse(JSON.stringify(rooms))
+      return clone.map(room => {
+        const roomValues = this.roomsData[room.id].flat()
         const values = roomValues.reduce((acc, data) => {
           const nodes = getValuesInside(data)
           return [...acc, ...nodes]
@@ -125,12 +137,11 @@ export default {
           return acc
         }, {})
         const summed = Object.values(groupped).map(this.sumQuantities)
-        const cloneJobs = JSON.parse(JSON.stringify(room.jobs))
+        const cloneJobs = JSON.parse(JSON.stringify(this.roomsData[room.id]))
         const children = cloneJobs
           .map(n => this.updateNodesInTree(n, summed))
           .flat()
         const filtered = children.filter(filterTreeByQuantity)
-
         return {
           key: room.id,
           data: {

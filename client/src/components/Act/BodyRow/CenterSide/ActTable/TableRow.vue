@@ -29,11 +29,22 @@ export default {
   },
   computed: {
     ...mapGetters('outlay', ['priceKey', 'striped']),
-    ...mapGetters('acts', ['act', 'hoveredItem', 'selectedItem']),
+    ...mapGetters('acts', [
+      'act',
+      'hoveredItem',
+      'selectedItem',
+      'showOnlyCompleted',
+      'completedValues',
+    ]),
     data() {
       return this.node.data
     },
     children() {
+      if (this.showOnlyCompleted) {
+        return this.node.children.filter(n =>
+          this.completedValues[this.act._id][this.room].includes(n.key),
+        )
+      }
       return this.node.children || []
     },
     isCategory() {
@@ -69,6 +80,9 @@ export default {
   watch: {
     selected(value) {
       if (value) {
+        if (this.isCategory) {
+          return
+        }
         this.selectInput()
       }
     },
@@ -89,6 +103,9 @@ export default {
       input.$el.select()
     },
     mouseEnterHandler() {
+      if (this.isCategory) {
+        return
+      }
       this.setHoveredItem({ id: this.node.key, room: this.room })
     },
     mouseLeaveHandler() {
@@ -108,18 +125,20 @@ export default {
     @mouseenter="mouseEnterHandler"
     @mouseleave="mouseLeaveHandler"
   >
-    <div class="table-cell">
-      <InputNumber
-        v-model="data.quantity"
-        ref="input"
-        class="input"
-        :disabled="!isEditable"
-        :min="0"
-        @change="changeHandler"
-        @focus="selectInput"
-      />
-    </div>
-    <div class="table-cell">{{ sum }}</div>
+    <template v-if="!isCategory">
+      <div class="table-cell">
+        <InputNumber
+          v-model="data.quantity"
+          ref="input"
+          class="input"
+          :disabled="!isEditable"
+          :min="0"
+          @change="changeHandler"
+          @focus="selectInput"
+        />
+      </div>
+      <div class="table-cell">{{ sum }}</div>
+    </template>
   </TableRowWrapper>
   <template v-if="isCategory">
     <TableRow

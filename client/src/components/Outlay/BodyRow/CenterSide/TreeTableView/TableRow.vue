@@ -36,6 +36,14 @@ export default {
       return formatNumber(quantity * price)
     },
     viewData() {
+      if (this.isCategory) {
+        return [
+          {
+            key: this.keys[0].id,
+            value: this.data[this.keys[0].id],
+          },
+        ]
+      }
       const formattedKeys = [this.quantityKey.id, this.priceKey.id, 'quantity']
       return this.keys.map(k => {
         if (formattedKeys.includes(k.id)) {

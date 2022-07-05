@@ -7,6 +7,7 @@ import {
   getValuesInside,
   treeToListOnlyKeys,
 } from '@/store/modules/outlay.module'
+
 import { filterTreeByQuantity } from '@/store/modules/acts.module'
 
 import { mapGetters } from 'vuex'
@@ -23,26 +24,42 @@ export default {
     },
     completed() {
       return this.rooms.reduce((acc, r) => {
-        const values = this.croppedActs
-          .map(act => {
-            const actRoomData = JSON.parse(
-              JSON.stringify(this.actsData[act._id][r.id]),
-            )
-            const filtered = actRoomData.filter(filterTreeByQuantity)
-            const keys = filtered.map(treeToListOnlyKeys).flat()
-            return keys
-          })
-          .flat()
-        const uniq = new Set(values)
+        const data = JSON.parse(JSON.stringify(this.roomsData[r.id]))
+        const filtered = JSON.parse(JSON.stringify(data)).filter(
+          filterTreeByQuantity,
+        )
+        const keys = filtered.map(treeToListOnlyKeys).flat()
+        const uniq = new Set(keys)
         acc[r.id] = [...uniq]
+        return acc
+      }, {})
+    },
+    roomsData() {
+      const data = this.croppedActs.reduce((acc, act) => {
+        this.rooms.forEach(room => {
+          const roomData = JSON.parse(
+            JSON.stringify(this.actsData[act._id][room.id]),
+          )
+          if (acc[room.id]) {
+            acc[room.id] = [...acc[room.id], ...roomData]
+            return
+          }
+          acc[room.id] = roomData
+        })
+        return acc
+      }, {})
+
+      return Object.entries(data).reduce((acc, [roomId, value]) => {
+        const merged = this.mergeChildren(value)
+        acc[roomId] = merged
         return acc
       }, {})
     },
     tableData() {
       if (!this.completed) return []
       const reversed = [...this.rooms].reverse()
-      return reversed.map(room => {
-        const cloneJobs = JSON.parse(JSON.stringify(room.jobs))
+      const data = reversed.map(room => {
+        const cloneJobs = JSON.parse(JSON.stringify(this.roomsData[room.id]))
         const jobs = cloneJobs.filter(n =>
           this.filterByCompleted(n, this.completed[room.id]),
         )
@@ -51,6 +68,7 @@ export default {
           jobs,
         }
       })
+      return data
     },
     sum() {
       const total = this.rooms.reduce((total, room) => {
@@ -72,6 +90,48 @@ export default {
     },
   },
   methods: {
+    sumQuantities(nodes) {
+      const node = nodes.reduce((acc, node) => {
+        if (!Object.keys(acc).length) {
+          return node
+        }
+        const { data: accData } = acc
+        const { data: nodeData } = node
+        const quantity = accData.quantity + nodeData.quantity
+        const newData = {
+          ...accData,
+          quantity,
+        }
+        return {
+          ...acc,
+          data: newData,
+        }
+      }, {})
+      return node
+    },
+    mergeChildren(nodes) {
+      const groupped = nodes.reduce((acc, node) => {
+        acc[node.key] = acc[node.key] || []
+        const { children } = node
+        const data = children.length > 0 ? children : node
+        acc[node.key].push(data)
+        return acc
+      }, {})
+      if (nodes && nodes.length > 0 && nodes[0].children.length === 0) {
+        const summed = Object.values(groupped).map(this.sumQuantities)
+        return summed
+      }
+      return Object.entries(groupped).map(([key, values]) => {
+        const node = nodes.find(n => n.key === key)
+        const { children } = node
+        if (children && children.length > 0) {
+          const flatted = values.flat()
+          node.children = this.mergeChildren(flatted)
+          return node
+        }
+        return node
+      })
+    },
     filterByCompleted(node, completed) {
       const { children, key } = node
       if (children && children.length > 0) {

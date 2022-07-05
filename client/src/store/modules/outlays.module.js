@@ -4,7 +4,6 @@ import idb from '../local/idb'
 import OutlayService from '../../api/OutlayService'
 import Outlay from '../../models/Outlay'
 
-import { getAllValues } from '@/helpers/treeMethods'
 import { InputType } from '../../enum/InputType'
 import getLocalDifference from '../../helpers/getLocalDifference'
 
@@ -205,18 +204,6 @@ export default {
     },
     async update({ commit, dispatch, rootGetters }, { id, data }) {
       try {
-        const { rooms } = data
-        const quantityKey = await dispatch('getQuantityKey', data)
-        const isValid = rooms.every(room => {
-          const nodes = room.jobs.map(getAllValues).flat()
-          const invalid = nodes.filter(n => n.data[quantityKey.id] === 0)
-          return invalid.length === 0
-        })
-        if (!isValid) {
-          const newData = { _id: id, ...data }
-          await idb.saveDataInCollection('outlays', newData)
-          return commit('updateById', { id, data: newData })
-        }
         const response = await OutlayService.update({ _id: id, ...data })
         commit('updateById', { id, data: response.data })
         const outlay = rootGetters['outlay/outlay']

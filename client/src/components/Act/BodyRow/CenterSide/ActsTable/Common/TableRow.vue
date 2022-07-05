@@ -58,6 +58,9 @@ export default {
   methods: {
     ...mapMutations('acts', ['setHoveredItem']),
     mouseEnterHandler() {
+      if (this.isCategory) {
+        return
+      }
       this.setHoveredItem({ id: this.node.key, room: this.room })
     },
     mouseLeaveHandler() {
@@ -77,10 +80,12 @@ export default {
     @mouseenter="mouseEnterHandler"
     @mouseleave="mouseLeaveHandler"
   >
-    <div class="table-cell">
-      {{ quantity }}
-    </div>
-    <div class="table-cell">{{ sum }}</div>
+    <template v-if="!isCategory">
+      <div class="table-cell">
+        {{ quantity }}
+      </div>
+      <div class="table-cell">{{ sum }}</div>
+    </template>
   </TableRowWrapper>
   <template v-if="isCategory">
     <TableRow

@@ -74,6 +74,9 @@ export default {
   methods: {
     ...mapMutations('acts', ['setHoveredItem']),
     mouseEnterHandler() {
+      if (this.isCategory) {
+        return
+      }
       this.setHoveredItem({ id: this.node.key, room: this.room })
     },
     mouseLeaveHandler() {
@@ -94,7 +97,12 @@ export default {
     @mouseenter="mouseEnterHandler"
     @mouseleave="mouseLeaveHandler"
   >
-    <template v-for="(item, index) in viewData" :key="item.key">
+    <template v-if="isCategory">
+      <div class="table-cell">
+        {{ viewData[0].value }}
+      </div>
+    </template>
+    <template v-else v-for="(item, index) in viewData" :key="item.key">
       <div
         v-if="index === 0"
         v-tooltip.top="item.value"

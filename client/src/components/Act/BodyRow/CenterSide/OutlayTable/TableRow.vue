@@ -76,6 +76,9 @@ export default {
   methods: {
     ...mapMutations('acts', ['setHoveredItem']),
     mouseEnterHandler() {
+      if (this.isCategory) {
+        return
+      }
       this.setHoveredItem({ id: this.node.key, room: this.room })
     },
     mouseLeaveHandler() {

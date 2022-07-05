@@ -106,6 +106,27 @@ export default {
         return this.getRoomWithSum(room, values)
       })
     },
+    roomsData() {
+      const clone = JSON.parse(JSON.stringify(this.croppedActs))
+      const data = clone.reduce((acc, act) => {
+        this.rooms.forEach(room => {
+          const roomData = JSON.parse(
+            JSON.stringify(this.actsData[act._id][room.id]),
+          )
+          if (acc[room.id]) {
+            acc[room.id] = [...acc[room.id], ...roomData]
+            return
+          }
+          acc[room.id] = roomData
+        })
+        return acc
+      }, {})
+      return Object.entries(data).reduce((acc, [roomId, value]) => {
+        const merged = this.mergeChildren(value)
+        acc[roomId] = merged
+        return acc
+      }, {})
+    },
   },
   methods: {
     ...mapMutations('acts', ['setShowRightSide']),
@@ -245,23 +266,8 @@ export default {
       return node
     },
     getDataWithRoom() {
-      const roomsData = Object.entries(this.actsData).reduce(
-        (acc, [key, value]) => {
-          const isInCropped = this.croppedActs.find(a => a._id === key)
-          if (isInCropped) {
-            return [...acc, value]
-          }
-          return acc
-        },
-        [],
-      )
       return this.rooms.reduce((acc, room) => {
-        const roomValues = roomsData
-          .reduce((acc, rData) => {
-            return [...acc, rData[room.id]]
-          }, [])
-          .flat()
-
+        const roomValues = this.roomsData[room.id].flat()
         const values = roomValues.reduce((acc, data) => {
           const nodes = getValuesInside(data)
           return [...acc, ...nodes]
@@ -293,7 +299,7 @@ export default {
           }, {})
           return node
         })
-        const cloneJobs = JSON.parse(JSON.stringify(room.jobs))
+        const cloneJobs = JSON.parse(JSON.stringify(this.roomsData[room.id]))
         const children = cloneJobs
           .map(n => this.updateNodesInTree(n, summed))
           .flat()

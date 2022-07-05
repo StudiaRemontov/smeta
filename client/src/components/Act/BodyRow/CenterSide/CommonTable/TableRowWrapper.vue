@@ -16,7 +16,7 @@
     background-color: #e1e1e1;
   }
 
-  &.selected {
+  &.selected:not(.category) {
     background-color: #e0ffc0;
   }
 }

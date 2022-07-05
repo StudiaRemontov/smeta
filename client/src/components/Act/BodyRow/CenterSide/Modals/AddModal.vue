@@ -1,7 +1,7 @@
 <script>
 import Dialog from 'primevue/dialog'
 import JobsTable from '../JobsTable/JobsTable.vue'
-import { mapGetters } from 'vuex'
+import { mapActions, mapGetters } from 'vuex'
 import { computed } from 'vue'
 
 import { getValuesInside } from '@/store/modules/outlay.module'
@@ -38,7 +38,7 @@ export default {
     ...mapGetters('outlay', ['outlay']),
     ...mapGetters('edition', ['editions']),
     ...mapGetters('directory', ['directories']),
-    ...mapGetters('acts', ['act']),
+    ...mapGetters('acts', ['act', 'activeRoom']),
     display: {
       get() {
         return this.modelValue
@@ -49,6 +49,8 @@ export default {
     },
   },
   methods: {
+    ...mapActions('outlays', ['update']),
+    ...mapActions('acts', ['setActsData', 'setOutlay']),
     onShow() {
       this.initTableData()
     },
@@ -60,18 +62,19 @@ export default {
       node.children = children.filter(callback)
       if (node.children.length > 0) {
         node.children = node.children.filter(c => this.filterNodes(c, callback))
-        return node
+        return node.children.length > 0
       }
       return false
     },
-    initTableData() {
-      if (!this.outlay || (this.tableData && this.keys)) {
+    createTableData() {
+      if (!this.outlay) {
         return
       }
       const outlayClone = JSON.parse(JSON.stringify(this.outlay))
       const outlayJobs = outlayClone.rooms
         .reduce((acc, room) => {
-          const jobs = room.jobs.map(getValuesInside).flat()
+          const fullJobs = [...room.jobs, ...room.newJobs]
+          const jobs = fullJobs.map(getValuesInside).flat()
           acc = [...acc, jobs]
           return acc
         }, [])
@@ -81,13 +84,16 @@ export default {
       const { edition } = outlayClone
       const editionInUse = this.editions.find(e => e._id === edition)
       this.edition = JSON.parse(JSON.stringify(editionInUse))
-      const { data } = this.edition
+      const { data } = JSON.parse(JSON.stringify(editionInUse))
       this.tableData = data.children.filter(c =>
         this.filterNodes(c, n => !keys.includes(n.key)),
       )
       this.tableData = this.tableData.filter(n => n.children.length > 0)
 
-      this.keys = this.edition.keys
+      this.keys = editionInUse.keys
+    },
+    initTableData() {
+      this.createTableData()
       this.initted = true
     },
     pushNodes(nodes) {
@@ -113,14 +119,65 @@ export default {
       )
       return tree
     },
-    save() {
-      //save method
-      // const tree = this.createTreeFromNodes()
+    mergeNodes(nodes) {
+      const groupped = nodes.reduce((acc, node) => {
+        acc[node.key] = acc[node.key] || []
+        const { children } = node
+        const data = children.length > 0 ? children : node
+        acc[node.key].push(data)
+        return acc
+      }, {})
+      return Object.entries(groupped).map(([key, values]) => {
+        const node = nodes.find(n => n.key === key)
+        const { children } = node
+        if (children && children.length > 0) {
+          const flatted = values.flat()
+          node.children = this.mergeNodes(flatted)
+          return node
+        }
+        return node
+      })
     },
-    cancel() {
+    async save() {
+      try {
+        const currentRoom = this.outlay.rooms.find(
+          r => r.id === this.activeRoom.id,
+        )
+        if (!currentRoom) {
+          return this.$toast.add({
+            severity: 'error',
+            summary: 'Ошибка',
+            detail: 'Перед добавлением нужно выбрать комнату',
+            life: 3000,
+          })
+        }
+        const cloneRoom = JSON.parse(JSON.stringify(currentRoom))
+        const { newJobs } = cloneRoom
+        const tree = JSON.parse(JSON.stringify(this.createTreeFromNodes()))
+        const merged = this.mergeNodes([...tree, ...newJobs].flat())
+        cloneRoom.newJobs = merged
+        const newOutlay = JSON.parse(JSON.stringify(this.outlay))
+        const updatedRooms = newOutlay.rooms.map(r => {
+          if (r.id === this.activeRoom.id) {
+            return cloneRoom
+          }
+          return r
+        })
+        const data = {
+          ...newOutlay,
+          rooms: updatedRooms,
+        }
+        await this.update({ id: data._id, data })
+        this.setActsData()
+        this.close()
+      } catch (error) {
+        console.log(error)
+      }
+    },
+    close() {
       const { dialog } = this.$refs
       dialog.close()
-      //close modal
+      this.selectedNodes = {}
     },
   },
 }
@@ -142,7 +199,7 @@ export default {
     </div>
     <template #footer>
       <button class="button save-button" @click="save">Добавить</button>
-      <button class="button cancel-button" @click="cancel">Отмена</button>
+      <button class="button cancel-button" @click="close">Отмена</button>
     </template>
   </Dialog>
 </template>

@@ -45,7 +45,12 @@ export default {
 </script>
 
 <template>
-  <template v-for="(row, index) in rowData" :key="row.key">
+  <template v-if="isCategory">
+    <div class="table-cell">
+      {{ rowData[0].value }}
+    </div>
+  </template>
+  <template v-else v-for="(row, index) in rowData" :key="row.key">
     <div
       v-if="index === 0"
       v-tooltip.top="row.value"

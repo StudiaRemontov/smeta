@@ -27,6 +27,7 @@ export default {
       'hoveredItem',
       'selectedItem',
       'showLeftQuantity',
+      'act',
     ]),
     data() {
       return this.node.data
@@ -34,7 +35,7 @@ export default {
     children() {
       if (this.showOnlyCompleted) {
         return this.node.children.filter(n =>
-          this.completedValues.includes(n.key),
+          this.completedValues[this.act._id][this.room].includes(n.key),
         )
       }
       return this.node.children || []
@@ -80,6 +81,9 @@ export default {
   methods: {
     ...mapMutations('acts', ['setHoveredItem']),
     mouseEnterHandler() {
+      if (this.isCategory) {
+        return
+      }
       this.setHoveredItem({ id: this.node.key, room: this.room })
     },
     mouseLeaveHandler() {

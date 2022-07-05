@@ -55,7 +55,6 @@ export default {
   <div class="completed-table" ref="wrapper">
     <RoomTable
       v-for="room in roomList"
-      :acts="[act]"
       :key="room.id"
       :room="room"
       ref="table"

@@ -308,6 +308,14 @@ export default {
       this.setSelectedItem({ id, room })
     },
     openModal() {
+      if (!this.activeRoom) {
+        return this.$toast.add({
+          severity: 'warn',
+          summary: 'Выберите комнату',
+          detail: 'Перед добавлением нужно выбрать комнату',
+          life: 3000,
+        })
+      }
       this.displayModal = true
     },
   },
@@ -339,7 +347,11 @@ export default {
               @click="autoCompleteClickHanler"
             />
           </div>
-          <button class="body-actions__button button" @click="openModal">
+          <button
+            class="body-actions__button button"
+            :disabled="!activeRoom"
+            @click="openModal"
+          >
             Добавить работу
           </button>
         </div>
@@ -421,6 +433,10 @@ export default {
     flex-basis: 150px;
     flex-grow: 1;
     justify-content: center;
+
+    &:disabled {
+      opacity: 0.5;
+    }
   }
 
   &__group {

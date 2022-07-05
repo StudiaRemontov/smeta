@@ -31,28 +31,9 @@ export default {
       return [...this.acts].slice(0, index + 1)
     },
     data() {
-      const roomsData = Object.entries(this.actsData).reduce(
-        (acc, [key, value]) => {
-          const isInCropped = this.croppedActs.find(a => a._id === key)
-          if (isInCropped) {
-            return [...acc, value]
-          }
-          return acc
-        },
-        [],
+      const roomValues = JSON.parse(
+        JSON.stringify(this.actsData[this.act._id][this.room.id]),
       )
-      const roomValues = roomsData
-        .map(r => {
-          const rooms = Object.entries(r).map(([key, value]) => {
-            return {
-              roomId: key,
-              value,
-            }
-          })
-          const room = rooms.find(r => r.roomId === this.room.id)
-          return room.value
-        })
-        .flat()
       const values = roomValues.reduce((acc, data) => {
         const nodes = getValuesInside(data)
         return [...acc, ...nodes]
@@ -82,8 +63,9 @@ export default {
         }, {})
         return node
       })
-
-      const cloneJobs = JSON.parse(JSON.stringify(this.room.jobs))
+      const cloneJobs = JSON.parse(
+        JSON.stringify(this.actsData[this.act._id][this.room.id]),
+      )
       const data = cloneJobs.map(n => this.updateNodesInTree(n, summed)).flat()
       const children = this.showOnlyCompleted
         ? data.filter(n =>
@@ -103,29 +85,25 @@ export default {
       ]
     },
     actData() {
-      const acts = [this.act]
-      return acts.map(act => {
-        const children = this.showOnlyCompleted
-          ? this.actsData[act._id][this.room.id].filter(n =>
-              this.completedValues[act._id][this.room.id].includes(n.key),
-            )
-          : this.actsData[act._id][this.room.id]
-
-        return {
-          key: act._id,
-          data: [
-            {
-              key: this.room.id,
-              data: {
-                [this.keys[0].id]: act.name,
-              },
-              children,
-              room: true,
-              level: 0,
+      const children = this.showOnlyCompleted
+        ? this.actsData[this.act._id][this.room.id].filter(n =>
+            this.completedValues[this.act._id][this.room.id].includes(n.key),
+          )
+        : this.actsData[this.act._id][this.room.id]
+      return {
+        key: this.act._id,
+        data: [
+          {
+            key: this.room.id,
+            data: {
+              [this.keys[0].id]: this.act.name,
             },
-          ],
-        }
-      })
+            children,
+            room: true,
+            level: 0,
+          },
+        ],
+      }
     },
   },
   methods: {
@@ -191,13 +169,7 @@ export default {
       </div>
     </div>
     <div class="acts-wrapper">
-      <ActTable
-        v-for="act in actData"
-        :key="act.key"
-        :act="act.key"
-        :data="act.data"
-        :room="room"
-      />
+      <ActTable :act="actData.key" :data="actData.data" :room="room" />
     </div>
   </div>
 </template>
