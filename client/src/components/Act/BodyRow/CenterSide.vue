@@ -9,6 +9,8 @@ import OutlayTable from './CenterSide/OutlayTable/OutlayTable.vue'
 import OutlayBlock from '@/components/Layout/OutlayBlock.vue'
 import AddModal from './CenterSide/Modals/AddModal.vue'
 
+import { actStatus } from '../../../enum/actStatus'
+
 import { isObjectId } from '@/helpers/isObjectId'
 
 import { uniqBy } from 'lodash'
@@ -110,6 +112,9 @@ export default {
       const jobs = this.actsData[this.act._id][this.activeRoom.id].flat()
       const clone = JSON.parse(JSON.stringify(jobs))
       return clone.map(r => this.getGroups(r, null)).flat()
+    },
+    addButtonDisabled() {
+      return !this.activeRoom || this.act.status === actStatus.CONFIRMED
     },
   },
   watch: {
@@ -349,7 +354,7 @@ export default {
           </div>
           <button
             class="body-actions__button button"
-            :disabled="!activeRoom"
+            :disabled="addButtonDisabled"
             @click="openModal"
           >
             Добавить работу

@@ -5,7 +5,7 @@ import PrintLayout from '@/layouts/PrintLayout.vue'
 import ActLayout from '@/layouts/ActLayout.vue'
 import Toast from 'primevue/toast'
 
-import { mapActions, mapMutations } from 'vuex'
+import { mapActions, mapGetters, mapMutations } from 'vuex'
 
 export default {
   components: { MainLayout, OutlayLayout, ActLayout, PrintLayout, Toast },
@@ -15,8 +15,17 @@ export default {
     }
   },
   computed: {
+    ...mapGetters(['isOffline']),
     layout() {
       return this.$route?.meta?.layout || 'MainLayout'
+    },
+  },
+  watch: {
+    isOffline(value) {
+      if (!value) {
+        //mb loader
+        this.fetchData()
+      }
     },
   },
   async mounted() {
@@ -49,9 +58,6 @@ export default {
     async onConnectionChange() {
       const status = navigator.onLine
       this.setIsOffline(!status)
-      if (status) {
-        this.fetchData()
-      }
     },
   },
 }

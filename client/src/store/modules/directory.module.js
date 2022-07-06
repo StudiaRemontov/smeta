@@ -3,7 +3,7 @@ import { InputType } from '../../enum/InputType'
 import Key from '../../helpers/Key'
 import idb from '../local/idb'
 
-const getChildren = (directory, directories) => {
+export const getChildren = (directory, directories) => {
   const children = directories.filter(d => d.parent === directory._id)
 
   const subChildren = children.map(c => getChildren(c, directories))
@@ -163,6 +163,13 @@ export default {
         const root = directories.find(d => d._id === getters.root._id)
         const rootClone = JSON.parse(JSON.stringify(root))
         rootClone.keys.push(key)
+        const defaultValue = Key.getDefaultValue(key.type)
+        if (rootClone.values) {
+          rootClone.values = rootClone.values.map(row => {
+            row.data[key.id] = defaultValue
+            return row
+          })
+        }
         const response = await dispatch('updateById', {
           id: root._id,
           data: rootClone,
@@ -171,7 +178,6 @@ export default {
           return response
         }
         const architectures = getArchitectires(root, directories)
-        const defaultValue = Key.getDefaultValue(key.type)
         return await Promise.all(
           architectures.map(async arc => {
             const clone = JSON.parse(JSON.stringify(arc))
@@ -182,6 +188,7 @@ export default {
               row.data[key.id] = defaultValue
               return row
             })
+
             return await dispatch('updateById', { id: arc._id, data: arc })
           }),
         )

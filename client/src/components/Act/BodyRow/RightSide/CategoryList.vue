@@ -15,7 +15,7 @@ export default {
     ...mapGetters('acts', ['activeRoom', 'changeView']),
     categoryList() {
       if (this.changeView) {
-        return this.categories[0].jobs
+        return this.categories[0].jobs.filter(r => r.sum)
       }
       if (this.activeRoom) {
         const room = this.categories.find(r => r.id === this.activeRoom.id)

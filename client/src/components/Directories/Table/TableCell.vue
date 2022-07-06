@@ -1,9 +1,14 @@
 <script>
 import keyTypes from '@/mixins/keyTypes.mixin'
+import TreeSelect from 'primevue/treeselect'
+
+import { getChildren } from '@/store/modules/directory.module'
+import roomTypes from '@/enum/roomTypes'
 
 import { mapGetters } from 'vuex'
 
 export default {
+  components: { TreeSelect },
   mixins: [keyTypes],
   props: {
     value: {
@@ -23,6 +28,8 @@ export default {
     return {
       timeout: null,
       hasUnmounted: false,
+      selectedCollections: {},
+      roomTypes: roomTypes,
     }
   },
   computed: {
@@ -72,6 +79,23 @@ export default {
         this.$emit('change', this.rowIndex, this.field, value)
       },
     },
+    treeSelectValues: {
+      get() {
+        if (this.type !== this.InputType.COLLECTION || !this.value) {
+          return {}
+        }
+        return this.value.reduce((acc, key) => {
+          acc[key] = {
+            checked: true,
+          }
+          return acc
+        }, {})
+      },
+      set(value) {
+        const keys = Object.keys(value)
+        this.$emit('change', this.rowIndex, this.field, keys)
+      },
+    },
     options() {
       if (
         this.type !== this.InputType.SELECT &&
@@ -116,6 +140,18 @@ export default {
         ...values,
       ]
     },
+    collections() {
+      if (this.type !== this.InputType.COLLECTION) {
+        return []
+      }
+
+      const { rootDir } = this.key
+      const directory = this.roots.find(d => d._id === rootDir)
+      const children = getChildren(directory, this.directories)
+      const tree = this.createTree(directory, children)
+      const { children: treeChildren } = tree
+      return treeChildren
+    },
   },
   unmounted() {
     this.hasUnmounted = true
@@ -136,6 +172,19 @@ export default {
         return row.data[key.id]
       })
       return vals
+    },
+    createTreeNode(directory) {
+      return {
+        key: directory._id,
+        label: directory.name,
+        children: [],
+      }
+    },
+    createTree(directory, directories) {
+      const node = this.createTreeNode(directory)
+      const children = directories.filter(d => d.parent === directory._id)
+      node.children = children.map(c => this.createTree(c, directories))
+      return node
     },
   },
 }
@@ -178,6 +227,23 @@ export default {
       {{ option.text }}
     </option>
   </select>
+  <TreeSelect
+    v-else-if="type === InputType.COLLECTION"
+    v-model="treeSelectValues"
+    class="tree-select"
+    :options="collections"
+    selectionMode="checkbox"
+    placeholder="Выберите элементы"
+  ></TreeSelect>
+  <select
+    v-else-if="type === InputType.ROOM_TYPE"
+    v-model="newValue"
+    class="input"
+  >
+    <option v-for="type in roomTypes" :key="type">
+      {{ type }}
+    </option>
+  </select>
 </template>
 
 <style lang="scss" scoped>
@@ -192,5 +258,11 @@ export default {
   &:focus {
     border-color: #3b82f6;
   }
+}
+
+.tree-select {
+  max-width: 200px;
+  width: 100%;
+  overflow: hidden;
 }
 </style>

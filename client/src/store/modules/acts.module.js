@@ -4,6 +4,19 @@ import ActService from '../../api/ActService'
 import idb from '../local/idb'
 import getLocalDifference from '../../helpers/getLocalDifference'
 
+export const filterNodes = (node, callback) => {
+  const { children } = node
+  if (children.length === 0) {
+    return true
+  }
+  node.children = children.filter(callback)
+  if (node.children.length > 0) {
+    node.children = node.children.filter(c => filterNodes(c, callback))
+    return node.children.length > 0
+  }
+  return false
+}
+
 const getNameWithNumber = acts => {
   const number = acts.reduce((acc, act) => {
     const numRegex = /№\d+/gm
@@ -37,7 +50,7 @@ export const setDefaultQuantityExcept = (node, except) => {
   return { ...node, data: updatedData }
 }
 
-const getNodeFromTree = (node, nodeKey) => {
+export const getNodeFromTree = (node, nodeKey) => {
   const { key, children } = node
   if (key === nodeKey) {
     return node
@@ -476,6 +489,36 @@ export default {
       } catch (error) {
         return Promise.reject(error)
       }
+    },
+    async removeAddedJob(
+      { state, dispatch, rootGetters },
+      { roomId, nodeKey },
+    ) {
+      const { outlay: actOutlay, act } = state
+      const outlays = rootGetters['outlays/outlays']
+      const outlay = outlays.find(o => o._id === actOutlay._id)
+      const { rooms } = outlay
+      const roomToEdit = rooms.find(r => r.id === roomId)
+      const { newJobs } = roomToEdit
+      roomToEdit.newJobs = newJobs.filter(n =>
+        filterNodes(n, node => node.key !== nodeKey),
+      )
+      const response = await dispatch(
+        'outlays/update',
+        { id: outlay._id, data: outlay },
+        { root: true },
+      )
+      dispatch('setOutlay', response.data)
+      const { rooms: actRooms } = act
+      const actRoomToEdit = actRooms.find(r => r.id === roomId)
+      if (!actRoomToEdit) {
+        return dispatch('setActsData')
+      }
+      const { jobs } = actRoomToEdit
+      actRoomToEdit.jobs = jobs.filter(n =>
+        filterNodes(n, node => node.key !== nodeKey),
+      )
+      return await dispatch('updateLocalData', { id: act._id, data: act })
     },
   },
   getters: {

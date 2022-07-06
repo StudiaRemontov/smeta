@@ -109,7 +109,6 @@ export default {
     leftData() {
       const clone = JSON.parse(JSON.stringify(this.data))
       const children = clone.map(this.getTreeWithLeftData).flat()
-
       const data = [
         {
           key: this.room.id,
@@ -157,8 +156,8 @@ export default {
       const nodes = roomsDataClone.map(getValuesInside).flat()
       const sum = nodes.reduce((acc, node) => {
         const { data } = node
-        const quantity = data.quantity
-        const price = data[this.priceKey.id]
+        const quantity = data.quantity || 0
+        const price = data[this.priceKey.id] || 0
         const sum = quantity * price
         return acc + sum
       }, 0)

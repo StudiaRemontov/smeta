@@ -1,5 +1,6 @@
 <script>
 import Dialog from 'primevue/dialog'
+import InputText from 'primevue/inputtext'
 import JobsTable from '../JobsTable/JobsTable.vue'
 import { mapActions, mapGetters } from 'vuex'
 import { computed } from 'vue'
@@ -9,13 +10,14 @@ import { getValuesInside } from '@/store/modules/outlay.module'
 import { uniqBy } from 'lodash'
 
 export default {
-  components: { Dialog, JobsTable },
+  components: { Dialog, JobsTable, InputText },
   provide() {
     return {
-      keys: computed(() => this.keys),
+      keys: computed(() => this.keysWithType),
       selectedNodes: computed(() => this.selectedNodes),
       pushNodes: this.pushNodes,
       removeNodes: this.removeNodes,
+      updateNode: this.updateNodeInTable,
     }
   },
   props: {
@@ -29,9 +31,11 @@ export default {
     return {
       initted: false,
       tableData: null,
+      filteredTableData: null,
       selectedNodes: {},
       keys: null,
       edition: null,
+      search: '',
     }
   },
   computed: {
@@ -46,6 +50,19 @@ export default {
       set(value) {
         this.$emit('update:modelValue', value)
       },
+    },
+    keysWithType() {
+      if (!this.edition) {
+        return []
+      }
+      const { dirId } = this.edition
+      const directory = this.directories.find(d => d._id === dirId)
+      const { keys } = directory
+      const typedKeys = this.keys.map(k => {
+        const typedKey = keys.find(key => key.id === k.id)
+        return typedKey
+      })
+      return typedKeys
     },
   },
   methods: {
@@ -71,15 +88,13 @@ export default {
         return
       }
       const outlayClone = JSON.parse(JSON.stringify(this.outlay))
-      const outlayJobs = outlayClone.rooms
-        .reduce((acc, room) => {
-          const fullJobs = [...room.jobs, ...room.newJobs]
-          const jobs = fullJobs.map(getValuesInside).flat()
-          acc = [...acc, jobs]
-          return acc
-        }, [])
-        .flat()
-      const uniq = uniqBy(outlayJobs, 'key')
+      const outlayRoom = outlayClone.rooms.find(
+        room => room.id === this.activeRoom.id,
+      )
+      const { jobs: roomJobs, newJobs } = outlayRoom
+      const fullJobs = [...roomJobs, ...newJobs]
+      const jobs = fullJobs.map(getValuesInside).flat()
+      const uniq = uniqBy(jobs, 'key')
       const keys = uniq.map(n => n.key)
       const { edition } = outlayClone
       const editionInUse = this.editions.find(e => e._id === edition)
@@ -88,8 +103,9 @@ export default {
       this.tableData = data.children.filter(c =>
         this.filterNodes(c, n => !keys.includes(n.key)),
       )
-      this.tableData = this.tableData.filter(n => n.children.length > 0)
-
+      const tableData = this.tableData.filter(n => n.children.length > 0)
+      this.tableData = JSON.parse(JSON.stringify(tableData))
+      this.filteredTableData = JSON.parse(JSON.stringify(tableData))
       this.keys = editionInUse.keys
     },
     initTableData() {
@@ -112,10 +128,17 @@ export default {
       })
     },
     createTreeFromNodes() {
-      const { data } = JSON.parse(JSON.stringify(this.edition))
+      const data = JSON.parse(JSON.stringify(this.tableData))
       const selectedNodes = Object.keys(this.selectedNodes)
-      const tree = data.children.filter(c =>
-        this.filterNodes(c, node => selectedNodes.includes(node.key)),
+      const tree = data.filter(c =>
+        this.filterNodes(c, node => {
+          const isInSelected = selectedNodes.includes(node.key)
+          if (isInSelected) {
+            node.added = true
+            return true
+          }
+          return false
+        }),
       )
       return tree
     },
@@ -179,6 +202,45 @@ export default {
       dialog.close()
       this.selectedNodes = {}
     },
+    onInput() {
+      if (this.timeout) {
+        this.timeout = clearTimeout(this.timeout)
+      }
+      if (!this.search) {
+        this.filteredTableData = JSON.parse(JSON.stringify(this.tableData))
+        return
+      }
+      this.timeout = setTimeout(() => {
+        if (!this.search) {
+          return
+        }
+        const tableData = JSON.parse(JSON.stringify(this.tableData))
+        this.filteredTableData = tableData.filter(c =>
+          this.filterNodes(c, node => {
+            const { data, children } = node
+            if (children.length > 0) {
+              return true
+            }
+            const name = data[this.keys[0].id] || ''
+            const loweredName = name.toLowerCase()
+            const loweredSearch = this.search.toLowerCase()
+            return loweredName.includes(loweredSearch)
+          }),
+        )
+      }, 1000)
+    },
+    updateNode(node, newNode) {
+      const { key, children } = node
+      const { key: newKey } = newNode
+      if (key === newKey) {
+        return newNode
+      }
+      node.children = children.map(c => this.updateNode(c, newNode))
+      return node
+    },
+    updateNodeInTable(newNode) {
+      this.tableData = this.tableData.map(n => this.updateNode(n, newNode))
+    },
   },
 }
 </script>
@@ -195,7 +257,15 @@ export default {
       <span class="modal-title">Добавить работы</span>
     </template>
     <div v-if="initted" class="modal-body">
-      <JobsTable :data="tableData" />
+      <div class="search">
+        <InputText
+          v-model="search"
+          class="search-input"
+          placeholder="Название работы"
+          @input="onInput"
+        />
+      </div>
+      <JobsTable :data="filteredTableData" />
     </div>
     <template #footer>
       <button class="button save-button" @click="save">Добавить</button>
@@ -205,9 +275,22 @@ export default {
 </template>
 
 <style lang="scss" scoped>
-.modal-title {
-  font-size: 22px;
-  font-weight: 600;
+.modal {
+  &-title {
+    font-size: 22px;
+    font-weight: 600;
+  }
+
+  &-body {
+    display: flex;
+    flex-direction: column;
+    min-height: 0px;
+    gap: 10px;
+  }
+}
+
+.search-input {
+  width: 100%;
 }
 
 .save-button,

@@ -13,7 +13,11 @@ export default {
       type: Boolean,
       default: false,
     },
+    added: Boolean,
+    canRemove: Boolean,
+    loading: Boolean,
   },
+  emits: ['remove'],
   computed: {
     ...mapGetters('outlay', ['keys', 'quantityKey', 'priceKey']),
     sum() {
@@ -41,14 +45,17 @@ export default {
       })
     },
   },
+  methods: {
+    removeJob() {
+      this.$emit('remove')
+    },
+  },
 }
 </script>
 
 <template>
   <template v-if="isCategory">
-    <div class="table-cell">
-      {{ rowData[0].value }}
-    </div>
+    <div class="table-cell">{{ rowData[0].value }}</div>
   </template>
   <template v-else v-for="(row, index) in rowData" :key="row.key">
     <div
@@ -57,7 +64,17 @@ export default {
       class="table-cell"
       :class="{ quantity: row.key === quantityKey.id }"
     >
-      {{ row.value }}
+      <button
+        v-if="added"
+        class="table-cell__button button"
+        :disabled="!canRemove || loading"
+        @click="removeJob"
+      >
+        <i class="pi pi-times"></i>
+      </button>
+      <span>
+        {{ row.value }}
+      </span>
     </div>
     <div
       v-else
@@ -77,9 +94,20 @@ export default {
 .table-cell {
   white-space: nowrap;
   @include table-cell;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 
   &.quantity {
     font-weight: 700;
+  }
+
+  &__button {
+    color: #de4848;
+
+    &:disabled {
+      opacity: 0.5;
+    }
   }
 }
 </style>

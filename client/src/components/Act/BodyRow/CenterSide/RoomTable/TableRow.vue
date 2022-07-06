@@ -1,10 +1,13 @@
 <script>
-import { mapGetters, mapMutations } from 'vuex'
+import { mapActions, mapGetters, mapMutations } from 'vuex'
 import { formatNumber } from '@/helpers/formatNumber'
+import { getNodeFromTree } from '@/store/modules/acts.module'
 import actsTable from '@/mixins/actsTable.mixin'
 
 import TableRowWrapper from '../CommonTable/TableRowWrapper.vue'
 import TableRowData from '../CommonTable/TableRowData.vue'
+
+import { actStatus } from '../../../../../enum/actStatus'
 
 export default {
   name: 'TableRow',
@@ -19,6 +22,11 @@ export default {
     level: Number,
     room: String,
   },
+  data() {
+    return {
+      isRemoving: false,
+    }
+  },
   computed: {
     ...mapGetters('outlay', ['keys', 'quantityKey', 'priceKey', 'striped']),
     ...mapGetters('acts', [
@@ -28,6 +36,7 @@ export default {
       'selectedItem',
       'showLeftQuantity',
       'act',
+      'acts',
     ]),
     data() {
       return this.node.data
@@ -77,9 +86,32 @@ export default {
       cloneData.quantity = cloneData[this.quantityKey.id]
       return cloneData
     },
+    canRemove() {
+      const added = this.node?.added
+      const { status } = this.act
+      const isConfirmed = status === actStatus.CONFIRMED
+      if (isConfirmed || !added) {
+        return false
+      }
+      const confirmedActs = this.acts.filter(
+        act => act.status === actStatus.CONFIRMED,
+      )
+      const isInConfirmed = confirmedActs.some(act => {
+        const { rooms } = act
+        const currentRoom = rooms.find(r => r.id === this.room)
+        if (!currentRoom) {
+          return false
+        }
+        const { jobs } = currentRoom
+        const found = jobs.map(n => getNodeFromTree(n, this.node.key)).flat()
+        return found.length > 0
+      })
+      return !isInConfirmed
+    },
   },
   methods: {
     ...mapMutations('acts', ['setHoveredItem']),
+    ...mapActions('acts', ['removeAddedJob']),
     mouseEnterHandler() {
       if (this.isCategory) {
         return
@@ -88,6 +120,16 @@ export default {
     },
     mouseLeaveHandler() {
       this.setHoveredItem(null)
+    },
+    async remove() {
+      this.isRemoving = true
+      try {
+        await this.removeAddedJob({ roomId: this.room, nodeKey: this.node.key })
+      } catch (error) {
+        console.log(error)
+      } finally {
+        this.isRemoving = false
+      }
     },
   },
 }
@@ -104,7 +146,14 @@ export default {
     @mouseenter="mouseEnterHandler"
     @mouseleave="mouseLeaveHandler"
   >
-    <TableRowData :data="rowData" :isCategory="isCategory" />
+    <TableRowData
+      :data="rowData"
+      :isCategory="isCategory"
+      :canRemove="canRemove"
+      :added="node.added"
+      :loading="isRemoving"
+      @remove="remove"
+    />
   </TableRowWrapper>
   <template v-if="isCategory">
     <TableRow

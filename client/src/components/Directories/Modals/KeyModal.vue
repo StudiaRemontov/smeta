@@ -14,6 +14,7 @@ const getInitState = () => ({
   name: '',
   type: '',
   selectedDirectory: '',
+  selectedCollection: '',
   visibleKeys: [],
   updateMode: false,
 })
@@ -25,7 +26,7 @@ export default {
     return getInitState()
   },
   computed: {
-    ...mapGetters('directory', ['directories', 'root']),
+    ...mapGetters('directory', ['directories', 'root', 'roots']),
     id() {
       return this.$route.params.id
     },
@@ -58,6 +59,16 @@ export default {
       })
       return architecturesWithParents
     },
+    collectionOptions() {
+      if (!this.id) return []
+      const directories = this.roots.filter(d => d._id !== this.id)
+      return directories.map(d => {
+        return {
+          ...d,
+          text: d.name,
+        }
+      })
+    },
     avaliableKeys() {
       if (!this.selectedDirectory) {
         return []
@@ -86,6 +97,7 @@ export default {
         this.type = options.key.type
         this.selectedDirectory = options.key.dirId
         this.visibleKeys = options.key.keys
+        this.selectedCollection = options.key.rootDir
       }
 
       this.$refs.popup.open()
@@ -116,7 +128,12 @@ export default {
         data.root = root
         data.keys = this.visibleKeys
       }
-
+      if (this.type === this.InputType.COLLECTION) {
+        if (!this.selectedCollection) {
+          return
+        }
+        data.rootDir = this.selectedCollection
+      }
       this.resolvePromise(data)
       this.reset()
     },
@@ -209,6 +226,18 @@ export default {
               <label :for="key.id"> {{ key.name }} </label>
             </div>
           </div>
+        </div>
+        <div v-else-if="type === InputType.COLLECTION" class="form__group">
+          <span> Выберите справочник с работами </span>
+          <select v-model="selectedCollection" class="select">
+            <option
+              v-for="option in collectionOptions"
+              :key="option._id"
+              :value="option._id"
+            >
+              {{ option.text }}
+            </option>
+          </select>
         </div>
       </form>
       <AppButton v-if="updateMode" outlined variant="danger" @click="_remove">

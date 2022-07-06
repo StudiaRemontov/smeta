@@ -1,4 +1,5 @@
 import { InputType } from '../enum/InputType'
+import roomTypes from '../enum/roomTypes'
 
 export default class Key {
   constructor(name, type) {
@@ -14,6 +15,10 @@ export default class Key {
     const numberTypes = [InputType.NUMBER, InputType.QUANTITY, InputType.PRICE]
     if (numberTypes.includes(type)) {
       return 1
+    }
+
+    if (type === InputType.ROOM_TYPE) {
+      return roomTypes[0]
     }
 
     return null

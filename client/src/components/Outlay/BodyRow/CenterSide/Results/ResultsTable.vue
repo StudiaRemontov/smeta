@@ -8,6 +8,7 @@ import { formatNumber } from '@/helpers/formatNumber'
 import categoriesWithoutSale from '@/enum/categoriesWithoutSale'
 
 import { uniqBy } from 'lodash'
+import prulal from 'plural-ru'
 
 export default {
   mixins: [roomParameters],
@@ -191,16 +192,17 @@ export default {
     },
     subTableData() {
       const saleValue = (this.totalPrice / 100) * this.sale
+      const dayString = prulal(this.workTime, 'день', 'дня', 'дней')
       return [
         {
           text: 'Стоимость без учета скидки',
           value: this.format(this.totalPrice + this.specMontage),
-          render: true,
+          render: this.sale && this.specMontage > 0,
         },
         {
           text: 'Стоимость общестр-х работ',
           value: this.format(this.totalPrice),
-          render: true,
+          render: this.sale || this.specMontage,
         },
         {
           text: 'Скидка на общестр-е работы',
@@ -208,14 +210,14 @@ export default {
           render: this.sale > 0,
         },
         {
-          text: 'Скидка на общестр-е работы',
+          text: 'Сумма скидки на общестр-е работы',
           value: this.format(saleValue),
           render: this.sale > 0,
         },
         {
           text: 'Общестр-е работы с учетом скидки',
           value: this.format(this.totalPriceWithSale),
-          render: this.sale > 0,
+          render: this.sale > 0 && this.specMontage,
         },
         {
           text: 'Спецмонтаж',
@@ -229,7 +231,7 @@ export default {
         },
         {
           text: 'Срок выполнения работ',
-          value: `${this.workTime} дня`,
+          value: `${this.workTime} ${dayString}`,
           render: true,
         },
       ]

@@ -210,6 +210,10 @@ export default {
         if (outlay && outlay._id === id) {
           await dispatch('outlay/setOutlay', response.data, { root: true })
         }
+        const act = rootGetters['acts/act']
+        if (act && act.outlay === id) {
+          await dispatch('acts/setActsData', null, { root: true })
+        }
         return response
       } catch (error) {
         return Promise.reject(error)

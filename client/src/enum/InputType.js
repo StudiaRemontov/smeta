@@ -6,4 +6,6 @@ export const InputType = {
   PRICE: 'Стоимость',
   QUANTITY: 'Количество',
   FORMULA: 'Формула',
+  COLLECTION: 'Набор справочников',
+  ROOM_TYPE: 'Тип помещения',
 }

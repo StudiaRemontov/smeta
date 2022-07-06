@@ -1,10 +1,13 @@
 <script>
 import TableRowWrapper from './TableRowWrapper.vue'
+import QuantityCell from './QuantityCell.vue'
 import TableCellWrapper from './TableCellWrapper.vue'
+import keyTypes from '@/mixins/keyTypes.mixin'
 
 export default {
-  components: { TableRowWrapper, TableCellWrapper },
-  inject: ['keys', 'pushNodes', 'removeNodes', 'selectedNodes'],
+  components: { TableRowWrapper, QuantityCell, TableCellWrapper },
+  mixins: [keyTypes],
+  inject: ['keys', 'pushNodes', 'removeNodes', 'selectedNodes', 'updateNode'],
   props: {
     node: {
       type: Object,
@@ -13,14 +16,31 @@ export default {
     },
   },
   emits: ['checked'],
+  data() {
+    return {
+      timeout: null,
+    }
+  },
   computed: {
     selected() {
       return this.selectedNodes[this.node.key]
+    },
+    data() {
+      return this.node.data
     },
   },
   methods: {
     clickNode() {
       this.$emit('checked')
+    },
+    updateHandler() {
+      if (this.timeout) {
+        this.timeout = clearTimeout(this.timeout)
+      }
+      this.timeout = setTimeout(() => {
+        console.log('updayed')
+        this.updateNode(this.node)
+      }, 300)
     },
   },
 }
@@ -28,9 +48,16 @@ export default {
 
 <template>
   <TableRowWrapper class="values-row" :class="{ selected }" @click="clickNode">
-    <TableCellWrapper v-for="key in keys" :key="key.id">
-      {{ node.data[key.id] }}
-    </TableCellWrapper>
+    <template v-for="key in keys" :key="key.id">
+      <QuantityCell
+        v-if="key.type === InputType.QUANTITY"
+        v-model="data[key.id]"
+        @update:modelValue="updateHandler"
+      />
+      <TableCellWrapper v-else>
+        {{ data[key.id] }}
+      </TableCellWrapper>
+    </template>
   </TableRowWrapper>
 </template>
 
