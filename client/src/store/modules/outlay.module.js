@@ -541,7 +541,25 @@ export default {
           ...r,
           ...payload,
         }
-        dispatch('setRoomData', data)
+        const { options: newOptions, dirId: newDirId } = data
+        const { options: oldOptions, dirId: oldDirId } = r
+        const isOptionsEqual = deepEqual(newOptions, oldOptions)
+
+        if (newDirId !== oldDirId) {
+          dispatch('setRoomData', data)
+          state.selectedValues[data.id] = []
+        }
+
+        if (!isOptionsEqual) {
+          const { roomsData, quantityKey, formulaKey } = state
+          const newRoomsData = setQuantity(
+            data,
+            roomsData[data.id],
+            quantityKey.id,
+            formulaKey.id,
+          )
+          state.roomsData[data.id] = newRoomsData
+        }
         commit('setSelectedRoom', data)
         return data
       })

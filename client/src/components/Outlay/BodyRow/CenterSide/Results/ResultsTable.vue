@@ -139,26 +139,20 @@ export default {
           return acc
         }, {})
 
-        const totalMontage = Object.values(sumOfMontage).reduce(
-          (acc, item) => (acc += item),
-          0,
-        )
-
         return {
           id: c.key,
           name: c.data[this.keys[0].id],
           rooms: sumOfCategoryInRooms,
-          specMontage: totalMontage,
+          specMontage: sumOfMontage,
         }
       })
     },
     sumOfCategory() {
       return this.categories.reduce((acc, category) => {
-        acc[category.id] = Object.values(category.rooms).reduce(
-          (sum, value) => sum + value,
+        acc[category.id] = Object.entries(category.rooms).reduce(
+          (sum, [key, value]) => sum + value + category.specMontage[key],
           0,
         )
-        acc[category.id] += category.specMontage
         return acc
       }, {})
     },
@@ -177,17 +171,30 @@ export default {
           acc += sumOfCategory
           return acc
         }, 0)
-
+        const specMontage = this.categories.reduce((acc, category) => {
+          const sumOfCategory = Object.entries(category.specMontage).reduce(
+            (sum, [key, value]) => {
+              if (key === r.id) {
+                sum += value
+              }
+              return sum
+            },
+            0,
+          )
+          acc += sumOfCategory
+          return acc
+        }, 0)
         return {
           id: r.id,
           result: result,
+          specMontage,
         }
       })
     },
     priceOfRoomsWithSale() {
       return this.priceOfRooms.map(r => {
         const saleValue = (r.result / 100) * this.sale
-        const priceWithSale = r.result - saleValue
+        const priceWithSale = r.result - saleValue + r.specMontage
         return {
           ...r,
           result: priceWithSale,
@@ -196,13 +203,18 @@ export default {
     },
     totalPrice() {
       return this.priceOfRooms.reduce((acc, room) => {
-        acc += room.result
+        acc += room.result + room.specMontage
         return acc
       }, 0)
     },
     totalPriceWithSale() {
-      const saleValue = (this.totalPrice / 100) * this.sale
-      return this.totalPrice - saleValue
+      const priceWithoutSpecMontage = this.priceOfRooms.reduce((acc, room) => {
+        acc += room.result
+        return acc
+      }, 0)
+      const saleValue = (priceWithoutSpecMontage / 100) * this.sale
+      const priceWithSale = priceWithoutSpecMontage - saleValue
+      return priceWithSale
     },
     specMontage() {
       const categories = this.roomList.reduce((acc, room) => {
@@ -226,17 +238,17 @@ export default {
       return days
     },
     subTableData() {
-      const saleValue = (this.totalPrice / 100) * this.sale
+      const saleValue = ((this.totalPrice - this.specMontage) / 100) * this.sale
       const dayString = prulal(this.workTime, 'день', 'дня', 'дней')
       return [
         {
           text: 'Стоимость без учета скидки',
-          value: this.format(this.totalPrice + this.specMontage),
+          value: this.format(this.totalPrice),
           render: this.sale && this.specMontage > 0,
         },
         {
           text: 'Стоимость общестр-х работ',
-          value: this.format(this.totalPrice),
+          value: this.format(this.totalPrice - this.specMontage),
           render: this.sale || this.specMontage,
         },
         {
@@ -337,7 +349,6 @@ export default {
         <th v-for="room in roomList" :key="room.id" class="results-table__cell">
           {{ room.name }}
         </th>
-        <th v-if="specMontage > 0" class="results-table__cell">Спецмонтаж</th>
         <th class="results-table__cell">Итого</th>
       </tr>
       <tr
@@ -355,7 +366,6 @@ export default {
         >
           {{ room.computed[val] || '-' }}
         </td>
-        <td v-if="specMontage > 0" class="results-table__cell">-</td>
         <td class="results-table__cell bold">
           {{ totalParameters[val] }}
         </td>
@@ -365,7 +375,6 @@ export default {
         <th v-for="room in roomList" :key="room.id" class="results-table__cell">
           {{ room.name }}
         </th>
-        <th v-if="specMontage > 0" class="results-table__cell">Спецмонтаж</th>
         <th class="results-table__cell">Итого</th>
       </tr>
       <tr
@@ -381,10 +390,7 @@ export default {
           :key="key"
           class="results-table__cell price"
         >
-          {{ format(val) }}
-        </td>
-        <td v-if="specMontage > 0" class="results-table__cell">
-          {{ format(category.specMontage) }}
+          {{ format(val + category.specMontage[key]) }}
         </td>
         <td class="results-table__cell bold price">
           {{ format(sumOfCategory[category.id]) }}
@@ -397,13 +403,10 @@ export default {
           :key="price.id"
           class="results-table__cell price"
         >
-          {{ format(price.result) }}
-        </th>
-        <th v-if="specMontage > 0" class="results-table__cell price">
-          {{ format(specMontage) }}
+          {{ format(price.result + price.specMontage) }}
         </th>
         <th class="results-table__cell price">
-          {{ format(totalPrice + specMontage) }}
+          {{ format(totalPrice) }}
         </th>
       </tr>
       <tr v-if="sale" class="results-table__row results-table__row--head">
@@ -414,9 +417,6 @@ export default {
           class="results-table__cell price"
         >
           {{ format(price.result) }}
-        </th>
-        <th v-if="specMontage > 0" class="results-table__cell price">
-          {{ format(specMontage) }}
         </th>
         <th class="results-table__cell price">
           {{ format(totalPriceWithSale + specMontage) }}

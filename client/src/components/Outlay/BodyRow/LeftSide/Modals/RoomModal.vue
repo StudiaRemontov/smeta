@@ -159,8 +159,9 @@ export default {
       this.okButton = options.okButton
       this.cancelButton = options.cancelButton
       if (options.edit) {
-        this.room =
-          this.roomTypes.find(r => r.roomId === this.selectedRoom.dirId) || ''
+        const { dirId, name } = this.selectedRoom
+        this.room = dirId ? this.roomTypes.find(r => r.roomId === dirId) : name
+
         if (this.selectedRoom.options) {
           this.width = this.selectedRoom.options.width
           this.height = this.selectedRoom.options.height
@@ -322,6 +323,11 @@ export default {
             optionLabel="name"
             :editable="true"
             ref="input"
+            :filter="true"
+            placeholder="Выберите помещение или введите название"
+            emptyMessage="Помещение не найдено"
+            dataKey="roomId"
+            filterPlaceholder="Поиск"
             @change="changeRoom"
             @input="inputRoom"
           />

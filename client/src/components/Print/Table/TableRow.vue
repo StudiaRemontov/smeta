@@ -39,12 +39,12 @@ export default {
         if (formattedKeys.includes(k.id)) {
           return {
             key: k.id,
-            value: formatNumber(this.data[k.id]),
+            value: this.data[k.id] && formatNumber(this.data[k.id]),
           }
         }
         return {
           key: k.id,
-          value: this.data[k.id],
+          value: this.data[k.id] || null,
         }
       })
     },

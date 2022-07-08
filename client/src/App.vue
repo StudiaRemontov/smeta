@@ -8,7 +8,13 @@ import Toast from 'primevue/toast'
 import { mapActions, mapGetters, mapMutations } from 'vuex'
 
 export default {
-  components: { MainLayout, OutlayLayout, ActLayout, PrintLayout, Toast },
+  components: {
+    MainLayout,
+    OutlayLayout,
+    ActLayout,
+    PrintLayout,
+    Toast,
+  },
   data() {
     return {
       loading: false,
