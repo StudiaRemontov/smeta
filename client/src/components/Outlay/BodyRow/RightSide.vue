@@ -133,6 +133,7 @@ export default {
   flex-direction: column;
   gap: 10px;
   overflow: auto;
+  flex: 1;
 
   &__results {
     flex: 1;

@@ -61,7 +61,7 @@ export default {
     <div
       v-if="index === 0"
       v-tooltip.top="row.value"
-      class="table-cell"
+      class="table-cell first"
       :class="{ quantity: row.key === quantityKey.id }"
     >
       <button
@@ -94,9 +94,12 @@ export default {
 .table-cell {
   white-space: nowrap;
   @include table-cell;
-  display: flex;
-  align-items: center;
-  gap: 5px;
+
+  &.first {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
 
   &.quantity {
     font-weight: 700;

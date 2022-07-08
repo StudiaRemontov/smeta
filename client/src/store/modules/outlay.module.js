@@ -149,6 +149,15 @@ const getNameWithNumber = (name, rooms, callback) => {
   return `${name} №${maxNumInRooms + 1}`
 }
 
+const filterTree = (node, selectedValues) => {
+  const { key, children } = node
+  if (children && children.length > 0 && !selectedValues.includes(key)) {
+    return false
+  }
+  node.children = children.filter(c => filterTree(c, selectedValues))
+  return true
+}
+
 export default {
   namespaced: true,
   state: {
@@ -267,8 +276,8 @@ export default {
       state.formulaKey = null
       state.initData = null
       state.keys = null
-      state.roomsData = null
-      state.selectedValues = null
+      state.roomsData = {}
+      state.selectedValues = {}
       state.showResults = false
     },
     setShowLeftSide(state, payload) {
@@ -289,7 +298,69 @@ export default {
     },
   },
   actions: {
-    setOutlay({ state, commit, rootGetters }, payload) {
+    setDefaultQuantity({ state }, room) {
+      const { roomsData } = state
+      const { id, options } = room
+      const dataWorkWith = JSON.parse(JSON.stringify(roomsData[id]))
+      if (!options) {
+        return
+      }
+      const data = setQuantity(
+        room,
+        dataWorkWith,
+        state.quantityKey.id,
+        state.formulaKey.id,
+      )
+      return data
+      // state.roomsData[id] = data
+    },
+    setRoomData({ state, rootGetters }, room) {
+      const { initData } = state
+      const { jobs, id, dirId } = room
+      const nodes = jobs.map(treeToList).flat()
+      const initDataClone = JSON.parse(JSON.stringify(initData))
+      if (!dirId) {
+        const { options } = room
+        if (options) {
+          const { computed } = methods.calculateAllParameters(options)
+          initDataClone.forEach(n =>
+            getQuantityByFormula(
+              n,
+              computed,
+              state.quantityKey.id,
+              state.formulaKey.id,
+            ),
+          )
+        }
+        const mergedTree = initDataClone.map(c => mergeTree(c, nodes)).flat()
+        state.roomsData[id] = mergedTree
+        return
+      }
+      const roomDirectory = rootGetters['directory/roomDirectory']
+      const { keys } = roomDirectory
+      const collectionKey = keys.find(k => k.type === InputType.COLLECTION)
+      const roomData = roomDirectory.values.find(r => r.id === dirId)
+
+      const roomCollections = roomData.data[collectionKey.id]
+      const filteredEdition = initDataClone.filter(c =>
+        filterTree(c, roomCollections),
+      )
+      const { options } = room
+      if (options) {
+        const { computed } = methods.calculateAllParameters(options)
+        filteredEdition.forEach(n =>
+          getQuantityByFormula(
+            n,
+            computed,
+            state.quantityKey.id,
+            state.formulaKey.id,
+          ),
+        )
+      }
+      const mergedTree = filteredEdition.map(c => mergeTree(c, nodes)).flat()
+      state.roomsData[id] = mergedTree
+    },
+    async setOutlay({ state, commit, rootGetters, dispatch }, payload) {
       if (!payload) {
         return commit('resetOutlay')
       }
@@ -310,33 +381,13 @@ export default {
       state.initData = initData
       state.keys = edition.keys
       const rooms = JSON.parse(JSON.stringify(state.outlay.rooms))
-      state.roomsData = rooms.reduce((acc, room) => {
-        //получаю категории с работами. (Не категории с категориями)
-        const nodes = room.jobs.map(treeToList).flat()
-        //создаю клон с данными из редакции
-        const clone = JSON.parse(JSON.stringify(initData))
-        const { options } = room
-        const { computed } = methods.calculateAllParameters(options)
-        //для каждой работы из клона редакции устанавливаю дефолтное количество
-        clone.forEach(n =>
-          getQuantityByFormula(
-            n,
-            computed,
-            state.quantityKey.id,
-            state.formulaKey.id,
-          ),
-        )
-        //объединяю деревья заменяя дефолтное количество на сохраненное в смете
-        const mergedTree = clone.map(c => mergeTree(c, nodes)).flat()
-        //сохраняю данные для таблицы для комнаты
-        acc[room.id] = mergedTree
-        return acc
-      }, {})
-      state.selectedValues = state.outlay.rooms.reduce((acc, room) => {
-        const values = room.jobs.map(treeToListOnlyValues).flat()
-        acc[room.id] = values
-        return acc
-      }, {})
+      rooms.map(async room => {
+        const roomClone = JSON.parse(JSON.stringify(room))
+        dispatch('setRoomData', room)
+        const { jobs, id } = roomClone
+        const values = jobs.map(treeToListOnlyValues).flat()
+        state.selectedValues[id] = values
+      })
       commit('setSelectedRoom', null)
     },
     updateRooms({ state, dispatch }, payload) {
@@ -408,7 +459,10 @@ export default {
       if (isSelectedCategory) return
       return dispatch('selectJob', node)
     },
-    async createRoom({ commit, state, dispatch }, { name, options }) {
+    async createRoom(
+      { commit, state, dispatch },
+      { name, options, dirId = null },
+    ) {
       if (!state.outlay) return
       const { rooms } = state.outlay
       const newName = getNameWithNumber(name, rooms, room => {
@@ -419,22 +473,17 @@ export default {
         name: newName,
         options,
         jobs: [],
+        dirId,
       }
       state.outlay.rooms.push(room)
-      const clone = setQuantity(
-        room,
-        state.initData,
-        state.quantityKey.id,
-        state.formulaKey.id,
-      )
-      state.roomsData[room.id] = clone
+      dispatch('setRoomData', room)
       state.selectedValues[room.id] = []
       commit('setSelectedRoom', room)
       return await dispatch('saveLocaly')
     },
     async cloneRoom(
       { getters, state, dispatch, commit },
-      { name, options, cloningRoomId },
+      { name, options, cloningRoomId, dirId },
     ) {
       const cloningRoomData = getters.rooms.find(r => r.id === cloningRoomId)
       const clone = JSON.parse(JSON.stringify(cloningRoomData))
@@ -448,9 +497,9 @@ export default {
         name: newName,
         options,
         jobs,
+        dirId,
       }
-      const { selectedValues, roomsData, outlay, quantityKey, formulaKey } =
-        state
+      const { selectedValues, roomsData, outlay } = state
       outlay.rooms.push(room)
       const clonedRoomsData = JSON.parse(
         JSON.stringify(roomsData[cloningRoomId]),
@@ -459,17 +508,11 @@ export default {
         JSON.stringify(selectedValues[cloningRoomId]),
       )
       const { options: oldOptions } = cloningRoomData
-      const isOptionsEqual = deepEqual(options, oldOptions)
+      const isOptionsEqual = deepEqual(options || {}, oldOptions || {})
       state.roomsData[room.id] = clonedRoomsData
       state.selectedValues[room.id] = clonedValues
       if (!isOptionsEqual) {
-        const cloneData = setQuantity(
-          room,
-          clonedRoomsData,
-          quantityKey.id,
-          formulaKey.id,
-        )
-        state.roomsData[room.id] = cloneData
+        dispatch('setDefaultQuantity', room)
       }
       commit('setSelectedRoom', room)
       return await dispatch('saveLocaly')
@@ -477,14 +520,14 @@ export default {
     async updateRoom({ state, dispatch, commit }, payload) {
       if (!state.outlay || !state.selectedRoom) return
       const { rooms } = state.outlay
-      const roomsForNewName = [...rooms].filter(
-        r => r.id !== state.selectedRoom.id,
-      )
       state.outlay.rooms = rooms.map(r => {
         if (r.id !== state.selectedRoom.id) {
           return r
         }
         if (r.name !== payload.name) {
+          const roomsForNewName = [...rooms].filter(
+            r => r.id !== state.selectedRoom.id,
+          )
           payload.name = getNameWithNumber(
             payload.name,
             roomsForNewName,
@@ -493,23 +536,13 @@ export default {
             },
           )
         }
-        const { options } = r
-        const { options: newOptions } = payload
-        const isOptionsEqual = deepEqual(options, newOptions)
+
         const data = {
           ...r,
           ...payload,
         }
+        dispatch('setRoomData', data)
         commit('setSelectedRoom', data)
-        if (!isOptionsEqual) {
-          const clone = setQuantity(
-            data,
-            state.roomsData[state.selectedRoom.id],
-            state.quantityKey.id,
-            state.formulaKey.id,
-          )
-          state.roomsData[r.id] = clone
-        }
         return data
       })
       return await dispatch('saveLocaly')

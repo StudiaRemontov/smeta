@@ -33,7 +33,10 @@ export default {
       })
     },
     calculatedParameters() {
-      return this.calculateAllParameters(this.options)
+      if (this.options) {
+        return this.calculateAllParameters(this.options)
+      }
+      return 0
     },
     calculated() {
       if (!this.calculatedParameters) {
@@ -88,7 +91,7 @@ export default {
           2022
         </span>
       </div>
-      <div class="parameters">
+      <div v-if="options" class="parameters">
         <table class="parameters-table">
           <tr class="parameters-table__row">
             <td

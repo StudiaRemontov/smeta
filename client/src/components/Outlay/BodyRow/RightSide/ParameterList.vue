@@ -19,8 +19,8 @@ export default {
 <template>
   <OutlayBlock>
     <div class="parameters">
-      <RoomParameters v-if="selectedRoom" />
-      <TotalParameters v-else />
+      <RoomParameters v-if="selectedRoom && selectedRoom.options" />
+      <TotalParameters v-else-if="!selectedRoom" />
     </div>
   </OutlayBlock>
 </template>

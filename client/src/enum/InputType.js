@@ -7,5 +7,6 @@ export const InputType = {
   QUANTITY: 'Количество',
   FORMULA: 'Формула',
   COLLECTION: 'Набор справочников',
-  ROOM_TYPE: 'Тип помещения',
+  BOOLEAN_ROOM_PARAMETERS: 'Логический (параметры комнаты)',
+  BOOLEAN_ROOM_COMPUTED: 'Логический (рассчеты)',
 }

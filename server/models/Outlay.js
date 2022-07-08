@@ -40,22 +40,19 @@ const roomSchema = new mongoose.Schema(
     },
     jobs: [jobsSchema],
     newJobs: [addedJobSchema],
+    dirId: String,
     options: {
       width: {
         type: String,
-        required: true,
       },
       height: {
         type: String,
-        required: true,
       },
       length: {
         type: String,
-        required: true,
       },
       spaces: {
         type: String,
-        required: true,
       },
     },
   },

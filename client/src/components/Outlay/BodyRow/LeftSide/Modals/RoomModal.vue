@@ -4,8 +4,9 @@ import InputNumber from 'primevue/inputnumber'
 import Dropdown from 'primevue/dropdown'
 
 import roomParameters from '@/mixins/roomParameters.mixin'
+import keyTypes from '@/mixins/keyTypes.mixin'
 import { mapGetters } from 'vuex'
-import { roomNames } from '@/enum/roomNames'
+import { directoryName } from '@/enum/roomDirectoryData'
 
 const getInitState = () => ({
   title: undefined,
@@ -24,17 +25,20 @@ const getInitState = () => ({
     length: null,
     spaces: null,
   },
-  roomTypes: roomNames,
+  roomTypes: [],
+  room: null,
+  invalid: false,
 })
 
 export default {
   components: { PopupModal, InputNumber, Dropdown },
-  mixins: [roomParameters],
+  mixins: [roomParameters, keyTypes],
   data() {
     return getInitState()
   },
   computed: {
-    ...mapGetters('outlay', ['selectedRoom', 'rooms']),
+    ...mapGetters('outlay', ['selectedRoom', 'rooms', 'edition']),
+    ...mapGetters('directory', ['directories', 'roomDirectory']),
     calculatedWidth() {
       return this.calculate(this.width)
     },
@@ -64,10 +68,12 @@ export default {
       )
     },
     isCorrectFields() {
-      if (!this.name) {
+      if (!this.room || this.invalid) {
         return false
       }
-
+      if (!this.room.parameters) {
+        return true
+      }
       return (
         this.isCorrectField(this.calculatedWidth) &&
         this.isCorrectField(this.calculatedLength) &&
@@ -88,6 +94,18 @@ export default {
       const { options } = firstRoom
       return Object.assign(placeholders, options)
     },
+    showParameters() {
+      if (!this.room) {
+        return false
+      }
+      if (typeof this.room === 'string') {
+        return true
+      }
+      if (typeof this.room !== 'object' && this.room) {
+        return false
+      }
+      return this.room.parameters
+    },
   },
   watch: {
     length(_, old) {
@@ -101,19 +119,56 @@ export default {
     },
   },
   methods: {
+    getRoomsFromDirectory() {
+      const directory = this.directories.find(d => d.name === directoryName)
+      if (!directory) {
+        console.warn(
+          'Справочника с комнатами либо не существует, либо указано неверное название справочника',
+        )
+        return []
+      }
+      const { values, keys } = directory
+      const roomKeys = keys.reduce((acc, key) => {
+        const { type } = key
+        if (type === this.InputType.STRING) {
+          acc.name = key.id
+        }
+        if (type === this.InputType.BOOLEAN_ROOM_COMPUTED) {
+          acc.computed = key.id
+        }
+        if (type === this.InputType.BOOLEAN_ROOM_PARAMETERS) {
+          acc.parameters = key.id
+        }
+        return acc
+      }, {})
+      const rooms = values.map(value => {
+        const { data, id } = value
+        return {
+          roomId: id,
+          name: data[roomKeys.name],
+          computed: data[roomKeys.computed],
+          parameters: data[roomKeys.parameters],
+        }
+      })
+      return rooms
+    },
     async show(options) {
+      const rooms = this.getRoomsFromDirectory()
+      this.roomTypes = rooms
       this.title = options.title
       this.okButton = options.okButton
       this.cancelButton = options.cancelButton
       if (options.edit) {
-        this.name = this.selectedRoom.name
-        this.width = this.selectedRoom.options.width
-        this.height = this.selectedRoom.options.height
-        this.length = this.selectedRoom.options.length
-        this.spaces = this.selectedRoom.options.spaces
+        this.room =
+          this.roomTypes.find(r => r.roomId === this.selectedRoom.dirId) || ''
+        if (this.selectedRoom.options) {
+          this.width = this.selectedRoom.options.width
+          this.height = this.selectedRoom.options.height
+          this.length = this.selectedRoom.options.length
+          this.spaces = this.selectedRoom.options.spaces
+        }
       }
       this.$refs.popup.open()
-
       await this.$nextTick()
       const { input } = this.$refs
       const inputEl = input.$el.querySelector('input')
@@ -130,17 +185,37 @@ export default {
         return
       }
       this.$refs.popup.close()
-
-      const data = {
-        name: this.name,
-        options: {
+      if (typeof this.room === 'object') {
+        const roomObj = {
+          name: this.room.name,
+          dirId: this.room.roomId,
+        }
+        if (!this.room.parameters) {
+          roomObj.options = null
+          this.resolvePromise(roomObj)
+          return this.reset()
+        }
+        roomObj.options = {
           width: this.width || '0',
           height: this.height || '0',
           length: this.length || '0',
           spaces: this.spaces || '0',
-        },
+        }
+        this.resolvePromise(roomObj)
+        return this.reset()
       }
-      this.resolvePromise(data)
+      if (typeof this.room === 'string') {
+        const data = {
+          name: this.room,
+          options: {
+            width: this.width || '0',
+            height: this.height || '0',
+            length: this.length || '0',
+            spaces: this.spaces || '0',
+          },
+        }
+        this.resolvePromise(data)
+      }
       this.reset()
     },
     _cancel() {
@@ -181,6 +256,55 @@ export default {
     isCorrectField(field) {
       return !isNaN(field) && field > 0
     },
+    getAllCategories(node) {
+      const { children } = node
+      if (children && children.length > 0) {
+        const childs = children.map(this.getAllCategories).flat()
+        return [node.key, ...childs]
+      }
+      return []
+    },
+    changeRoom(e) {
+      const { value: room } = e
+      const { values: rooms, keys } = this.roomDirectory
+      const directoryRoom = rooms.find(r => r.id === room.roomId)
+      if (!directoryRoom) {
+        return console.warn('данной комнаты в справочнике не существует')
+      }
+      const { data } = directoryRoom
+
+      const collectionKey = keys.find(k => k.type === this.InputType.COLLECTION)
+      if (!collectionKey) {
+        return console.warn(
+          'В справочнике комнат нету колонки с набором справочников',
+        )
+      }
+      const roomCollections = data[collectionKey.id]
+      if (!roomCollections) {
+        return console.warn(
+          'В данной комнете нету справочников, обратитесь к администратору',
+        )
+      }
+      const editionClone = JSON.parse(JSON.stringify(this.edition))
+      const { data: root } = editionClone
+      const rootCollections = root.children.map(this.getAllCategories).flat()
+      const isValid = roomCollections.every(
+        r => rootCollections.indexOf(r) >= 0,
+      )
+      if (!isValid) {
+        this.invalid = true
+        return this.$toast.add({
+          severity: 'warn',
+          summary: 'Несоответствие работ комнаты и редакции',
+          detail: 'Обратитесь к администратору',
+          life: 3000,
+        })
+      }
+      this.invalid = false
+    },
+    inputRoom() {
+      this.invalid = false
+    },
   },
 }
 </script>
@@ -193,88 +317,91 @@ export default {
         <div class="form__group">
           <label class="form__label">Название</label>
           <Dropdown
-            v-model.trim="name"
+            v-model="room"
             :options="roomTypes"
+            optionLabel="name"
             :editable="true"
             ref="input"
+            @change="changeRoom"
+            @input="inputRoom"
           />
         </div>
-        <span>Параметры помещения</span>
-        <div class="form__grid">
-          <div class="form__group">
-            <label class="form__label">Длина</label>
-            <input
-              v-model="length"
-              class="input"
-              type="text"
-              :placeholder="placeholders['length']"
-              @input="inputHandler($event, 'length')"
-            />
+        <template v-if="showParameters">
+          <span>Параметры помещения</span>
+          <div class="form__grid">
+            <div class="form__group">
+              <label class="form__label">Длина</label>
+              <input
+                v-model="length"
+                class="input"
+                type="text"
+                @input="inputHandler($event, 'length')"
+              />
+            </div>
+            <div class="form__group">
+              <label class="form__label">Ширина</label>
+              <input
+                v-model="width"
+                class="input"
+                type="text"
+                @input="inputHandler($event, 'width')"
+              />
+            </div>
+            <div class="form__group">
+              <label class="form__label">Высота</label>
+              <input
+                v-model="height"
+                class="input"
+                type="text"
+                :placeholder="placeholders['height']"
+                @input="inputHandler($event, 'height')"
+              />
+            </div>
+            <div class="form__group">
+              <label class="form__label">Проемы</label>
+              <input
+                v-model="spaces"
+                class="input"
+                type="text"
+                :placeholder="placeholders['spaces']"
+                @input="inputHandler($event, 'spaces')"
+              />
+            </div>
           </div>
-          <div class="form__group">
-            <label class="form__label">Ширина</label>
-            <input
-              v-model="width"
-              class="input"
-              type="text"
-              :placeholder="placeholders['width']"
-              @input="inputHandler($event, 'width')"
-            />
+          <span>Вычисляемые свойства</span>
+          <div class="form__grid">
+            <div class="form__group">
+              <label class="form__label">Периметр</label>
+              <InputNumber
+                v-model="perimeter"
+                placeholder="Периметер"
+                :disabled="true"
+                :minFractionDigits="2"
+                :maxFractionDigits="2"
+              />
+            </div>
+            <div class="form__group">
+              <label class="form__label">Площадь пола</label>
+              <InputNumber
+                v-model="floorArea"
+                placeholder="Площадь пола"
+                :disabled="true"
+                :minFractionDigits="2"
+                :maxFractionDigits="2"
+              />
+            </div>
+            <div class="form__group">
+              <label class="form__label">Площадь стен</label>
+              <InputNumber
+                v-model="wallArea"
+                placeholder="Площадь стен"
+                :disabled="true"
+                :minFractionDigits="2"
+                :maxFractionDigits="2"
+              />
+            </div>
           </div>
-          <div class="form__group">
-            <label class="form__label">Высота</label>
-            <input
-              v-model="height"
-              class="input"
-              type="text"
-              :placeholder="placeholders['height']"
-              @input="inputHandler($event, 'height')"
-            />
-          </div>
-          <div class="form__group">
-            <label class="form__label">Проемы</label>
-            <input
-              v-model="spaces"
-              class="input"
-              type="text"
-              :placeholder="placeholders['spaces']"
-              @input="inputHandler($event, 'spaces')"
-            />
-          </div>
-        </div>
-        <span>Вычисляемые свойства</span>
-        <div class="form__grid">
-          <div class="form__group">
-            <label class="form__label">Периметр</label>
-            <InputNumber
-              v-model="perimeter"
-              placeholder="Периметер"
-              :disabled="true"
-              :minFractionDigits="2"
-              :maxFractionDigits="2"
-            />
-          </div>
-          <div class="form__group">
-            <label class="form__label">Площадь пола</label>
-            <InputNumber
-              v-model="floorArea"
-              placeholder="Площадь пола"
-              :disabled="true"
-              :minFractionDigits="2"
-              :maxFractionDigits="2"
-            />
-          </div>
-          <div class="form__group">
-            <label class="form__label">Площадь стен</label>
-            <InputNumber
-              v-model="wallArea"
-              placeholder="Площадь стен"
-              :disabled="true"
-              :minFractionDigits="2"
-              :maxFractionDigits="2"
-            />
-          </div>
-        </div>
+        </template>
       </form>
       <div class="modal__actions">
         <AppButton outlined @click="_cancel">

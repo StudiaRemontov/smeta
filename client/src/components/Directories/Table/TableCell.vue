@@ -235,15 +235,14 @@ export default {
     selectionMode="checkbox"
     placeholder="Выберите элементы"
   ></TreeSelect>
-  <select
-    v-else-if="type === InputType.ROOM_TYPE"
+  <input
+    v-else-if="
+      type === InputType.BOOLEAN_ROOM_PARAMETERS ||
+      type === InputType.BOOLEAN_ROOM_COMPUTED
+    "
     v-model="newValue"
-    class="input"
-  >
-    <option v-for="type in roomTypes" :key="type">
-      {{ type }}
-    </option>
-  </select>
+    type="checkbox"
+  />
 </template>
 
 <style lang="scss" scoped>

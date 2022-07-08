@@ -1,5 +1,4 @@
 import { InputType } from '../enum/InputType'
-import roomTypes from '../enum/roomTypes'
 
 export default class Key {
   constructor(name, type) {
@@ -17,8 +16,11 @@ export default class Key {
       return 1
     }
 
-    if (type === InputType.ROOM_TYPE) {
-      return roomTypes[0]
+    if (
+      type === InputType.BOOLEAN_ROOM_PARAMETERS ||
+      type === InputType.BOOLEAN_ROOM_COMPUTED
+    ) {
+      return true
     }
 
     return null

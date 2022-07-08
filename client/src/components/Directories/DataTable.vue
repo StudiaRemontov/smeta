@@ -87,19 +87,82 @@ export default {
         values,
       })
     },
+    getKeysToEdit(index, field, value) {
+      /* метод должен вернить массив ключей, которые нужно изменить 
+        [{
+          key: key_id,
+          value: value
+        }]
+      */
+      const keysToUpdate = []
+      const keyToEdit = this.allKeys.find(k => k.id === field)
+      if (!keyToEdit) {
+        return keysToUpdate
+      }
+      /*
+        1) Если поле с типом Указывается параметры поменялось на false,
+        то полю с типом Учитывать в рассчетах тоже ставить false
+      */
+      if (keyToEdit.type === this.InputType.BOOLEAN_ROOM_PARAMETERS && !value) {
+        const computedKey = this.allKeys.find(
+          k => k.type === this.InputType.BOOLEAN_ROOM_COMPUTED,
+        )
+        if (!computedKey) {
+          return keysToUpdate
+        }
+        keysToUpdate.push({
+          key: computedKey.id,
+          value: false,
+        })
+        return keysToUpdate
+      }
+      /* 
+        2) Если поле с типом Учитывать в рассчетах поменялось на true,
+        а поле с типом Указывается параметры равно false, то не менять поле
+        Учитывать в рассчетах
+      */
+      if (keyToEdit.type === this.InputType.BOOLEAN_ROOM_COMPUTED && value) {
+        const parametersKey = this.allKeys.find(
+          k => k.type === this.InputType.BOOLEAN_ROOM_PARAMETERS,
+        )
+        if (!parametersKey) {
+          return keysToUpdate
+        }
+        const row = this.values[index]
+        const value = row.data[parametersKey.id]
+        if (!value) {
+          keysToUpdate.push({
+            key: field,
+            value: false,
+          })
+        }
+      }
+      return keysToUpdate
+    },
     async change(index, field, value) {
       try {
+        const keysToEdit = this.getKeysToEdit(index, field, value)
         const tableData = JSON.parse(JSON.stringify(this.values))
         const values = tableData.map((row, rowIndex) => {
           if (rowIndex === index) {
             row.data[field] = value
+            if (keysToEdit.length > 0) {
+              keysToEdit.forEach(key => {
+                row.data[key.key] = key.value
+              })
+            }
           }
           return row
         })
+
         await this.updateValues({
           id: this.directoryId,
           values,
         })
+        //rerender table
+        if (keysToEdit.length > 0) {
+          this.updateDirectory({ id: this.directory._id, data: this.directory })
+        }
       } catch (error) {
         this.updateDirectory({ id: this.directory._id, data: this.directory })
       }

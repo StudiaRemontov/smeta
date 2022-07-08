@@ -2,6 +2,7 @@
 import { mapGetters, mapState } from 'vuex'
 
 import roomParameters from '@/mixins/roomParameters.mixin'
+import keyTypes from '@/mixins/keyTypes.mixin'
 import { isObjectId } from '@/helpers/isObjectId'
 import { filterNodes } from '@/store/modules/outlay.module'
 import { formatNumber } from '@/helpers/formatNumber'
@@ -11,8 +12,9 @@ import { uniqBy } from 'lodash'
 import prulal from 'plural-ru'
 
 export default {
-  mixins: [roomParameters],
+  mixins: [roomParameters, keyTypes],
   computed: {
+    ...mapGetters('directory', ['roomDirectory']),
     ...mapState('outlay', ['selectedValues']),
     ...mapGetters('outlay', [
       'rooms',
@@ -25,6 +27,30 @@ export default {
     roomList() {
       return [...this.rooms].reverse()
     },
+    roomsWithOptions() {
+      const { keys } = this.roomDirectory
+      const parametersKey = keys.find(
+        k => k.type === this.InputType.BOOLEAN_ROOM_PARAMETERS,
+      )
+      const computedKey = keys.find(
+        k => k.type === this.InputType.BOOLEAN_ROOM_COMPUTED,
+      )
+      const rooms = this.roomList.filter(room => {
+        const { dirId } = room
+        if (!dirId) {
+          return true
+        }
+        const roomData = this.roomDirectory.values.find(r => r.id === dirId)
+        if (!roomData.data[parametersKey.id]) {
+          return false
+        }
+        if (!roomData.data[computedKey.id]) {
+          return false
+        }
+        return true
+      })
+      return rooms.map(r => r.id)
+    },
     parameters() {
       return {
         perimeter: this.roomOptions.perimeter,
@@ -35,6 +61,12 @@ export default {
     roomParameters() {
       return this.roomList.map(r => {
         const { options, id } = r
+        if (!this.roomsWithOptions.includes(id)) {
+          return {
+            id,
+            computed: 0,
+          }
+        }
         const { computed } = this.calculateAllParameters(options)
         return {
           id,
@@ -44,7 +76,10 @@ export default {
     },
     totalParameters() {
       return this.roomList.reduce((acc, room) => {
-        const { options } = room
+        const { options, id } = room
+        if (!this.roomsWithOptions.includes(id)) {
+          return acc
+        }
         const { computed } = this.calculateAllParameters(options)
         return this.sumParameters(acc, computed)
       }, {})
@@ -318,7 +353,7 @@ export default {
           :key="room.id"
           class="results-table__cell"
         >
-          {{ room.computed[val] }}
+          {{ room.computed[val] || '-' }}
         </td>
         <td v-if="specMontage > 0" class="results-table__cell">-</td>
         <td class="results-table__cell bold">
@@ -436,6 +471,9 @@ export default {
     text-align: left;
     padding: 8px;
     border: 1px solid rgb(179, 179, 179);
+    @media print {
+      font-size: 11px;
+    }
   }
 
   &__cell:not(:first-child) {
@@ -456,11 +494,16 @@ export default {
   }
 
   &__cell {
+    padding: 8px;
+    border: 1px solid rgb(179, 179, 179);
+
     &:not(:first-child) {
       text-align: center;
     }
-    padding: 8px;
-    border: 1px solid rgb(179, 179, 179);
+
+    @media print {
+      font-size: 11px;
+    }
   }
 }
 

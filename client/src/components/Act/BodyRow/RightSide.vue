@@ -335,6 +335,7 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  flex: 1;
 
   &__results {
     flex: 1;
