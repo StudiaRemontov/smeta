@@ -49,7 +49,7 @@ export default {
       return this.tableData.map(r => r.data)
     },
     values() {
-      return this.directory.values
+      return this.directory.values.filter(r => !r.removed)
     },
     tableData() {
       return this.values.map(r => r.data)
@@ -81,7 +81,12 @@ export default {
       this.createTableRow(this.directoryId)
     },
     removeRow(rowIndex) {
-      const values = this.values.filter((_, index) => index !== rowIndex)
+      const values = this.values.map((row, index) => {
+        if (index === rowIndex) {
+          return { ...row, removed: true }
+        }
+        return row
+      })
       this.updateValues({
         id: this.directoryId,
         values,

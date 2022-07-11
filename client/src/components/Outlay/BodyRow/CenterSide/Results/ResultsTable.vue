@@ -247,22 +247,22 @@ export default {
           render: this.sale && this.specMontage > 0,
         },
         {
-          text: 'Стоимость общестр-х работ',
+          text: 'Стоимость общестроительных работ',
           value: this.format(this.totalPrice - this.specMontage),
           render: this.sale || this.specMontage,
         },
         {
-          text: 'Скидка на общестр-е работы',
+          text: 'Скидка на общестроительные работы',
           value: `${this.sale} %`,
           render: this.sale > 0,
         },
         {
-          text: 'Сумма скидки на общестр-е работы',
+          text: 'Сумма скидки на общестроительные работы',
           value: this.format(saleValue),
           render: this.sale > 0,
         },
         {
-          text: 'Общестр-е работы с учетом скидки',
+          text: 'Общестроительные работы с учетом скидки',
           value: this.format(this.totalPriceWithSale),
           render: this.sale > 0 && this.specMontage,
         },

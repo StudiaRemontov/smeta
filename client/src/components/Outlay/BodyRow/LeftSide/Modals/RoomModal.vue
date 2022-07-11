@@ -1,6 +1,7 @@
 <script>
 import PopupModal from '@/components/UI/PopupModal.vue'
 import InputNumber from 'primevue/inputnumber'
+import InputText from 'primevue/inputtext'
 import Dropdown from 'primevue/dropdown'
 
 import roomParameters from '@/mixins/roomParameters.mixin'
@@ -31,7 +32,7 @@ const getInitState = () => ({
 })
 
 export default {
-  components: { PopupModal, InputNumber, Dropdown },
+  components: { PopupModal, InputNumber, InputText, Dropdown },
   mixins: [roomParameters, keyTypes],
   data() {
     return getInitState()
@@ -68,10 +69,10 @@ export default {
       )
     },
     isCorrectFields() {
-      if (!this.room || this.invalid) {
+      if (!this.name || this.invalid) {
         return false
       }
-      if (!this.room.parameters) {
+      if (!this.room) {
         return true
       }
       return (
@@ -95,16 +96,7 @@ export default {
       return Object.assign(placeholders, options)
     },
     showParameters() {
-      if (!this.room) {
-        return false
-      }
-      if (typeof this.room === 'string') {
-        return true
-      }
-      if (typeof this.room !== 'object' && this.room) {
-        return false
-      }
-      return this.room.parameters
+      return (this.name && !this.room) || (this.room && this.room.parameters)
     },
   },
   watch: {
@@ -141,7 +133,8 @@ export default {
         }
         return acc
       }, {})
-      const rooms = values.map(value => {
+      const existingRooms = values.filter(r => !r.removed)
+      const rooms = existingRooms.map(value => {
         const { data, id } = value
         return {
           roomId: id,
@@ -160,8 +153,8 @@ export default {
       this.cancelButton = options.cancelButton
       if (options.edit) {
         const { dirId, name } = this.selectedRoom
-        this.room = dirId ? this.roomTypes.find(r => r.roomId === dirId) : name
-
+        this.room = dirId && this.roomTypes.find(r => r.roomId === dirId)
+        this.name = name
         if (this.selectedRoom.options) {
           this.width = this.selectedRoom.options.width
           this.height = this.selectedRoom.options.height
@@ -181,42 +174,27 @@ export default {
         this.rejectPromise = rej
       })
     },
+    capitalizeName(string) {
+      return string.charAt(0).toUpperCase() + string.slice(1)
+    },
     _confirm() {
       if (!this.isCorrectFields) {
         return
       }
       this.$refs.popup.close()
-      if (typeof this.room === 'object') {
-        const roomObj = {
-          name: this.room.name,
-          dirId: this.room.roomId,
-        }
-        if (!this.room.parameters) {
-          roomObj.options = null
-          this.resolvePromise(roomObj)
-          return this.reset()
-        }
-        roomObj.options = {
+      const dirId = this.room && this.room.roomId
+      const name = this.capitalizeName(this.name)
+      const data = {
+        name,
+        options: {
           width: this.width || '0',
           height: this.height || '0',
           length: this.length || '0',
           spaces: this.spaces || '0',
-        }
-        this.resolvePromise(roomObj)
-        return this.reset()
+        },
+        dirId,
       }
-      if (typeof this.room === 'string') {
-        const data = {
-          name: this.room,
-          options: {
-            width: this.width || '0',
-            height: this.height || '0',
-            length: this.length || '0',
-            spaces: this.spaces || '0',
-          },
-        }
-        this.resolvePromise(data)
-      }
+      this.resolvePromise(data)
       this.reset()
     },
     _cancel() {
@@ -267,6 +245,8 @@ export default {
     },
     changeRoom(e) {
       const { value: room } = e
+      const { name } = room
+      this.name = name
       const { values: rooms, keys } = this.roomDirectory
       const directoryRoom = rooms.find(r => r.id === room.roomId)
       if (!directoryRoom) {
@@ -315,22 +295,27 @@ export default {
     <div class="modal">
       <span class="modal__title">{{ title }}</span>
       <form class="form" @submit.prevent="_confirm">
-        <div class="form__group">
-          <label class="form__label">Название</label>
-          <Dropdown
-            v-model="room"
-            :options="roomTypes"
-            optionLabel="name"
-            :editable="true"
-            ref="input"
-            :filter="true"
-            placeholder="Выберите помещение или введите название"
-            emptyMessage="Помещение не найдено"
-            dataKey="roomId"
-            filterPlaceholder="Поиск"
-            @change="changeRoom"
-            @input="inputRoom"
-          />
+        <div class="form__flex">
+          <div class="form__group">
+            <label class="form__label">Тип помещения</label>
+            <Dropdown
+              v-model="room"
+              :options="roomTypes"
+              optionLabel="name"
+              ref="input"
+              :filter="true"
+              placeholder="Выберите помещение или введите название"
+              emptyMessage="Помещение не найдено"
+              dataKey="roomId"
+              filterPlaceholder="Поиск"
+              @change="changeRoom"
+              @input="inputRoom"
+            />
+          </div>
+          <div class="form__group">
+            <label class="form__label">Название</label>
+            <InputText v-model.trim="name" placeholder="Название помещения" />
+          </div>
         </div>
         <template v-if="showParameters">
           <span>Параметры помещения</span>
@@ -455,6 +440,15 @@ export default {
     grid-template-columns: 1fr 1fr;
     grid-template-rows: 1fr 1fr;
     gap: 10px;
+  }
+
+  &__flex {
+    display: flex;
+    gap: 10px;
+  }
+
+  &__flex &__group {
+    flex: 1;
   }
 }
 .input,

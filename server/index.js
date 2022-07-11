@@ -15,9 +15,13 @@ const edition = require('./router/edition')
 const pricelist = require('./router/priceList')
 const outlay = require('./router/outlay')
 const act = require('./router/act')
+const status = require('./router/status')
 
 //middleware
 const errorMiddleware = require('./middleware/error-middleware')
+
+//app initizlization
+const start = require('./start')
 
 const app = express()
 
@@ -44,6 +48,7 @@ app.use('/api/edition', edition)
 app.use('/api/pricelist', pricelist)
 app.use('/api/outlay', outlay)
 app.use('/api/act', act)
+app.use('/api/status', status)
 app.use('/pdf', express.static(__dirname + '/pdf'))
 
 //middleware
@@ -52,10 +57,12 @@ app.use(errorMiddleware)
 app.listen(config.PORT, async () => {
   try {
     await mongoose.connect(config.MONGO_URL)
+    console.log(`successfully connected to mongoDb ${config.MONGO_URL}`)
+    const startDate = await start()
+    console.log(`app started at ${startDate}`)
+
+    console.log(`app started on port ${config.PORT}`)
   } catch (error) {
     Logger.log('ERROR', 'Ошибка при подключении к базе')
   }
-  console.log(`successfully connected to mongoDb ${config.MONGO_URL}`)
-
-  console.log(`app started on port ${config.PORT}`)
 })

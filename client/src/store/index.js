@@ -7,6 +7,7 @@ import edition from './modules/edition.module'
 import outlay from './modules/outlay.module'
 import outlays from './modules/outlays.module'
 import acts from './modules/acts.module'
+import status from './modules/status.module'
 import OutlayService from '../api/OutlayService'
 import ActService from '../api/ActService'
 import collections from './local/collections'
@@ -33,10 +34,12 @@ const store = createStore({
     outlay,
     outlays,
     acts,
+    status,
   },
   actions: {
-    async initApp({ commit }) {
+    async initApp({ commit, dispatch }) {
       if (navigator.onLine) {
+        await dispatch('status/getStatus', null, { root: true })
         return
       }
       commit('setIsOffline', true)

@@ -2,7 +2,8 @@ const expiresTime = +import.meta.env.VITE_LOCAL_EXPIRES_TIME
 //сравниваю локальные и серверные данные.
 //метод возвразает объект с массивами: created, updated, removed.
 //В этих массивах сметы, которые нужно создать/изменить/удалить т.е. отправить запрос на бек.
-export default (server, local) => {
+export default (server, local, serverStartedAt) => {
+  const serverStartedAtTime = new Date(serverStartedAt).getTime()
   const created = local.filter(localData => {
     //те, что не удалены локально
     if (localData.removedAt) {
@@ -16,8 +17,14 @@ export default (server, local) => {
     if (isExistsOnServer) {
       return false
     }
-    //Проверяю устаревшие данные или нет
+
+    //проверка сервер запушен раннее изменения документа
     const localUpdatedAt = new Date(localData.updatedAt).getTime()
+
+    if (serverStartedAtTime > localUpdatedAt) {
+      return false
+    }
+    //Проверяю устаревшие данные или нет
     const now = Date.now()
     const diff = now - localUpdatedAt
     if (diff < expiresTime) {
@@ -35,6 +42,12 @@ export default (server, local) => {
     }
     const serverUpdatedAt = new Date(serverData.updatedAt).getTime()
     const localUpdatedAt = new Date(localData.updatedAt).getTime()
+
+    //проверка сервер запушен раннее изменения документа
+    if (serverStartedAtTime > localUpdatedAt) {
+      return false
+    }
+
     //если дата изменения локальной больше серверной, то она считается измененой
     return localUpdatedAt > serverUpdatedAt
   })
@@ -47,8 +60,14 @@ export default (server, local) => {
     if (!serverData) {
       return false
     }
+
     const serverUpdatedAt = new Date(serverData.updatedAt).getTime()
     const localRemovedAt = new Date(lo.removedAt).getTime()
+
+    //проверка сервер запушен раннее изменения документа
+    if (serverStartedAtTime > localRemovedAt) {
+      return false
+    }
     return localRemovedAt > serverUpdatedAt
   })
 

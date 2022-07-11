@@ -70,11 +70,12 @@ export default {
         state.loading = false
       }
     },
-    async syncData({ dispatch, state }) {
+    async syncData({ dispatch, state, rootGetters }) {
       try {
         const data = state.outlays
         const localData = await idb.getCollectionData('outlays')
-        const diff = getLocalDifference(data, localData)
+        const startedAt = rootGetters['status/status']
+        const diff = getLocalDifference(data, localData, startedAt)
         const { created, updated, removed } = diff
         await idb.setArrayToCollection('outlays', data)
         await Promise.all(
@@ -209,10 +210,6 @@ export default {
         const outlay = rootGetters['outlay/outlay']
         if (outlay && outlay._id === id) {
           await dispatch('outlay/setOutlay', response.data, { root: true })
-        }
-        const act = rootGetters['acts/act']
-        if (act && act.outlay === id) {
-          await dispatch('acts/setActsData', null, { root: true })
         }
         return response
       } catch (error) {

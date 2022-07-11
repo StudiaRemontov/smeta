@@ -158,6 +158,26 @@ const filterTree = (node, selectedValues) => {
   return true
 }
 
+const mergeNodes = nodes => {
+  const groupped = nodes.reduce((acc, node) => {
+    acc[node.key] = acc[node.key] || []
+    const { children } = node
+    const data = children.length > 0 ? children : node
+    acc[node.key].push(data)
+    return acc
+  }, {})
+  return Object.entries(groupped).map(([key, values]) => {
+    const node = nodes.find(n => n.key === key)
+    const { children } = node
+    if (children && children.length > 0) {
+      const flatted = values.flat()
+      node.children = mergeNodes(flatted)
+      return node
+    }
+    return node
+  })
+}
+
 export default {
   namespaced: true,
   state: {
@@ -319,7 +339,10 @@ export default {
       const { jobs, id, dirId } = room
       const nodes = jobs.map(treeToList).flat()
       const initDataClone = JSON.parse(JSON.stringify(initData))
-      if (!dirId) {
+
+      const roomDirectory = rootGetters['directory/roomDirectory']
+      const roomData = roomDirectory.values.find(r => r.id === dirId)
+      if (!dirId || !roomData) {
         const { options } = room
         if (options) {
           const { computed } = methods.calculateAllParameters(options)
@@ -336,11 +359,8 @@ export default {
         state.roomsData[id] = mergedTree
         return
       }
-      const roomDirectory = rootGetters['directory/roomDirectory']
       const { keys } = roomDirectory
       const collectionKey = keys.find(k => k.type === InputType.COLLECTION)
-      const roomData = roomDirectory.values.find(r => r.id === dirId)
-
       const roomCollections = roomData.data[collectionKey.id]
       const filteredEdition = initDataClone.filter(c =>
         filterTree(c, roomCollections),
@@ -357,8 +377,11 @@ export default {
           ),
         )
       }
-      const mergedTree = filteredEdition.map(c => mergeTree(c, nodes)).flat()
-      state.roomsData[id] = mergedTree
+      const merged = mergeNodes([...jobs, ...filteredEdition])
+      const mergedWithReplacedValues = merged
+        .map(c => mergeTree(c, nodes))
+        .flat()
+      state.roomsData[id] = mergedWithReplacedValues
     },
     async setOutlay({ state, commit, rootGetters, dispatch }, payload) {
       if (!payload) {

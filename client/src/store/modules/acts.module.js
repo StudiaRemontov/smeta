@@ -232,7 +232,7 @@ export default {
     setOutlay({ state }, payload) {
       state.outlay = payload
     },
-    setActsData({ state, rootGetters }) {
+    setActsData({ state, rootGetters, getters }) {
       //структура данных актов:
       /*
         Из работ сметы,
@@ -240,15 +240,19 @@ export default {
         и из тех, что заполнены в акте, но удалены в добавленных
         количество беру их заполненных работ 
       */
-      const { acts, outlay, act } = state
-      const notRemoved = acts.filter(act => !act.removedAt)
+      const { outlay, act } = state
+      const { acts } = getters
+
+      //получаю комнаты из используемой в редакции сметы
       const outlays = rootGetters['outlays/outlays']
       const usedOutlay = outlays.find(o => o._id === outlay._id)
       const outlayClone = JSON.parse(JSON.stringify(usedOutlay))
       const { rooms: outlayRooms } = outlayClone
-      const actIndex = notRemoved.findIndex(a => a._id === act._id)
-      const croppedActs = [...notRemoved].slice(0, actIndex + 1)
+      //получаю все акты, что принадлежат смете и в промежутке от текущего акта до первого
+      const actIndex = acts.findIndex(a => a._id === act._id)
+      const croppedActs = [...acts].slice(0, actIndex + 1)
 
+      //объединяю все добавленные работы комнаты с обычными
       const allOutlayRoomJobs = outlayRooms.map(room => {
         const { jobs, newJobs, id } = room
         const merged = mergeNodes([...jobs, ...newJobs])
@@ -257,7 +261,7 @@ export default {
           jobs: merged,
         }
       })
-
+      //получаю акты с сохраненными работами
       const actsWithRooms = croppedActs.filter(act => act.rooms.length > 0)
 
       const actRoomsData = actsWithRooms.map(croppedAct => {
@@ -352,13 +356,15 @@ export default {
         state.loading = false
       }
     },
-    async syncData({ dispatch, state }) {
+    async syncData({ dispatch, state, rootGetters }) {
       try {
         const acts = state.acts
+        const startedAt = rootGetters['status/status']
         const localData = await idb.getCollectionData('acts')
         const { updated, created, removed } = getLocalDifference(
           acts,
           localData,
+          startedAt,
         )
         await idb.setArrayToCollection('acts', acts)
         await Promise.all(
@@ -407,7 +413,7 @@ export default {
         return Promise.reject(error)
       }
     },
-    async saveLocaly({ state, commit }) {
+    async saveLocaly({ state, commit, dispatch }) {
       try {
         // формирование данных
         const { act, actsData, outlay } = state
@@ -420,6 +426,7 @@ export default {
           updatedAt: new Date(),
         })
         commit('updateById', { id: act._id, data })
+        await dispatch('setAct', data)
       } catch (error) {
         return Promise.reject(error)
       }

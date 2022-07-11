@@ -254,7 +254,8 @@ export default {
       try {
         const directory = state.directories.find(d => d._id === id)
         const clone = JSON.parse(JSON.stringify(directory))
-        clone.values = values
+        const removedValues = clone.values.filter(r => r.removed)
+        clone.values = [...values, ...removedValues]
         const response = await axios.put(`/directory/${id}`, clone)
         const newValues = response.data.values
         commit('updateDirectoryValues', { id, values: newValues })
