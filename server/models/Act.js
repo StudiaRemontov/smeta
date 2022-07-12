@@ -7,6 +7,9 @@ jobsSchema.add({
   key: {},
   children: [jobsSchema],
   data: {},
+  added: {
+    type: Boolean,
+  },
 })
 
 const roomSchema = new mongoose.Schema(

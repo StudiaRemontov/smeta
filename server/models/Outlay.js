@@ -12,6 +12,21 @@ jobsSchema.add({
   },
 })
 
+const addedJobSchema = new mongoose.Schema(
+  { _id: false },
+  { versionKey: false }
+)
+
+addedJobSchema.add({
+  key: {},
+  children: [addedJobSchema],
+  data: {},
+  added: {
+    type: Boolean,
+    default: true,
+  },
+})
+
 const roomSchema = new mongoose.Schema(
   {
     _id: false,
@@ -24,23 +39,20 @@ const roomSchema = new mongoose.Schema(
       type: String,
     },
     jobs: [jobsSchema],
-    newJobs: [jobsSchema],
+    newJobs: [addedJobSchema],
+    dirId: String,
     options: {
       width: {
         type: String,
-        required: true,
       },
       height: {
         type: String,
-        required: true,
       },
       length: {
         type: String,
-        required: true,
       },
       spaces: {
         type: String,
-        required: true,
       },
     },
   },
