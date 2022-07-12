@@ -37,9 +37,8 @@ const store = createStore({
     status,
   },
   actions: {
-    async initApp({ commit, dispatch }) {
+    async initApp({ commit }) {
       if (navigator.onLine) {
-        await dispatch('status/getStatus', null, { root: true })
         return
       }
       commit('setIsOffline', true)
@@ -56,12 +55,14 @@ const store = createStore({
             }),
           )
         }
+        commit('status/setContentLoaded', false, { root: true })
         commit('directory/setContentLoaded', false, { root: true })
         commit('edition/setContentLoaded', false, { root: true })
         commit('priceList/setContentLoaded', false, { root: true })
         commit('outlays/setContentLoaded', false, { root: true })
         commit('acts/setContentLoaded', false, { root: true })
 
+        await dispatch('status/getStatus', null, { root: true })
         return await Promise.all([
           dispatch('directory/fetchAll', null, { root: true }),
           dispatch('edition/fetchAll', null, { root: true }),

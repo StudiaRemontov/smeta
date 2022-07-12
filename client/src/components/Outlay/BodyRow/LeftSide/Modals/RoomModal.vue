@@ -72,7 +72,7 @@ export default {
       if (!this.name || this.invalid) {
         return false
       }
-      if (!this.room) {
+      if (this.room && !this.room.parameters) {
         return true
       }
       return (
@@ -88,11 +88,11 @@ export default {
         length: null,
         spaces: null,
       }
-      const firstRoom = this.rooms[0]
-      if (!firstRoom) {
+      const firstRoomWithParameters = this.rooms.find(r => r.options)
+      if (!firstRoomWithParameters) {
         return placeholders
       }
-      const { options } = firstRoom
+      const { options } = firstRoomWithParameters
       return Object.assign(placeholders, options)
     },
     showParameters() {
@@ -184,14 +184,19 @@ export default {
       this.$refs.popup.close()
       const dirId = this.room && this.room.roomId
       const name = this.capitalizeName(this.name)
+      const options =
+        (this.room && this.room.parameters) || !this.room
+          ? {
+              width: this.width || '0',
+              height: this.height || '0',
+              length: this.length || '0',
+              spaces: this.spaces || '0',
+            }
+          : null
+
       const data = {
         name,
-        options: {
-          width: this.width || '0',
-          height: this.height || '0',
-          length: this.length || '0',
-          spaces: this.spaces || '0',
-        },
+        options,
         dirId,
       }
       this.resolvePromise(data)

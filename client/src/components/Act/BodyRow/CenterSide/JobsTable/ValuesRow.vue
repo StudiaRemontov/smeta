@@ -7,7 +7,7 @@ import keyTypes from '@/mixins/keyTypes.mixin'
 export default {
   components: { TableRowWrapper, QuantityCell, TableCellWrapper },
   mixins: [keyTypes],
-  inject: ['keys', 'pushNodes', 'removeNodes', 'selectedNodes', 'updateNode'],
+  inject: ['keys', 'selectedNodes', 'updateNode'],
   props: {
     node: {
       type: Object,
@@ -38,7 +38,6 @@ export default {
         this.timeout = clearTimeout(this.timeout)
       }
       this.timeout = setTimeout(() => {
-        console.log('updayed')
         this.updateNode(this.node)
       }, 300)
     },

@@ -114,8 +114,8 @@ export default {
 </script>
 
 <template>
-  <div class="tree-table">
-    <div class="table-grid" ref="wrapper">
+  <div class="tree-table" ref="wrapper">
+    <div class="table-grid">
       <TableGroup
         v-for="node in data"
         ref="table"
@@ -134,12 +134,13 @@ export default {
   display: flex;
   flex-direction: column;
   min-height: 0px;
+  @include darkScroll;
+  overflow-y: overlay;
 }
 
 .table-grid {
   flex: 1;
-  @include darkScroll;
-  overflow-y: overlay;
+  min-width: fit-content;
   position: relative;
 }
 </style>

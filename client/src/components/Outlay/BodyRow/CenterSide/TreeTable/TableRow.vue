@@ -226,6 +226,14 @@ export default {
     z-index: 2;
     border: 2px black solid;
   }
+
+  &:hover {
+    background-color: rgb(233, 233, 233) !important;
+  }
+
+  &.selected:hover {
+    background-color: #d1eeb4 !important;
+  }
 }
 
 .table-cell {

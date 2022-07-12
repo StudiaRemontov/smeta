@@ -20,7 +20,6 @@ export default (server, local, serverStartedAt) => {
 
     //проверка сервер запушен раннее изменения документа
     const localUpdatedAt = new Date(localData.updatedAt).getTime()
-
     if (serverStartedAtTime > localUpdatedAt) {
       return false
     }

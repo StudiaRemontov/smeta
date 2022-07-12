@@ -29,6 +29,7 @@ export default {
   emits: ['update:modelValue'],
   data() {
     return {
+      loading: false,
       initted: false,
       tableData: null,
       filteredTableData: null,
@@ -63,6 +64,10 @@ export default {
         return typedKey
       })
       return typedKeys
+    },
+    addButtonDisabled() {
+      const hasSelectedNodes = Object.keys(this.selectedNodes).length > 0
+      return !hasSelectedNodes || this.loading
     },
   },
   methods: {
@@ -162,6 +167,7 @@ export default {
       })
     },
     async save() {
+      this.loading = true
       try {
         const currentRoom = this.outlay.rooms.find(
           r => r.id === this.activeRoom.id,
@@ -195,12 +201,15 @@ export default {
         this.close()
       } catch (error) {
         console.log(error)
+      } finally {
+        this.loading = false
       }
     },
     close() {
       const { dialog } = this.$refs
       dialog.close()
       this.selectedNodes = {}
+      this.search = null
     },
     onInput() {
       if (this.timeout) {
@@ -251,6 +260,9 @@ export default {
     ref="dialog"
     :style="{ width: '70vw' }"
     :modal="true"
+    :draggable="false"
+    :closeOnEscape="false"
+    :closable="!addButtonDisabled"
     @show="onShow"
   >
     <template #header>
@@ -268,8 +280,17 @@ export default {
       <JobsTable :data="filteredTableData" />
     </div>
     <template #footer>
-      <button class="button save-button" @click="save">Добавить</button>
-      <button class="button cancel-button" @click="close">Отмена</button>
+      <button
+        class="button save-button"
+        :disabled="addButtonDisabled"
+        @click="save"
+      >
+        <i v-if="loading" class="pi pi-spin pi-spinner"></i>
+        Добавить
+      </button>
+      <button class="button cancel-button" :disabled="loading" @click="close">
+        Отмена
+      </button>
     </template>
   </Dialog>
 </template>
@@ -298,6 +319,10 @@ export default {
   padding: 7px 15px;
   border-radius: 5px;
   color: #fff;
+
+  &:disabled {
+    opacity: 0.5;
+  }
 }
 
 .save-button {

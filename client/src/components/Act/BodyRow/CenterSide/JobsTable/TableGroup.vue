@@ -102,7 +102,7 @@ export default {
         :node="child"
         :level="level + 1"
         @selected="onSelect"
-        @unselect="onUnselect"
+        @unselected="onUnselect"
       />
     </template>
     <template v-else>

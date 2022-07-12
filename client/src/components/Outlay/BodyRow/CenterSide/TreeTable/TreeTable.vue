@@ -287,8 +287,8 @@ export default {
 }
 </script>
 <template>
-  <div class="tree-table">
-    <div class="table-grid__body" ref="wrapper">
+  <div class="tree-table" ref="wrapper">
+    <div class="table-grid__body">
       <TableGroup
         v-for="(node, index) in tableData"
         :key="node.key"
@@ -307,6 +307,8 @@ export default {
   display: flex;
   flex-direction: column;
   min-height: 0px;
+  @include darkScroll;
+  overflow-y: overlay;
 }
 
 .table-grid {
@@ -325,9 +327,8 @@ export default {
 
   &__body {
     flex: 1;
-    @include darkScroll;
-    overflow-y: overlay;
     position: relative;
+    min-width: fit-content;
   }
 
   &__cell {

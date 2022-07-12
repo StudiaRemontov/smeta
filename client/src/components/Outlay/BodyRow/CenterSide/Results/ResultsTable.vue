@@ -445,6 +445,8 @@ export default {
   flex-direction: column;
   align-items: flex-start;
   gap: 20px;
+  overflow: auto;
+  @include darkScroll;
 
   @media print {
     display: block;

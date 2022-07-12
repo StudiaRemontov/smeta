@@ -31,9 +31,28 @@ export default {
       return [...this.acts].slice(0, index + 1)
     },
     data() {
-      const roomValues = JSON.parse(
-        JSON.stringify(this.actsData[this.act._id][this.room.id]),
+      const roomsData = Object.entries(this.actsData).reduce(
+        (acc, [key, value]) => {
+          const isInCropped = this.croppedActs.find(a => a._id === key)
+          if (isInCropped) {
+            return [...acc, value]
+          }
+          return acc
+        },
+        [],
       )
+      const roomValues = roomsData
+        .map(r => {
+          const rooms = Object.entries(r).map(([key, value]) => {
+            return {
+              roomId: key,
+              value,
+            }
+          })
+          const room = rooms.find(r => r.roomId === this.room.id)
+          return room.value
+        })
+        .flat()
       const values = roomValues.reduce((acc, data) => {
         const nodes = getValuesInside(data)
         return [...acc, ...nodes]
