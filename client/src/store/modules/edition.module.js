@@ -107,6 +107,17 @@ export default {
         return Promise.reject(error)
       }
     },
+    async update({ commit }, { id, data }) {
+      try {
+        const response = await axios.put(`/edition/${id}`, data)
+        const { data: rData } = response
+        const { _id: rId } = rData
+        commit('update', { id: rId, data: rData })
+        return response
+      } catch (error) {
+        return Promise.reject(error)
+      }
+    },
     async remove({ commit, rootGetters, dispatch }, payload) {
       try {
         const response = await axios.delete(`/edition/${payload}`)

@@ -1,4 +1,5 @@
 <script>
+import { computed } from 'vue'
 import { mapActions, mapGetters, mapMutations } from 'vuex'
 import StretchedRow from './TableRows/StretchedRow.vue'
 import DefaultRow from './TableRows/DefaultRow.vue'
@@ -9,6 +10,11 @@ export default {
   name: 'TalbeRow',
   components: { StretchedRow, DefaultRow, SelectedRow, CloneRow },
   inject: ['opacities'],
+  provide() {
+    return {
+      changed: computed(() => this.changed),
+    }
+  },
   inheritAttrs: false,
   props: {
     node: {
@@ -30,6 +36,7 @@ export default {
       'showOnlyChecked',
       'currentRoomData',
       'currentNode',
+      'initNodes',
     ]),
     data() {
       return this.node.data
@@ -83,6 +90,15 @@ export default {
     },
     current() {
       return this.currentNode?.key === this.node.key
+    },
+    changed() {
+      const initNode = this.initNodes.find(n => n.key === this.node.key)
+      if (!initNode) {
+        return false
+      }
+      const currentPrice = this.node.data[this.priceKey.id]
+      const initPrice = initNode.data[this.priceKey.id]
+      return currentPrice !== initPrice
     },
   },
   methods: {

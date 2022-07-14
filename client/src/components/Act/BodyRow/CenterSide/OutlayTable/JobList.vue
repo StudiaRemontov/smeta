@@ -1,5 +1,5 @@
 <script>
-import { mapActions, mapGetters, mapMutations } from 'vuex'
+import { mapActions, mapGetters } from 'vuex'
 import TableRow from './TableRow.vue'
 
 export default {
@@ -52,7 +52,6 @@ export default {
     },
   },
   methods: {
-    ...mapMutations('outlay', ['selectJob', 'unselectJob']),
     ...mapActions('outlay', ['toggleCategoryJobs']),
   },
 }

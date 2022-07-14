@@ -6,6 +6,7 @@ import OutlayService from '../../api/OutlayService'
 import roomParametersMixin from '../../mixins/roomParameters.mixin'
 
 import { InputType } from '../../enum/InputType'
+import { outlayViewKeys } from '../../enum/outlayKeys'
 import { getAllValues } from '@/helpers/treeMethods'
 import { deepEqual } from '@/helpers/deepEqual'
 
@@ -186,7 +187,7 @@ export default {
     selectedRoom: null,
     showOnlyChecked: false,
     keys: [],
-    initNodes: null,
+    initNodes: [],
     initData: null,
     roomsData: {},
     selectedValues: {},
@@ -255,20 +256,28 @@ export default {
     setStriped(state, payload) {
       state.striped = payload
     },
-    selectJob(state, job) {
-      if (!state.selectedRoom) return
-      const selectedValues = state.selectedValues[state.selectedRoom.id]
-      if (!selectedValues) return
-      if (!selectedValues.includes(job.key)) {
-        selectedValues.push(job.key)
+    selectJobs(state, jobs) {
+      const { outlay, selectedRoom, selectedValues } = state
+      if (!outlay) {
+        return
       }
+      const selected = selectedValues[selectedRoom.id]
+      jobs.forEach(job => {
+        const isSelected = selected.includes(job.key)
+        if (isSelected) {
+          return
+        }
+        selected.push(job.key)
+      })
     },
-    unselectJob(state, job) {
-      if (!state.selectedRoom) return
-      const selectedValues = state.selectedValues[state.selectedRoom.id]
-      if (!selectedValues) return
-      state.selectedValues[state.selectedRoom.id] = selectedValues.filter(
-        key => key !== job.key,
+    unSelectJobs(state, jobs) {
+      const { outlay, selectedRoom, selectedValues } = state
+      if (!outlay) {
+        return
+      }
+      const selected = selectedValues[selectedRoom.id]
+      selectedValues[selectedRoom.id] = selected.filter(
+        key => !jobs.includes(key),
       )
     },
     updateNodeChildren(state, { node, children }) {
@@ -332,14 +341,12 @@ export default {
         state.formulaKey.id,
       )
       return data
-      // state.roomsData[id] = data
     },
     setRoomData({ state, rootGetters }, room) {
       const { initData } = state
       const { jobs, id, dirId } = room
       const nodes = jobs.map(treeToList).flat()
       const initDataClone = JSON.parse(JSON.stringify(initData))
-
       const roomDirectory = rootGetters['directory/roomDirectory']
       const roomData = roomDirectory.values.find(r => r.id === dirId)
       if (!dirId || !roomData) {
@@ -381,6 +388,7 @@ export default {
       const mergedWithReplacedValues = merged
         .map(c => mergeTree(c, nodes))
         .flat()
+
       state.roomsData[id] = mergedWithReplacedValues
     },
     async setOutlay({ state, commit, rootGetters, dispatch }, payload) {
@@ -401,10 +409,12 @@ export default {
       state.priceKey = directory.keys.find(k => k.type === InputType.PRICE)
       state.formulaKey = directory.keys.find(k => k.type === InputType.FORMULA)
       const initData = JSON.parse(JSON.stringify(edition.data.children))
+      const cloneInitData = JSON.parse(JSON.stringify(initData))
+      state.initNodes = cloneInitData.map(getValuesInside).flat()
       state.initData = initData
-      state.keys = edition.keys
+      state.keys = directory.keys.filter(k => outlayViewKeys.includes(k.type))
       const rooms = JSON.parse(JSON.stringify(state.outlay.rooms))
-      rooms.map(async room => {
+      rooms.map(room => {
         const roomClone = JSON.parse(JSON.stringify(room))
         dispatch('setRoomData', room)
         const { jobs, id } = roomClone
@@ -694,5 +704,6 @@ export default {
     },
     showLeftSide: s => s.showLeftSide,
     showRightSide: s => s.showRightSide,
+    initNodes: s => s.initNodes,
   },
 }

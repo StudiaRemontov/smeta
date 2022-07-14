@@ -297,6 +297,11 @@ export default {
     align-items: center;
   }
 }
+
+::v-deep(.p-column-header-content) {
+  flex-direction: row-reverse;
+  gap: 10px;
+}
 </style>
 
 <style lang="scss">
@@ -308,11 +313,6 @@ export default {
 }
 .p-datatable-wrapper {
   @include darkScroll;
-}
-
-.p-datatable .p-column-header-content {
-  flex-direction: row-reverse;
-  gap: 10px;
 }
 
 .create-cell {

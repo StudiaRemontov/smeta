@@ -7,7 +7,7 @@ import Dropdown from 'primevue/dropdown'
 import roomParameters from '@/mixins/roomParameters.mixin'
 import keyTypes from '@/mixins/keyTypes.mixin'
 import { mapGetters } from 'vuex'
-import { directoryName } from '@/enum/roomDirectoryData'
+import directoryNames from '@/enum/directoryNames'
 
 const getInitState = () => ({
   title: undefined,
@@ -112,7 +112,9 @@ export default {
   },
   methods: {
     getRoomsFromDirectory() {
-      const directory = this.directories.find(d => d.name === directoryName)
+      const directory = this.directories.find(
+        d => d.name === directoryNames.ROOMS,
+      )
       if (!directory) {
         console.warn(
           'Справочника с комнатами либо не существует, либо указано неверное название справочника',

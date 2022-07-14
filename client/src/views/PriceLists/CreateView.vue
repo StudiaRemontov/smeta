@@ -8,6 +8,7 @@ import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
 import priceListMixin from '@/mixins/priceList.mixin'
 import expandAllMixin from '@/mixins/expandAll.mixin'
+import { requiredKeys as outlayKeys } from '@/enum/outlayKeys'
 
 export default {
   components: {
@@ -21,6 +22,13 @@ export default {
   },
   mixins: [priceListMixin, expandAllMixin],
   computed: {
+    outlayKeys() {
+      return outlayKeys
+    },
+    tooltipData() {
+      const text = 'Редакция может быть создана из справочников с колонками:'
+      return `${text} ${this.outlayKeys.join(', ')}`
+    },
     tree() {
       if (!this.selectedRoot) return []
       const root = this.clonedDirectories.find(
@@ -31,7 +39,11 @@ export default {
       return [tree]
     },
     rootOptions() {
-      return this.roots.map(r => ({ name: r.name, value: r._id }))
+      const rootsForOutlay = this.roots.filter(root => {
+        const { keys } = root
+        return this.outlayKeys.every(key => keys.find(k => k.type === key))
+      })
+      return rootsForOutlay.map(r => ({ name: r.name, value: r._id }))
     },
   },
   watch: {
@@ -64,7 +76,14 @@ export default {
         </div>
         <div class="select">
           <div v-if="!selectedPriceList" class="header__row">
-            <span> Корневой справочник </span>
+            <span>
+              Корневой справочник
+              <i
+                v-tooltip.top="tooltipData"
+                class="pi pi-question-circle"
+                style="font-size: 16px"
+              ></i>
+            </span>
             <SelectButton
               v-model="rootId"
               :options="rootOptions"

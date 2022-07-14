@@ -1,5 +1,5 @@
 <script>
-import { mapActions, mapGetters, mapMutations } from 'vuex'
+import { mapActions, mapGetters } from 'vuex'
 import JobList from './JobList.vue'
 import HeaderCells from './HeaderCells.vue'
 
@@ -98,7 +98,6 @@ export default {
     },
   },
   methods: {
-    ...mapMutations('outlay', ['selectJob', 'unselectJob']),
     ...mapActions('outlay', ['toggleCategoryJobs']),
     treeToListOnlyValues(node) {
       const { children, key } = node
@@ -109,25 +108,6 @@ export default {
       }
 
       return [node]
-    },
-    select() {
-      if (!this.selected) {
-        this.selectJob(this.node)
-        return this.$emit('select-node')
-      }
-
-      if (this.isCategory) {
-        const hasSelectedValues = !!this.node.children.find(n =>
-          this.selectedValues.includes(n.key),
-        )
-
-        if (!hasSelectedValues) {
-          this.unselectJob(this.node)
-        }
-        return this.$emit('select-node')
-      }
-      this.unselectJob(this.node)
-      this.$emit('select-node')
     },
     toggleCategory() {
       if (!this.editable) return
@@ -162,7 +142,6 @@ export default {
           :node="child"
           :level="level + 1"
           :room="room"
-          @select-node="select"
         />
       </template>
       <template v-else>
@@ -171,7 +150,6 @@ export default {
           :level="level + 1"
           :room="room"
           :hasTitle="false"
-          @select-node="select"
         />
       </template>
     </template>

@@ -128,7 +128,10 @@ export default {
         data.root = root
         data.keys = this.visibleKeys
       }
-      if (this.type === this.InputType.COLLECTION) {
+      if (
+        this.type === this.InputType.COLLECTION ||
+        this.type === this.InputType.COLLECTION_VALUES
+      ) {
         if (!this.selectedCollection) {
           return
         }
@@ -227,7 +230,13 @@ export default {
             </div>
           </div>
         </div>
-        <div v-else-if="type === InputType.COLLECTION" class="form__group">
+        <div
+          v-else-if="
+            type === InputType.COLLECTION ||
+            type === InputType.COLLECTION_VALUES
+          "
+          class="form__group"
+        >
           <span> Выберите справочник с работами </span>
           <select v-model="selectedCollection" class="select">
             <option

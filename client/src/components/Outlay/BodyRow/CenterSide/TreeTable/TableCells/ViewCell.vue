@@ -4,6 +4,7 @@ import { mapGetters } from 'vuex'
 import { formatNumber } from '@/helpers/formatNumber'
 
 export default {
+  inject: ['changed'],
   props: {
     value: {
       required: true,
@@ -56,6 +57,7 @@ export default {
     :title="viewValue"
     :data-cellIndex="index"
   >
+    <span v-if="index === 0 && changed"> * </span>
     {{ viewValue }}
   </div>
 </template>

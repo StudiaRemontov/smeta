@@ -1,5 +1,5 @@
 <script>
-import { mapActions, mapGetters, mapMutations } from 'vuex'
+import { mapActions, mapGetters } from 'vuex'
 import TableRow from './TableRow.vue'
 import EditableTableRow from '../TreeTable/TableRow.vue'
 
@@ -59,27 +59,7 @@ export default {
     },
   },
   methods: {
-    ...mapMutations('outlay', ['selectJob', 'unselectJob']),
     ...mapActions('outlay', ['toggleCategoryJobs']),
-    select() {
-      if (!this.selected) {
-        this.selectJob(this.node)
-        return this.$emit('select-node')
-      }
-
-      if (this.isCategory) {
-        const hasSelectedValues = !!this.node.children.find(n =>
-          this.selectedValues.includes(n.key),
-        )
-
-        if (!hasSelectedValues) {
-          this.unselectJob(this.node)
-        }
-        return this.$emit('select-node')
-      }
-      this.unselectJob(this.node)
-      this.$emit('select-node')
-    },
     categoryClick() {
       if (!this.editable) return
       this.toggleCategoryJobs(this.node)
@@ -108,7 +88,6 @@ export default {
         :room="room"
         :parent="node"
         :index="index"
-        @select-node="select"
       />
     </template>
     <template v-else>

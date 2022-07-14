@@ -5,11 +5,19 @@ import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
 import expandAllMixin from '@/mixins/expandAll.mixin'
 
+import SortModal from '@/components/PriceLists/Modals/SortModal.vue'
+
 import { mapGetters } from 'vuex'
 
 export default {
-  components: { TreeTable, Column, ContentBody, InputText },
+  components: { TreeTable, Column, ContentBody, InputText, SortModal },
   mixins: [expandAllMixin],
+  data() {
+    return {
+      nodeToSort: null,
+      showModal: false,
+    }
+  },
   computed: {
     ...mapGetters('edition', ['selectedEdition']),
     columns() {
@@ -33,12 +41,19 @@ export default {
       immediate: true,
     },
   },
+  methods: {
+    sortCategory(node) {
+      this.nodeToSort = node
+      this.showModal = true
+    },
+  },
 }
 </script>
 
 <template>
   <ContentBody>
     <template #content>
+      <SortModal v-model="showModal" :nodeToSort="nodeToSort" />
       <TreeTable
         v-if="tree"
         :value="tree"
@@ -61,7 +76,7 @@ export default {
           </div>
         </template>
         <Column
-          v-for="col in columns"
+          v-for="(col, index) in columns"
           :key="col.id"
           :field="col.id"
           :header="col.name"
@@ -69,7 +84,22 @@ export default {
           :class="col.expander ? 'first' : 'secondary'"
         >
           <template #body="{ node }">
-            <span :class="{ bold: node.children.length > 0 }">
+            <span
+              class="column-body"
+              :class="{ bold: node.children.length > 0 }"
+            >
+              <button
+                v-if="
+                  node.children.length &&
+                  node.children.length > 0 &&
+                  index === 0
+                "
+                class="button"
+                @click="sortCategory(node)"
+              >
+                <i class="pi pi-sort-alt" />
+              </button>
+
               {{ node.data[col.id] }}
             </span>
           </template>

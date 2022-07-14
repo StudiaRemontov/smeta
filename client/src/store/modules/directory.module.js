@@ -2,7 +2,7 @@ import axios from '../../modules/axios'
 import { InputType } from '../../enum/InputType'
 import Key from '../../helpers/Key'
 import idb from '../local/idb'
-import { directoryName } from '../../enum/roomDirectoryData'
+import directoryNames from '../../enum/directoryNames'
 
 export const getChildren = (directory, directories) => {
   const children = directories.filter(d => d.parent === directory._id)
@@ -280,7 +280,9 @@ export default {
     directories: s => s.directories,
     roomDirectory: s => {
       const { directories } = s
-      const roomDirectory = directories.find(d => d.name === directoryName)
+      const roomDirectory = directories.find(
+        d => d.name === directoryNames.ROOMS,
+      )
       return roomDirectory
     },
   },

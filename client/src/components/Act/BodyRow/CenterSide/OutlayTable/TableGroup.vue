@@ -1,5 +1,5 @@
 <script>
-import { mapActions, mapGetters, mapMutations } from 'vuex'
+import { mapActions, mapGetters } from 'vuex'
 import JobList from './JobList.vue'
 import HeaderCells from './HeaderCells.vue'
 
@@ -93,7 +93,6 @@ export default {
     },
   },
   methods: {
-    ...mapMutations('outlay', ['selectJob', 'unselectJob']),
     ...mapActions('outlay', ['toggleCategoryJobs']),
     treeToListOnlyValues(node) {
       const { children, key } = node
