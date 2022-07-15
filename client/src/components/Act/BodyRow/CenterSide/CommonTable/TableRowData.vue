@@ -72,9 +72,7 @@ export default {
       >
         <i class="pi pi-times"></i>
       </button>
-      <span>
-        {{ row.value }}
-      </span>
+      <span> {{ row.value }} </span>
     </div>
     <div
       v-else
@@ -99,6 +97,12 @@ export default {
     display: flex;
     align-items: center;
     gap: 5px;
+
+    span {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
   }
 
   &.quantity {

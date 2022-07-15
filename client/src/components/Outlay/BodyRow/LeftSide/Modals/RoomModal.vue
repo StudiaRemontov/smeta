@@ -361,7 +361,6 @@ export default {
                 v-model="spaces"
                 class="input"
                 type="text"
-                :placeholder="placeholders['spaces']"
                 @input="inputHandler($event, 'spaces')"
               />
             </div>

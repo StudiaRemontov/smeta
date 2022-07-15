@@ -364,10 +364,10 @@ export default {
           :key="room.id"
           class="results-table__cell"
         >
-          {{ room.computed[val] || '-' }}
+          {{ room.computed[val] ? format(room.computed[val]) : '-' }}
         </td>
         <td class="results-table__cell bold">
-          {{ totalParameters[val] }}
+          {{ format(totalParameters[val]) }}
         </td>
       </tr>
       <tr class="results-table__row results-table__row--head">

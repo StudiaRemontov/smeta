@@ -23,9 +23,6 @@
     background-color: rgb(232, 232, 232);
   }
 
-  &.parent {
-    color: $color-light;
-  }
 
   &.selected:not(&.parent) {
     background-color: #E0FFC0;

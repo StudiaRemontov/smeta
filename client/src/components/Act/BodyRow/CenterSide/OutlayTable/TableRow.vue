@@ -120,10 +120,11 @@ export default {
   height: auto;
 
   &.category {
-    font-weight: 700;
+    font-weight: 600;
     position: sticky;
     top: calc(32px * v-bind(level));
     height: 32px;
+    text-align: center;
   }
 
   &:not(.category).striped:nth-child(even) {

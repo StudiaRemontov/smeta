@@ -25,6 +25,17 @@ export default {
     title() {
       return this.node.data[this.keys[0].id]
     },
+    categoryKeys() {
+      return this.keys.map((k, index) => {
+        if (index === 0) {
+          return {
+            ...k,
+            name: this.title,
+          }
+        }
+        return k
+      })
+    },
     children() {
       return this.node.children
     },
@@ -44,10 +55,15 @@ export default {
 </script>
 
 <template>
-  <RowWrapper category>
-    <CellWrapper category :colspan="keys.length + 1">
-      {{ title }}
+  <RowWrapper category bold>
+    <CellWrapper
+      v-for="(key, index) in categoryKeys"
+      :key="key.id"
+      :category="index === 0"
+    >
+      {{ key.name }}
     </CellWrapper>
+    <CellWrapper> Сумма </CellWrapper>
   </RowWrapper>
   <JobList v-for="item in children" :key="item.key" :node="item" />
   <RowWrapper results>

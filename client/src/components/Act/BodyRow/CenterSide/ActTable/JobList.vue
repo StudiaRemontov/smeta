@@ -68,7 +68,6 @@ export default {
     position: sticky;
     top: calc(32px * v-bind(level));
     z-index: calc(10 - v-bind(level));
-    background-color: $table-subcategory-color;
     height: 32px;
     font-weight: 400;
     line-height: 15px;

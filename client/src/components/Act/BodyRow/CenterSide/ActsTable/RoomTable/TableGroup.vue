@@ -97,6 +97,7 @@ export default {
 
   &--category {
     background-color: $table-category-color;
+    text-align: center;
     font-weight: 400;
     color: #ffffff;
     z-index: calc(10 - v-bind(level));

@@ -118,7 +118,10 @@ export default {
 <template>
   <div class="wrapper">
     <CollapseBlock v-model="showRightSide" :position="'right'" />
-    <ParameterList class="wrapper__parameters" />
+    <ParameterList
+      v-if="(selectedRoom && selectedRoom.options) || !selectedRoom"
+      class="wrapper__parameters"
+    />
     <OutlayBlock class="wrapper__results">
       <CategoryList :categories="data" />
       <ResultsForm :data="data" />

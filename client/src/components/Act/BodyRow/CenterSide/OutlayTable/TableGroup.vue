@@ -169,6 +169,7 @@ export default {
   &--category {
     background-color: $table-category-color;
     font-weight: 400;
+    text-align: center;
     color: #ffffff;
     z-index: calc(10 - v-bind(level));
   }

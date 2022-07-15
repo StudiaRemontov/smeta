@@ -2,6 +2,7 @@
 import AppLogo from '@/components/UI/AppLogo.vue'
 import { roomOptions } from '@/enum/roomOptions'
 import roomParameters from '@/mixins/roomParameters.mixin'
+import { formatNumber } from '@/helpers/formatNumber'
 
 export default {
   components: { AppLogo },
@@ -53,9 +54,14 @@ export default {
         const newKey = Object.keys(this.roomOptions).find(
           k => this.roomOptions[k] === key,
         )
-        acc[newKey] = value
+        acc[newKey] = this.format(value)
         return acc
       }, {})
+    },
+  },
+  methods: {
+    format(value) {
+      return formatNumber(value)
     },
   },
 }
@@ -128,7 +134,7 @@ export default {
               :key="key"
               class="parameters-table__cell"
             >
-              {{ val }}
+              {{ format(val) }}
             </td>
           </tr>
         </table>

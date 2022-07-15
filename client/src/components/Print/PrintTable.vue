@@ -82,7 +82,6 @@ export default {
 
   &--result {
     text-align: right !important;
-    font-size: 13px;
     font-weight: 700;
   }
 }

@@ -92,6 +92,25 @@ export default {
         values,
       })
     },
+    insertAfter(index, newItem) {
+      const newValues = [
+        ...this.values.slice(0, index),
+        {
+          id: Date.now() + '',
+          data: newItem,
+        },
+        ...this.values.slice(index),
+      ]
+      return newValues
+    },
+    cloneRow(node, rowIndex) {
+      const clone = JSON.parse(JSON.stringify(node))
+      const values = this.insertAfter(rowIndex + 1, clone)
+      this.updateValues({
+        id: this.directoryId,
+        values,
+      })
+    },
     getKeysToEdit(index, field, value) {
       /* метод должен вернить массив ключей, которые нужно изменить 
         [{
@@ -278,12 +297,19 @@ export default {
           icon="pi pi-plus"
         />
       </template>
-      <template #body="{ index }">
-        <Button
-          icon="pi pi-trash"
-          class="p-button-rounded p-button-danger"
-          @click="removeRow(index)"
-        />
+      <template #body="{ index, data }">
+        <div class="table-buttons">
+          <Button
+            icon="pi pi-clone"
+            class="p-button-rounded"
+            @click="cloneRow(data, index)"
+          />
+          <Button
+            icon="pi pi-trash"
+            class="p-button-rounded p-button-danger"
+            @click="removeRow(index)"
+          />
+        </div>
       </template>
     </Column>
   </DataTable>
@@ -296,6 +322,11 @@ export default {
     gap: 10px;
     align-items: center;
   }
+}
+
+.table-buttons {
+  display: flex;
+  gap: 5px;
 }
 
 ::v-deep(.p-column-header-content) {

@@ -10,6 +10,8 @@ import { outlayViewKeys } from '../../enum/outlayKeys'
 import { getAllValues } from '@/helpers/treeMethods'
 import { deepEqual } from '@/helpers/deepEqual'
 
+import { filterNodes as actFilter } from './acts.module'
+
 const { methods } = roomParametersMixin
 
 export const treeToList = node => {
@@ -171,8 +173,8 @@ const mergeNodes = nodes => {
     const node = nodes.find(n => n.key === key)
     const { children } = node
     if (children && children.length > 0) {
-      const flatted = values.flat()
-      node.children = mergeNodes(flatted)
+      const flatten = values.flat()
+      node.children = mergeNodes(flatten)
       return node
     }
     return node
@@ -263,11 +265,11 @@ export default {
       }
       const selected = selectedValues[selectedRoom.id]
       jobs.forEach(job => {
-        const isSelected = selected.includes(job.key)
+        const isSelected = selected.includes(job)
         if (isSelected) {
           return
         }
-        selected.push(job.key)
+        selectedValues[selectedRoom.id].push(job)
       })
     },
     unSelectJobs(state, jobs) {
@@ -275,10 +277,13 @@ export default {
       if (!outlay) {
         return
       }
-      const selected = selectedValues[selectedRoom.id]
-      selectedValues[selectedRoom.id] = selected.filter(
-        key => !jobs.includes(key),
-      )
+      jobs.forEach(job => {
+        selectedValues[selectedRoom.id] = selectedValues[
+          selectedRoom.id
+        ].filter(key => {
+          return key !== job
+        })
+      })
     },
     updateNodeChildren(state, { node, children }) {
       state.roomsData[state.selectedRoom.id].forEach(root => {
@@ -384,7 +389,7 @@ export default {
           ),
         )
       }
-      const merged = mergeNodes([...jobs, ...filteredEdition])
+      const merged = mergeNodes([...filteredEdition, ...jobs])
       const mergedWithReplacedValues = merged
         .map(c => mergeTree(c, nodes))
         .flat()
@@ -468,6 +473,20 @@ export default {
           selectedRoom.id
         ].filter(key => key !== p.key)
       })
+    },
+    unselectArrayOfJobs({ state }, array = []) {
+      if (array.length === 0) return
+      const { outlay, selectedRoom } = state
+      const currentRoom = outlay.rooms.find(r => r.id === selectedRoom.id)
+      const roomDataTree = JSON.parse(JSON.stringify(currentRoom.jobs))
+      const filteredTree = roomDataTree.filter(t =>
+        actFilter(t, n => {
+          const { key } = n
+          return !array.includes(key)
+        }),
+      )
+      const selectedValues = filteredTree.map(treeToListOnlyKeys).flat()
+      state.selectedValues[selectedRoom.id] = selectedValues
     },
     toggleCategoryJobs({ state, dispatch }, node) {
       const { selectedValues, selectedRoom } = state

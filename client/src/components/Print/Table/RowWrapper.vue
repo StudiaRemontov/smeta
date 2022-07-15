@@ -22,6 +22,7 @@ export default {
   &.bold {
     color: black;
     font-weight: 700;
+    text-align: center;
   }
 
   &.results {

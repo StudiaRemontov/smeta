@@ -30,13 +30,9 @@ export default {
     },
     headerStyle() {
       const keysLength = this.keys.length
-      const style = {
+      return {
         gridTemplateColumns: `4fr repeat(${keysLength}, minmax(100px, 1fr))`,
       }
-      if (this.isCategory) {
-        style.backgroundColor = `rgba(38, 138, 173, ${this.opacity})`
-      }
-      return style
     },
     sum() {
       const quantity = this.node.data[this.quantityKey.id]
@@ -105,9 +101,10 @@ export default {
 
   &.category {
     position: sticky;
-    color: #fff;
     top: calc(32px * v-bind(level));
+    font-weight: 600;
     height: 32px;
+    text-align: center;
   }
 
   &:not(.category).striped:nth-child(even) {

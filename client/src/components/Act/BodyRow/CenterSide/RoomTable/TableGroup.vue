@@ -124,6 +124,7 @@ export default {
     font-weight: 400;
     color: #ffffff;
     z-index: calc(10 - v-bind(level));
+    text-align: center;
   }
 
   &--results {

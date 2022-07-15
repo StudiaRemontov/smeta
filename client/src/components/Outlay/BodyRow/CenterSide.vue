@@ -9,10 +9,12 @@ import ResultsTable from './CenterSide/Results/ResultsTable.vue'
 import OutlayBlock from '@/components/Layout/OutlayBlock.vue'
 
 import { isObjectId } from '@/helpers/isObjectId'
+import directoryNames from '@/enum/directoryNames'
+import keyTypes from '@/mixins/keyTypes.mixin'
 
 import { uniqBy } from 'lodash'
 
-import { mapGetters, mapMutations } from 'vuex'
+import { mapActions, mapGetters, mapMutations } from 'vuex'
 
 export default {
   components: {
@@ -24,26 +26,18 @@ export default {
     ResultsTable,
     OutlayBlock,
   },
+  mixins: [keyTypes],
   data() {
     return {
       screenHeight: null,
       selectedJob: null,
       filteredJobs: [],
       selectedFastJobs: [],
-      fastJobs: [
-        {
-          label: 'Работы 1',
-        },
-        {
-          label: 'Работы 2',
-        },
-        {
-          label: 'Работы 3',
-        },
-      ],
+      selectedFastJobsBefore: [],
     }
   },
   computed: {
+    ...mapGetters('directory', ['directories']),
     ...mapGetters('outlay', [
       'selectedRoom',
       'roots',
@@ -55,6 +49,28 @@ export default {
       'selectedValues',
       'showResults',
     ]),
+    fastJobs() {
+      const fastJobsDirectory = this.directories.find(
+        d => d.name === directoryNames.FAST_JOBS,
+      )
+      if (!fastJobsDirectory) {
+        return []
+      }
+      const { values, keys } = fastJobsDirectory
+      const nameKey = keys[0]
+      const jobsKey = keys.find(
+        k => k.type === this.InputType.COLLECTION_VALUES,
+      )
+      const jobs = values.map(row => {
+        const { data, id } = row
+        return {
+          key: id,
+          label: data[nameKey.id],
+          value: data[jobsKey.id],
+        }
+      })
+      return jobs
+    },
     striped: {
       get() {
         return this.$store.getters['outlay/striped']
@@ -89,6 +105,9 @@ export default {
     outlay() {
       this.windowResize()
     },
+    selectedFastJobs(_, oldVal) {
+      this.selectedFastJobsBefore = oldVal
+    },
   },
   mounted() {
     this.windowResize()
@@ -98,7 +117,8 @@ export default {
     window.removeEventListener('resize', this.windowResize)
   },
   methods: {
-    ...mapMutations('outlay', ['selectJob', 'setStriped']),
+    ...mapMutations('outlay', ['selectJobs', 'setStriped']),
+    ...mapActions('outlay', ['unselectArrayOfJobs']),
     async windowResize() {
       if (!this.outlay || this.showResults) {
         return
@@ -259,6 +279,35 @@ export default {
     autocompleteInput() {
       this.$refs.autocomplete.hideOverlay()
     },
+    getDifference() {
+      const added = this.selectedFastJobs.filter(val => {
+        return !this.selectedFastJobsBefore.find(v => v.key === val.key)
+      })
+
+      const removed = this.selectedFastJobsBefore.filter(val => {
+        return !this.selectedFastJobs.find(v => v.key === val.key)
+      })
+
+      return {
+        added,
+        removed,
+      }
+    },
+    async changeMultiselect() {
+      await this.$nextTick()
+      const { removed, added } = this.getDifference()
+      added.forEach(val => {
+        const { value } = val
+        return this.selectJobs(value)
+      })
+
+      const removedArrays = removed.map(val => val.value)
+      const mergedArrays = removedArrays.reduce((acc, array) => {
+        acc = [...acc, ...array]
+        return acc
+      }, [])
+      return this.unselectArrayOfJobs(mergedArrays)
+    },
   },
 }
 </script>
@@ -294,6 +343,7 @@ export default {
             placeholder="Быстрые работы"
             :options="fastJobs"
             optionLabel="label"
+            @change="changeMultiselect"
           />
           <div class="switch-wrapper">
             <div class="switch">

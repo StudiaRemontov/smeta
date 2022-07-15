@@ -74,10 +74,9 @@ export default {
     top: calc(32px * v-bind(level));
     z-index: calc(10 - v-bind(level));
     height: 32px;
-    background-color: $table-subcategory-color;
-    font-weight: 400;
+    text-align: center;
+    font-weight: 600;
     line-height: 15px;
-    color: #ffffff;
   }
 }
 .table-cell {

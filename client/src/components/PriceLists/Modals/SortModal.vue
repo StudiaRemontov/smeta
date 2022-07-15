@@ -137,7 +137,9 @@ export default {
           :rowReorder="true"
           headerStyle="width: 3rem"
           :reorderableColumn="false"
-        />
+          style="cursor: move"
+        >
+        </Column>
         <Column
           v-for="col of keys"
           :key="col.id"

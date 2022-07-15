@@ -45,6 +45,7 @@ export default {
         return this.modelValue
       },
       set(value) {
+        if (this.modelValue === value) return
         this.$emit('update:modelValue', value)
       },
     },

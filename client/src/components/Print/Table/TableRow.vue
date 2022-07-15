@@ -72,4 +72,8 @@ export default {
 .sum-cell {
   font-size: inherit;
 }
+
+.category {
+  text-align: center;
+}
 </style>

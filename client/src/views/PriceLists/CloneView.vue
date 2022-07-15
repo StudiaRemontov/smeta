@@ -48,6 +48,8 @@ export default {
       treeBefore: null,
       timeout: null,
       updatedFields: [],
+      roundDirection: 'Вверх',
+      roundDirections: ['Вверх', 'Вниз'],
     }
   },
   computed: {
@@ -103,7 +105,6 @@ export default {
     )
     const tree = this.clone.value
     const treeData = JSON.parse(JSON.stringify(tree))
-
     const globalItems = this.treeToList(
       JSON.parse(JSON.stringify(globalTree)),
       [],
@@ -119,17 +120,7 @@ export default {
     const oldKeys = difference(currentTreeRows, globalRows)
     const newestKeys = difference(globalRows, currentTreeRows)
 
-    const merged =
-      this.clone.mergeType === 'full'
-        ? this.merge1(
-            JSON.parse(JSON.stringify([globalTree])),
-            JSON.parse(JSON.stringify(treeData)),
-          )
-        : this.merge2(
-            JSON.parse(JSON.stringify([globalTree])),
-            JSON.parse(JSON.stringify(treeData)),
-          )
-
+    const merged = treeData
     const keys = JSON.parse(JSON.stringify(this.selectedEdition.keys))
     this.selectedColumns = keys.map((key, index) => ({
       ...key,
@@ -269,7 +260,11 @@ export default {
           )
           const valueBefore = itemBefore.data[this.selectedKey]
           const increaseValue = (valueBefore / 100) * value
-          row.data[this.selectedKey] = +(valueBefore + increaseValue).toFixed(2)
+          const newValue = valueBefore + increaseValue
+          row.data[this.selectedKey] =
+            this.roundDirection === 'Вверх'
+              ? Math.ceil(newValue)
+              : Math.floor(newValue)
         })
       }, 500)
     },
@@ -294,9 +289,11 @@ export default {
       const isParent = isObjectId(node.key)
       if (!isParent) {
         const increaseValue = (node.data[this.selectedKey] / 100) * this.percent
-        node.data[this.selectedKey] = +(
-          node.data[this.selectedKey] + increaseValue
-        ).toFixed(2)
+        const newValue = node.data[this.selectedKey] + increaseValue
+        node.data[this.selectedKey] =
+          this.roundDirection === 'Вверх'
+            ? Math.ceil(newValue)
+            : Math.floor(newValue)
         return
       }
       const items = this.treeToListOnlyValues(node)
@@ -307,7 +304,11 @@ export default {
         const valueBefore = itemBefore.data[this.selectedKey]
 
         const increaseValue = (valueBefore / 100) * this.percent
-        item.data[this.selectedKey] = +(valueBefore + increaseValue).toFixed(2)
+        const newValue = valueBefore + increaseValue
+        item.data[this.selectedKey] =
+          this.roundDirection === 'Вверх'
+            ? Math.ceil(newValue)
+            : Math.floor(newValue)
       })
     },
     onNodeUnselect(node) {
@@ -379,6 +380,11 @@ export default {
                   placeholder="Процент"
                   :minFractionDigits="2"
                   @input="updateValues"
+                />
+                <Dropdown
+                  v-model="roundDirection"
+                  :options="roundDirections"
+                  placeholder="Округление в сторону"
                 />
               </template>
               <Dropdown

@@ -138,7 +138,8 @@ export default {
 <style lang="scss" scoped>
 .table-row {
   &.category {
-    font-weight: 700;
+    font-weight: 600;
+    text-align: center;
     position: sticky;
     top: calc(32px * v-bind(level));
     height: 32px;

@@ -33,13 +33,8 @@ export default {
       return [data]
     },
   },
-  watch: {
-    tree: {
-      handler() {
-        this.expandAll()
-      },
-      immediate: true,
-    },
+  mounted() {
+    this.expandFirstChildren()
   },
   methods: {
     sortCategory(node) {

@@ -7,6 +7,10 @@ export default {
     }
   },
   methods: {
+    expandFirstChildren() {
+      const node = this.tree[0]
+      this.expandedKeys[node.key] = true
+    },
     expandAll() {
       for (const node of this.tree) {
         this.expandNode(node)

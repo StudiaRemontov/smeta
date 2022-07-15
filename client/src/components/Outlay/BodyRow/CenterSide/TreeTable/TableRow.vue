@@ -9,7 +9,6 @@ import CloneRow from './TableRows/CloneRow.vue'
 export default {
   name: 'TalbeRow',
   components: { StretchedRow, DefaultRow, SelectedRow, CloneRow },
-  inject: ['opacities'],
   provide() {
     return {
       changed: computed(() => this.changed),
@@ -67,18 +66,11 @@ export default {
         'data-level': this.level,
       }
     },
-    opacity() {
-      return this.opacities[this.level - 1] || 0
-    },
     rowStyle() {
       const keysLength = this.keys.length
-      const style = {
+      return {
         gridTemplateColumns: `4fr repeat(${keysLength}, minmax(100px, 1fr)) 50px`,
       }
-      if (this.level > 2 && this.isCategory) {
-        style.backgroundColor = `rgba(38, 138, 173, ${this.opacity})`
-      }
-      return style
     },
     sum() {
       const quantity = this.data[this.quantityKey.id]
@@ -232,10 +224,8 @@ export default {
     position: sticky;
     top: calc(32px * v-bind(level));
     z-index: calc(10 - v-bind(level));
-  }
-
-  &.parent &__cell {
-    color: #fff;
+    font-weight: 600;
+    text-align: center;
   }
 
   &.current {
@@ -243,11 +233,11 @@ export default {
     border: 2px black solid;
   }
 
-  &:hover {
+  &:not(.parent):hover {
     background-color: rgb(233, 233, 233) !important;
   }
 
-  &.selected:hover {
+  &:not(.parent).selected:hover {
     background-color: #d1eeb4 !important;
   }
 }

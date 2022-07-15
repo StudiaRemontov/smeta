@@ -81,7 +81,11 @@ export default {
     },
     treeSelectValues: {
       get() {
-        if (this.type !== this.InputType.COLLECTION || !this.value) {
+        if (
+          (this.type !== this.InputType.COLLECTION &&
+            this.type !== this.InputType.COLLECTION_VALUES) ||
+          !this.value
+        ) {
           return {}
         }
         return this.value.reduce((acc, key) => {
@@ -144,11 +148,43 @@ export default {
       if (this.type !== this.InputType.COLLECTION) {
         return []
       }
-
       const { rootDir } = this.key
       const directory = this.roots.find(d => d._id === rootDir)
       const children = getChildren(directory, this.directories)
       const tree = this.createTree(directory, children)
+      const { children: treeChildren } = tree
+      return treeChildren
+    },
+    collectionsWithValues() {
+      if (this.type !== this.InputType.COLLECTION_VALUES) {
+        return []
+      }
+      const { rootDir } = this.key
+      const directory = this.roots.find(d => d._id === rootDir)
+      const directoryClone = JSON.parse(JSON.stringify(directory))
+      const { keys } = directoryClone
+      const directoriesClone = JSON.parse(JSON.stringify(this.directories))
+      const directoriesWithValues = getChildren(
+        directoryClone,
+        directoriesClone,
+      )
+      const fullDirectories = directoriesWithValues.map(dir => {
+        const { values } = dir
+        if (!values) {
+          return dir
+        }
+        dir.children = values.map(value => {
+          const { data, id } = value
+          const subDir = {
+            _id: id,
+            name: data[keys[0].id],
+          }
+          return subDir
+        })
+
+        return dir
+      })
+      const tree = this.createTreeWithValues(directoryClone, fullDirectories)
       const { children: treeChildren } = tree
       return treeChildren
     },
@@ -184,6 +220,25 @@ export default {
       const node = this.createTreeNode(directory)
       const children = directories.filter(d => d.parent === directory._id)
       node.children = children.map(c => this.createTree(c, directories))
+      return node
+    },
+    createTreeWithValues(directory, directories) {
+      const node = this.createTreeNode(directory)
+      const children = directories.filter(d => d.parent === directory._id)
+      if (children.length > 0) {
+        node.children = children.map(c =>
+          this.createTreeWithValues(c, directories),
+        )
+        return node
+      }
+
+      const { children: dirChildren } = directory
+      if (dirChildren) {
+        const childNodes = dirChildren.map(child => {
+          return this.createTreeNode(child)
+        })
+        node.children = childNodes
+      }
       return node
     },
   },
@@ -232,6 +287,14 @@ export default {
     v-model="treeSelectValues"
     class="tree-select"
     :options="collections"
+    selectionMode="checkbox"
+    placeholder="Выберите элементы"
+  ></TreeSelect>
+  <TreeSelect
+    v-else-if="type === InputType.COLLECTION_VALUES"
+    v-model="treeSelectValues"
+    class="tree-select"
+    :options="collectionsWithValues"
     selectionMode="checkbox"
     placeholder="Выберите элементы"
   ></TreeSelect>

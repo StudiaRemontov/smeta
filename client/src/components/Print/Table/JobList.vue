@@ -37,10 +37,13 @@ export default {
 
 <template>
   <RowWrapper v-if="title" bold>
-    <CellWrapper v-for="key in visibleKeys" :key="key">
-      {{ key }}
-    </CellWrapper>
-    <CellWrapper result>Сумма</CellWrapper>
+    <template v-for="(key, index) in keys" :key="key.id">
+      <CellWrapper v-if="index === 0" :category="index === 0">
+        {{ title }}
+      </CellWrapper>
+      <CellWrapper v-else />
+    </template>
+    <CellWrapper />
   </RowWrapper>
   <TableRow v-else :node="node" />
   <TableRow v-for="item in children" :node="item" :key="item.key" />

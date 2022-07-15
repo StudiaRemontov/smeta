@@ -1,6 +1,7 @@
 <script>
 import ParameterItem from './ParameterItem.vue'
 import roomParameters from '@/mixins/roomParameters.mixin'
+import { formatNumber } from '@/helpers/formatNumber'
 
 export default {
   components: {
@@ -15,22 +16,44 @@ export default {
       },
     },
   },
+  computed: {
+    floorAreaData() {
+      return {
+        name: 'S пола',
+        value: this.parametersData[this.roomOptions.floorArea],
+      }
+    },
+    wallAreaData() {
+      return {
+        name: 'S стен',
+        value: this.parametersData[this.roomOptions.wallArea],
+      }
+    },
+    perimeterData() {
+      return {
+        name: 'Периметр',
+        value: this.parametersData[this.roomOptions.perimeter],
+      }
+    },
+    parameters() {
+      return [this.floorAreaData, this.wallAreaData, this.perimeterData]
+    },
+  },
+  methods: {
+    format(value) {
+      return formatNumber(value)
+    },
+  },
 }
 </script>
 
 <template>
   <div class="computed-parameters">
     <ParameterItem
-      name="S пола"
-      :value="parametersData[roomOptions.floorArea]"
-    />
-    <ParameterItem
-      name="S стен"
-      :value="parametersData[roomOptions.wallArea]"
-    />
-    <ParameterItem
-      name="Периметр"
-      :value="parametersData[roomOptions.perimeter]"
+      v-for="parameter in parameters"
+      :key="parameter.name"
+      :name="parameter.name"
+      :value="format(parameter.value)"
     />
   </div>
 </template>

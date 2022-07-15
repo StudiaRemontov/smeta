@@ -25,7 +25,7 @@ export default {
   max-width: 100px;
   width: 100px;
   border-bottom: 1px solid #a7a7a7;
-  font-size: 11px;
+  font-size: 12px;
   padding: 8px;
 
   &:not(:first-child) {
@@ -34,12 +34,10 @@ export default {
 
   &.result {
     text-align: right !important;
-    font-size: 11px;
     font-weight: 700;
   }
 
   &.category {
-    font-size: 14px;
     color: black;
     font-weight: 700;
     text-align: center;
