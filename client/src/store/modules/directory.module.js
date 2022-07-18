@@ -88,9 +88,12 @@ export default {
     async createDirectory({ commit }, payload) {
       try {
         const response = await axios.post('/directory', payload)
-        commit('pushDirectory', response.data)
-        await idb.saveDataInCollection('directories', response.data)
-        return response
+        const { directory, parent } = response.data
+        commit('pushDirectory', directory)
+        if (parent) {
+          commit('updateDirectory', { id: parent._id, data: parent })
+          return response
+        }
       } catch (error) {
         console.log(error)
         return Promise.reject(error)
@@ -122,7 +125,6 @@ export default {
           values,
         }
         await axios.put(`/directory/${id}`, data)
-        await idb.saveDataInCollection('directories', data)
       } catch (error) {
         return Promise.reject(error)
       }
@@ -134,7 +136,6 @@ export default {
           id: response.data._id,
           data: response.data,
         })
-        await idb.saveDataInCollection('directories', response.data)
         return response
       } catch (error) {
         console.log(error)
@@ -147,10 +148,13 @@ export default {
       }
       try {
         const response = await axios.delete(`/directory/${payload}`)
-        response.data.forEach(d => {
+        const { removed, updated } = response.data
+        removed.forEach(d => {
           commit('removeDirectory', d._id)
         })
-        await idb.removeDataInCollection('directories', payload)
+        if (updated) {
+          commit('updateDirectory', { id: updated._id, data: updated })
+        }
         return response
       } catch (error) {
         console.log(error)
@@ -259,8 +263,21 @@ export default {
         const response = await axios.put(`/directory/${id}`, clone)
         const newValues = response.data.values
         commit('updateDirectoryValues', { id, values: newValues })
-        await idb.saveDataInCollection('directories', response.data)
         return response
+      } catch (error) {
+        return Promise.reject(error)
+      }
+    },
+    async sort({ commit }, { id, children }) {
+      try {
+        const response = await axios.patch(`/directory/sort/${id}`, {
+          children,
+        })
+        const { directory, editionsToUpdate } = response.data
+        commit('updateDirectory', { id, data: directory })
+        editionsToUpdate.forEach(e => {
+          commit('edition/update', { id: e._id, data: e }, { root: true })
+        })
       } catch (error) {
         return Promise.reject(error)
       }

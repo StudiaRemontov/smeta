@@ -18,6 +18,7 @@ const schema = new mongoose.Schema(
       type: mongoose.SchemaTypes.Mixed,
       default: null,
     },
+    children: [{ type: mongoose.SchemaTypes.ObjectId, ref: 'Directory' }],
   },
   { versionKey: false }
 )

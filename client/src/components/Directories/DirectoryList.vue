@@ -4,7 +4,10 @@ import CreateButton from './CreateButton.vue'
 import DirectoryForm from './DirectoryForm.vue'
 import RemoveModal from './Modals/RemoveModal.vue'
 import AlertModal from './Modals/AlertModal.vue'
+
 import { mapActions } from 'vuex'
+
+import draggable from 'vuedraggable'
 
 export default {
   components: {
@@ -13,16 +16,31 @@ export default {
     DirectoryForm,
     RemoveModal,
     AlertModal,
+    draggable,
   },
   props: {
     items: {
       type: Array,
     },
+    loading: Boolean,
   },
+  emits: ['sorted'],
   data() {
     return {
       formVisible: false,
+      dragOptions: {},
     }
+  },
+  computed: {
+    listItems: {
+      get() {
+        return this.items
+      },
+      async set(array) {
+        const ids = array.map(item => item._id)
+        this.$emit('sorted', ids)
+      },
+    },
   },
   methods: {
     ...mapActions('directory', ['removeDirectory']),
@@ -62,19 +80,32 @@ export default {
 </script>
 
 <template>
-  <ul class="directory-list">
-    <DirectoryItem
-      v-for="item in items"
-      :key="item.id"
-      :directory="item"
-      @remove="openRemove"
-      @alert="openAlert"
-    />
-    <DirectoryForm v-if="formVisible" @created="formVisible = false" />
-    <CreateButton v-else text="Создать папку" @click="formVisible = true" />
-    <RemoveModal ref="remove-modal" />
-    <AlertModal ref="alert-modal" />
-  </ul>
+  <draggable
+    v-model="listItems"
+    :component-data="{ tag: 'ul', type: 'transition-group' }"
+    tag="ul"
+    item-key="id"
+    :animation="200"
+    :ghostClass="'ghost'"
+    :disabled="loading"
+    class="directory-list"
+    :class="{ loading }"
+  >
+    <template #item="{ element }">
+      <DirectoryItem
+        :key="element.id"
+        :directory="element"
+        @remove="openRemove"
+        @alert="openAlert"
+      />
+    </template>
+    <template #footer>
+      <DirectoryForm v-if="formVisible" @created="formVisible = false" />
+      <CreateButton v-else text="Создать папку" @click="formVisible = true" />
+    </template>
+  </draggable>
+  <RemoveModal ref="remove-modal" />
+  <AlertModal ref="alert-modal" />
 </template>
 
 <style lang="scss" scoped>
@@ -84,5 +115,9 @@ export default {
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   grid-auto-rows: 130px;
   gap: 20px;
+
+  &.loading {
+    opacity: 0.5;
+  }
 }
 </style>

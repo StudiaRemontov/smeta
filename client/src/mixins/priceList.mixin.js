@@ -42,9 +42,10 @@ export default {
     ...mapMutations('edition', ['setClonedDirectories', 'setClone']),
     ...mapActions('edition', ['create']),
     getSubItems(directory) {
-      const children = this.clonedDirectories.filter(
-        d => d?.parent === directory._id,
-      )
+      const { children: childrenIds } = directory
+      const children = childrenIds.map(id => {
+        return this.clonedDirectories.find(d => d._id === id)
+      })
       const { values } = directory
       const subChildren = values
         ? values.map(n => ({

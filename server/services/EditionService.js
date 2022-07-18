@@ -2,6 +2,23 @@ const Edition = require('../models/Edition')
 const PriceList = require('../models/PriceList')
 const ApiError = require('../utils/ApiError')
 
+const updateNodeInTree = (node, nodeKey, order) => {
+  const { key, children } = node
+  if (key === nodeKey && children && children.length > 0) {
+    const exists = order.filter((key) => children.find((n) => n.key === key))
+    const notExists = children.filter((n) => !order.includes(n.key + ''))
+    const ordered = exists.map((k) => children.find((n) => n.key === k))
+
+    const newChildren = [...ordered, ...notExists]
+    node.children = newChildren
+    return node
+  }
+  if (children && children.length > 0) {
+    node.children = children.map((c) => updateNodeInTree(c, nodeKey, order))
+  }
+  return node
+}
+
 class EditionService {
   static async get() {
     return await Edition.find().lean()
@@ -56,6 +73,18 @@ class EditionService {
       throw ApiError.BadRequest('Edition not found')
     }
     return edition
+  }
+
+  static async getEditionsByDirectoryIdAndUpdate(dirId, children) {
+    const editions = await EditionService.get()
+    const editionsToUpdate = await Promise.all(
+      editions.map(async (edition) => {
+        const { data: root, _id: id } = edition
+        edition.data = updateNodeInTree(root, dirId, children)
+        return await EditionService.update(id, edition)
+      })
+    )
+    return editionsToUpdate
   }
 }
 

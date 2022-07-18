@@ -31,6 +31,7 @@ export default {
     return {
       search: '',
       showCreateFolder: false,
+      sorting: false,
     }
   },
   computed: {
@@ -55,7 +56,9 @@ export default {
         return []
       }
 
-      return this.directories.filter(d => d.parent === this.directory._id)
+      return this.directory.children.map(id => {
+        return this.directories.find(d => d._id === id)
+      })
     },
     architectureValues() {
       //get all architectures that can be architecture of current
@@ -90,7 +93,7 @@ export default {
     },
   },
   methods: {
-    ...mapActions('directory', ['updateById', 'updateDirectoryValues']),
+    ...mapActions('directory', ['updateById', 'updateDirectoryValues', 'sort']),
     openCreateDirectory() {
       this.showCreateFolder = true
     },
@@ -394,6 +397,24 @@ export default {
         values: tableValues,
       }
     },
+    async onSorted(array) {
+      this.sorting = true
+      try {
+        const { _id: id } = this.directory
+        await this.sort({ id, children: array })
+      } catch (error) {
+        const { response } = error
+        const message = response ? response.data.message : error.message
+        this.$toast.add({
+          severity: 'error',
+          summary: 'Ошибка',
+          detail: message,
+          life: 3000,
+        })
+      } finally {
+        this.sorting = false
+      }
+    },
   },
 }
 </script>
@@ -429,6 +450,8 @@ export default {
       <DirectoryList
         v-else-if="subFolders.length && !directory.values"
         :items="subFolders"
+        :loading="sorting"
+        @sorted="onSorted"
       />
       <DataTable v-else :directory="directory" />
     </template>

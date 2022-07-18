@@ -30,6 +30,7 @@ export default {
   },
   computed: {
     ...mapGetters('edition', ['selectedEdition']),
+    ...mapGetters('directory', ['directories']),
     keys() {
       if (!this.selectedEdition) return []
       const { keys } = this.selectedEdition
@@ -46,6 +47,7 @@ export default {
   },
   methods: {
     ...mapActions('edition', ['update']),
+    ...mapActions('directory', ['sort']),
     onShow() {
       this.node = JSON.parse(JSON.stringify(this.nodeToSort))
       this.tableData = this.nodeToSort.children.map(c => ({
@@ -71,13 +73,30 @@ export default {
     async save() {
       this.loading = true
       try {
+        const editionClone = JSON.parse(JSON.stringify(this.selectedEdition))
+        // перемещение справочников внутри справочника
+        if (
+          this.node.children &&
+          this.node.children.length > 0 &&
+          this.node.children[0].children &&
+          this.node.children[0].children.length > 0
+        ) {
+          const { key: dirId } = this.node
+          const directory = this.directories.find(d => d._id === dirId)
+          const sortedChildren = this.tableData.map(item => item.key)
+          const children = [
+            ...new Set([...sortedChildren, ...directory.children]),
+          ]
+          await this.sort({ id: dirId, children })
+          return this.close()
+        }
+        //пермещение работ внутри категории (временно, пока нету функции перемещения эдементов внутри справочника-архитектуры)
         const updatedChildren = this.tableData.map(data => {
           const { key } = data
           const node = this.node.children.find(n => n.key === key)
           return node
         })
         this.node.children = updatedChildren
-        const editionClone = JSON.parse(JSON.stringify(this.selectedEdition))
         const { data } = editionClone
         const newTree = this.updateNodeInTree(data, this.node)
         const updatedData = {

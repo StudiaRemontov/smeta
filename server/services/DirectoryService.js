@@ -1,5 +1,3 @@
-const mongoose = require('mongoose')
-
 const Directory = require('../models/Directory')
 const ApiError = require('../utils/ApiError')
 
