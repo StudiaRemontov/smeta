@@ -52,7 +52,6 @@ export default {
 <style lang="scss" scoped>
 .results {
   padding: 15px 12px;
-  border-top: 1px solid #a7a7a7;
   display: flex;
   flex-direction: column;
   align-items: flex-end;

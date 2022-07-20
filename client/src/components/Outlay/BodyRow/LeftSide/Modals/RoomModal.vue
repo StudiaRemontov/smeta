@@ -1,8 +1,13 @@
 <script>
 import PopupModal from '@/components/UI/PopupModal.vue'
-import InputNumber from 'primevue/inputnumber'
 import InputText from 'primevue/inputtext'
+import ToggleButton from 'primevue/togglebutton'
 import Dropdown from 'primevue/dropdown'
+import MultiSelect from 'primevue/multiselect'
+
+import ListItems from './RoomModal/ListItems.vue'
+import InputNumber from './RoomModal/InputNumber.vue'
+import CalculatedParameters from './RoomModal/CalculatedParameters.vue'
 
 import roomParameters from '@/mixins/roomParameters.mixin'
 import keyTypes from '@/mixins/keyTypes.mixin'
@@ -28,12 +33,31 @@ const getInitState = () => ({
   },
   roomTypes: [],
   room: null,
+  optionRooms: [],
   invalid: false,
+  editName: false,
+  dors: [],
+  windows: [],
 })
 
 export default {
-  components: { PopupModal, InputNumber, InputText, Dropdown },
+  components: {
+    PopupModal,
+    InputText,
+    Dropdown,
+    ToggleButton,
+    MultiSelect,
+    ListItems,
+    InputNumber,
+    CalculatedParameters,
+  },
   mixins: [roomParameters, keyTypes],
+  provide() {
+    return {
+      updateItem: this.updateItem,
+      removeItem: this.removeItem,
+    }
+  },
   data() {
     return getInitState()
   },
@@ -50,6 +74,7 @@ export default {
       return this.calculate(this.height)
     },
     calculatedSpaces() {
+      //calc with dors and windows
       return this.calculate(this.spaces)
     },
     perimeter() {
@@ -68,6 +93,27 @@ export default {
         this.calculatedSpaces,
       )
     },
+    calculatedParameters() {
+      if (this.isSpecMontage) {
+        return this.optionRooms.reduce((acc, roomId) => {
+          const room = this.rooms.find(r => r.id === roomId)
+          const { options } = room
+          const { computed } = this.calculateAllParameters(options)
+          const data = {
+            [this.roomOptions.perimeter]: computed[this.roomOptions.perimeter],
+            [this.roomOptions.floorArea]: computed[this.roomOptions.floorArea],
+            [this.roomOptions.wallArea]: computed[this.roomOptions.wallArea],
+          }
+          return this.sumParameters(acc, data)
+        }, {})
+      }
+
+      return {
+        [this.roomOptions.perimeter]: this.perimeter,
+        [this.roomOptions.floorArea]: this.floorArea,
+        [this.roomOptions.wallArea]: this.wallArea,
+      }
+    },
     isCorrectFields() {
       if (!this.name || this.invalid) {
         return false
@@ -75,6 +121,11 @@ export default {
       if (this.room && !this.room.parameters) {
         return true
       }
+
+      if (this.isSpecMontage) {
+        return this.optionRooms.length > 0
+      }
+
       return (
         this.isCorrectField(this.calculatedWidth) &&
         this.isCorrectField(this.calculatedLength) &&
@@ -95,8 +146,38 @@ export default {
       const { options } = firstRoomWithParameters
       return Object.assign(placeholders, options)
     },
+    isSpecMontage() {
+      if (!this.room || !this.room.roomId) {
+        return false
+      }
+      const loweredName = this.room.name.toLowerCase()
+      return loweredName === 'спецмонтаж'
+    },
     showParameters() {
-      return (this.name && !this.room) || (this.room && this.room.parameters)
+      if (this.isSpecMontage) {
+        return false
+      }
+      return this.room && (!this.room.roomId || this.room.parameters)
+    },
+    specRooms() {
+      if (!this.isSpecMontage) {
+        return []
+      }
+      return this.rooms.filter(room => {
+        const { dirId } = room
+        if (!dirId) {
+          return true
+        }
+        const roomData = this.roomTypes.find(r => r.roomId === dirId)
+        if (!roomData) {
+          return false
+        }
+        const { parameters, computed } = roomData
+        return parameters && computed
+      })
+    },
+    label() {
+      return this.editName ? 'Название помещения' : 'Тип помещения'
     },
   },
   watch: {
@@ -149,19 +230,31 @@ export default {
     },
     async show(options) {
       const rooms = this.getRoomsFromDirectory()
-      this.roomTypes = rooms
+      const customRoomOption = {
+        roomId: null,
+        name: 'Своя комната',
+        computed: true,
+        parameters: true,
+      }
+      this.roomTypes = [customRoomOption, ...rooms]
       this.title = options.title
       this.okButton = options.okButton
       this.cancelButton = options.cancelButton
       if (options.edit) {
         const { dirId, name } = this.selectedRoom
-        this.room = dirId && this.roomTypes.find(r => r.roomId === dirId)
+        this.room = this.roomTypes.find(r => r.roomId === dirId)
         this.name = name
-        if (this.selectedRoom.options) {
+        if (this.selectedRoom.options && !this.selectedRoom.options.rooms) {
           this.width = this.selectedRoom.options.width
           this.height = this.selectedRoom.options.height
           this.length = this.selectedRoom.options.length
-          this.spaces = this.selectedRoom.options.spaces
+          const { others, dors, windows } = this.selectedRoom.options.spaces
+          this.spaces = others
+          this.dors = dors
+          this.windows = windows
+        }
+        if (this.selectedRoom.options.rooms) {
+          this.optionRooms = this.selectedRoom.options.rooms
         }
       }
       this.$refs.popup.open()
@@ -186,19 +279,38 @@ export default {
       this.$refs.popup.close()
       const dirId = this.room && this.room.roomId
       const name = this.capitalizeName(this.name)
-      const options =
-        (this.room && this.room.parameters) || !this.room
-          ? {
-              width: this.width || '0',
-              height: this.height || '0',
-              length: this.length || '0',
-              spaces: this.spaces || '0',
-            }
-          : null
 
+      if (this.isSpecMontage) {
+        this.resolvePromise({
+          name,
+          options: {
+            rooms: this.optionRooms,
+          },
+          dirId,
+        })
+        return this.reset()
+      }
+
+      if (this.room.parameters) {
+        const options = {
+          width: this.width || '0',
+          height: this.height || '0',
+          length: this.length || '0',
+          spaces: {
+            others: this.spaces || '0',
+            dors: this.dors,
+            windows: this.windows,
+          },
+        }
+        this.resolvePromise({
+          name,
+          options,
+          dirId,
+        })
+        return this.reset()
+      }
       const data = {
         name,
-        options,
         dirId,
       }
       this.resolvePromise(data)
@@ -216,28 +328,6 @@ export default {
     },
     reset() {
       Object.assign(this.$data, getInitState())
-    },
-    inputHandler(e, key) {
-      const regex = /^[0-9+-/*.,]*$/
-      const isValid = regex.test(this[key])
-      if (!isValid) {
-        return (this[key] = this.formDataBefore[key])
-      }
-      const { data } = e
-      if (data === ',') {
-        this[key] = this[key].replace(',', '.')
-      }
-      const numberRegex = /[-]?\d+(\.\d+)?/g
-      const matches = this[key].match(numberRegex)
-      if (!matches) {
-        return
-      }
-      matches.forEach(n => {
-        const num = +n
-        if (num > 0) {
-          this[key] = this[key].replace(n, num)
-        }
-      })
     },
     isCorrectField(field) {
       return !isNaN(field) && field > 0
@@ -257,7 +347,7 @@ export default {
       const { values: rooms, keys } = this.roomDirectory
       const directoryRoom = rooms.find(r => r.id === room.roomId)
       if (!directoryRoom) {
-        return console.warn('данной комнаты в справочнике не существует')
+        return
       }
       const { data } = directoryRoom
 
@@ -293,6 +383,27 @@ export default {
     inputRoom() {
       this.invalid = false
     },
+    createItem(type) {
+      const item = {
+        id: Date.now(),
+        width: '',
+        height: '',
+      }
+      if (type === 'dors') {
+        return this.dors.push(item)
+      }
+      this.windows.push(item)
+    },
+    clearItems(type) {
+      this[type] = []
+    },
+    updateItem(type, id, key, value) {
+      const node = this[type].find(item => item.id === id)
+      node[key] = value
+    },
+    removeItem(type, id) {
+      this[type] = this[type].filter(item => item.id !== id)
+    },
   },
 }
 </script>
@@ -302,101 +413,102 @@ export default {
     <div class="modal">
       <span class="modal__title">{{ title }}</span>
       <form class="form" @submit.prevent="_confirm">
-        <div class="form__flex">
+        <div class="modal__section main">
           <div class="form__group">
-            <label class="form__label">Тип помещения</label>
-            <Dropdown
-              v-model="room"
-              :options="roomTypes"
-              optionLabel="name"
-              ref="input"
-              :filter="true"
-              placeholder="Выберите помещение или введите название"
-              emptyMessage="Помещение не найдено"
-              dataKey="roomId"
-              filterPlaceholder="Поиск"
-              @change="changeRoom"
-              @input="inputRoom"
-            />
-          </div>
-          <div class="form__group">
-            <label class="form__label">Название</label>
-            <InputText v-model.trim="name" placeholder="Название помещения" />
+            <label class="form__label">{{ label }}</label>
+            <div class="form__room">
+              <InputText
+                v-if="editName"
+                v-model.trim="name"
+                placeholder="Название помещения"
+                class="input-name"
+              />
+              <Dropdown
+                v-else
+                v-model="room"
+                :options="roomTypes"
+                class="dropdown"
+                optionLabel="name"
+                ref="input"
+                :filter="true"
+                placeholder="Выберите помещение или введите название"
+                emptyMessage="Помещение не найдено"
+                dataKey="roomId"
+                filterPlaceholder="Поиск"
+                @change="changeRoom"
+                @input="inputRoom"
+              />
+              <ToggleButton
+                v-model="editName"
+                v-tooltip.top="'Изменить название'"
+                :disabled="!room"
+                class="p-button-raised p-button-text"
+                onIcon="pi pi-check"
+                offIcon="pi pi-pencil"
+              />
+            </div>
           </div>
         </div>
-        <template v-if="showParameters">
-          <span>Параметры помещения</span>
-          <div class="form__grid">
+        <template v-if="isSpecMontage">
+          <MultiSelect
+            v-model="optionRooms"
+            :options="specRooms"
+            optionLabel="name"
+            optionValue="id"
+          />
+          <div class="modal__section calculated">
+            <span class="section-title">Вычисляемые свойства</span>
+            <CalculatedParameters :parameters="calculatedParameters" />
+          </div>
+        </template>
+        <template v-else-if="showParameters">
+          <div class="modal__section main-parameters">
             <div class="form__group">
               <label class="form__label">Длина</label>
-              <input
-                v-model="length"
-                class="input"
-                type="text"
-                @input="inputHandler($event, 'length')"
-              />
+              <InputNumber v-model="length" class="main-input" />
             </div>
             <div class="form__group">
               <label class="form__label">Ширина</label>
-              <input
-                v-model="width"
-                class="input"
-                type="text"
-                @input="inputHandler($event, 'width')"
-              />
+              <InputNumber v-model="width" class="main-input" />
             </div>
             <div class="form__group">
               <label class="form__label">Высота</label>
-              <input
+              <InputNumber
                 v-model="height"
-                class="input"
-                type="text"
                 :placeholder="placeholders['height']"
-                @input="inputHandler($event, 'height')"
-              />
-            </div>
-            <div class="form__group">
-              <label class="form__label">Проемы</label>
-              <input
-                v-model="spaces"
-                class="input"
-                type="text"
-                @input="inputHandler($event, 'spaces')"
+                class="main-input"
               />
             </div>
           </div>
-          <span>Вычисляемые свойства</span>
-          <div class="form__grid">
-            <div class="form__group">
-              <label class="form__label">Периметр</label>
-              <InputNumber
-                v-model="perimeter"
-                placeholder="Периметер"
-                :disabled="true"
-                :minFractionDigits="2"
-                :maxFractionDigits="2"
+
+          <div class="modal__section section spaces">
+            <span class="section-title">Проемы</span>
+            <div class="form__flex form__lists">
+              <ListItems
+                title="Двери"
+                label="Дверь"
+                :items="dors"
+                type="dors"
+                @createItem="createItem('dors')"
+                @clear="clearItems('dors')"
+              />
+              <ListItems
+                title="Окна"
+                label="Окно"
+                :items="windows"
+                type="windows"
+                @createItem="createItem('windows')"
+                @clear="clearItems('windows')"
               />
             </div>
             <div class="form__group">
-              <label class="form__label">Площадь пола</label>
-              <InputNumber
-                v-model="floorArea"
-                placeholder="Площадь пола"
-                :disabled="true"
-                :minFractionDigits="2"
-                :maxFractionDigits="2"
-              />
+              <label class="form__label">Дополнительные проемы</label>
+              <InputNumber v-model="spaces" />
             </div>
-            <div class="form__group">
-              <label class="form__label">Площадь стен</label>
-              <InputNumber
-                v-model="wallArea"
-                placeholder="Площадь стен"
-                :disabled="true"
-                :minFractionDigits="2"
-                :maxFractionDigits="2"
-              />
-            </div>
+          </div>
+          <div class="modal__section calculated">
+            <span class="section-title">Вычисляемые свойства</span>
+            <CalculatedParameters :parameters="calculatedParameters" />
           </div>
         </template>
       </form>
@@ -418,6 +530,11 @@ export default {
   flex-direction: column;
   justify-content: space-between;
   gap: 10px;
+
+  &__section {
+    border-bottom: 1px #ccc solid;
+    padding-bottom: 10px;
+  }
 
   &__title {
     font-weight: 700;
@@ -453,8 +570,28 @@ export default {
     gap: 10px;
   }
 
+  &__lists {
+    height: 300px;
+    max-height: 300px;
+  }
+
   &__flex &__group {
     flex: 1;
+  }
+
+  &__room {
+    display: flex;
+    gap: 10px;
+
+    .dropdown,
+    .input-name {
+      flex: 1;
+    }
+  }
+
+  &__spaces-title {
+    display: flex;
+    align-items: center;
   }
 }
 .input,
@@ -462,5 +599,21 @@ export default {
   border: 1px solid #a7a7a7;
   padding: 10px;
   outline: none;
+}
+
+.main {
+  &-parameters {
+    display: flex;
+    justify-content: space-between;
+    gap: 5px;
+  }
+
+  &-input {
+    width: 100%;
+  }
+}
+
+.section-title {
+  font-size: 16px;
 }
 </style>

@@ -6,6 +6,7 @@ import { mapActions, mapGetters } from 'vuex'
 import { computed } from 'vue'
 
 import { getValuesInside } from '@/store/modules/outlay.module'
+import { outlayViewKeys } from '@/enum/outlayKeys'
 
 import { uniqBy } from 'lodash'
 
@@ -13,7 +14,7 @@ export default {
   components: { Dialog, JobsTable, InputText },
   provide() {
     return {
-      keys: computed(() => this.keysWithType),
+      keys: computed(() => this.keys),
       selectedNodes: computed(() => this.selectedNodes),
       pushNodes: this.pushNodes,
       removeNodes: this.removeNodes,
@@ -40,7 +41,7 @@ export default {
     }
   },
   computed: {
-    ...mapGetters('outlay', ['outlay']),
+    ...mapGetters('outlay', ['outlay', 'quantityKey']),
     ...mapGetters('edition', ['editions']),
     ...mapGetters('directory', ['directories']),
     ...mapGetters('acts', ['act', 'activeRoom']),
@@ -52,22 +53,16 @@ export default {
         this.$emit('update:modelValue', value)
       },
     },
-    keysWithType() {
-      if (!this.edition) {
-        return []
-      }
-      const { dirId } = this.edition
-      const directory = this.directories.find(d => d._id === dirId)
-      const { keys } = directory
-      const typedKeys = this.keys.map(k => {
-        const typedKey = keys.find(key => key.id === k.id)
-        return typedKey
-      })
-      return typedKeys
-    },
     addButtonDisabled() {
-      const hasSelectedNodes = Object.keys(this.selectedNodes).length > 0
-      return !hasSelectedNodes || this.loading
+      const selected = Object.values(this.selectedNodes)
+      const isValidNodes = selected.every(node => {
+        const { data, children } = node
+        if (children.length > 0) {
+          return true
+        }
+        return data[this.quantityKey.id] > 0
+      })
+      return !selected.length || !isValidNodes
     },
   },
   methods: {
@@ -88,6 +83,19 @@ export default {
       }
       return false
     },
+    getKeys() {
+      if (!this.edition) {
+        return []
+      }
+      const { dirId } = this.edition
+      const directory = this.directories.find(d => d._id === dirId)
+      const { keys } = directory
+      const requiredKeys = outlayViewKeys.map(keyType => {
+        const key = keys.find(k => k.type === keyType)
+        return key
+      })
+      return requiredKeys
+    },
     createTableData() {
       if (!this.outlay) {
         return
@@ -106,12 +114,15 @@ export default {
       this.edition = JSON.parse(JSON.stringify(editionInUse))
       const { data } = JSON.parse(JSON.stringify(editionInUse))
       this.tableData = data.children.filter(c =>
-        this.filterNodes(c, n => !keys.includes(n.key)),
+        this.filterNodes(c, n => {
+          n.data[this.quantityKey.id] = 0
+          return !keys.includes(n.key)
+        }),
       )
       const tableData = this.tableData.filter(n => n.children.length > 0)
       this.tableData = JSON.parse(JSON.stringify(tableData))
       this.filteredTableData = JSON.parse(JSON.stringify(tableData))
-      this.keys = editionInUse.keys
+      this.keys = this.getKeys()
     },
     initTableData() {
       this.createTableData()

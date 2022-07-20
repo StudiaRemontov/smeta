@@ -37,20 +37,7 @@ export default {
       })
     },
     totalComputedParameters() {
-      return this.roomsWithOptions.reduce((acc, room) => {
-        const { options } = room
-        const { computed } = this.calculateAllParameters(options)
-        return this.sumParameters(acc, computed)
-      }, {})
-    },
-  },
-  methods: {
-    sumParameters(obj1, obj2) {
-      return Object.entries(obj2).reduce((props, [key, value]) => {
-        const sum = value + (obj1[key] || 0)
-        props[key] = sum
-        return props
-      }, {})
+      return this.getTotalParametersOfRooms(this.roomsWithOptions)
     },
   },
 }

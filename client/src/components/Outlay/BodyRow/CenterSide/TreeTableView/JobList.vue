@@ -60,10 +60,6 @@ export default {
   },
   methods: {
     ...mapActions('outlay', ['toggleCategoryJobs']),
-    categoryClick() {
-      if (!this.editable) return
-      this.toggleCategoryJobs(this.node)
-    },
   },
 }
 </script>
@@ -75,7 +71,7 @@ export default {
       class="table-row table-row--category"
       :style="headerStyle"
     >
-      <div class="table-cell" @click="categoryClick">
+      <div class="table-cell">
         {{ title }}
       </div>
     </div>

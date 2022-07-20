@@ -19,7 +19,7 @@ export default {
   },
   emits: ['clone'],
   computed: {
-    ...mapGetters('outlay', ['keys']),
+    ...mapGetters('outlay', ['keys', 'priceKey']),
   },
 }
 </script>
@@ -29,7 +29,11 @@ export default {
     v-for="(key, index) in keys"
     :key="key.id"
     :keyData="key"
-    :value="node.data[key.id]"
+    :value="
+      key.id === priceKey.id
+        ? `${node.data[key.id]} (${node.coef})`
+        : node.data[key.id]
+    "
     :index="index"
   />
   <ViewCell :isSum="true" :value="sum" />

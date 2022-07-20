@@ -104,8 +104,9 @@ export default {
           const specMontage = this.getOnlyMontage(category)
           const onlyMontage = specMontage.map(this.treeToListOnlyValues).flat()
           const sum = onlyMontage.reduce((s, node) => {
-            const { data } = node
-            const jobSum = data[this.quantityKey.id] * data[this.priceKey.id]
+            const { data, coef } = node
+            const jobSum =
+              data[this.quantityKey.id] * (data[this.priceKey.id] * coef)
             s += jobSum
             return s
           }, 0)
@@ -131,8 +132,9 @@ export default {
             .map(this.treeToListOnlyValues)
             .flat()
           const sum = selectedNodes.reduce((acc, item) => {
-            const { data } = item
-            const sumData = data[this.quantityKey.id] * data[this.priceKey.id]
+            const { data, coef } = item
+            const sumData =
+              data[this.quantityKey.id] * (data[this.priceKey.id] * coef)
             return acc + sumData
           }, 0)
           acc[room.id] = sum - sumOfMontage[room.id]
@@ -223,8 +225,9 @@ export default {
       const onlySpecMontage = categories.map(this.getOnlyMontage).flat()
       const values = onlySpecMontage.map(this.treeToListOnlyValues).flat()
       const sum = values.reduce((acc, node) => {
-        const { data } = node
-        const jobSum = data[this.quantityKey.id] * data[this.priceKey.id]
+        const { data, coef } = node
+        const jobSum =
+          data[this.quantityKey.id] * (data[this.priceKey.id] * coef)
         acc += jobSum
         return acc
       }, 0)
@@ -242,27 +245,17 @@ export default {
       const dayString = prulal(this.workTime, 'день', 'дня', 'дней')
       return [
         {
-          text: 'Стоимость без учета скидки',
-          value: this.format(this.totalPrice),
-          render: this.sale && this.specMontage > 0,
-        },
-        {
           text: 'Стоимость общестроительных работ',
           value: this.format(this.totalPrice - this.specMontage),
           render: this.sale || this.specMontage,
         },
         {
-          text: 'Скидка на общестроительные работы',
-          value: `${this.sale} %`,
-          render: this.sale > 0,
-        },
-        {
-          text: 'Сумма скидки на общестроительные работы',
+          text: `Скидка на общестроительные работы ${this.sale}%`,
           value: this.format(saleValue),
           render: this.sale > 0,
         },
         {
-          text: 'Общестроительные работы с учетом скидки',
+          text: 'Общестроительные работы за вычетом скидки',
           value: this.format(this.totalPriceWithSale),
           render: this.sale > 0 && this.specMontage,
         },
@@ -275,23 +268,18 @@ export default {
           text: 'Итого сметная стоимость',
           value: this.format(this.totalPriceWithSale + this.specMontage),
           render: true,
+          gray: true,
         },
         {
           text: 'Срок выполнения работ',
           value: `${this.workTime} ${dayString}`,
           render: true,
+          gray: true,
         },
       ]
     },
   },
   methods: {
-    sumParameters(obj1, obj2) {
-      return Object.entries(obj2).reduce((props, [key, value]) => {
-        const sum = value + (obj1[key] || 0)
-        props[key] = sum
-        return props
-      }, {})
-    },
     treeToListOnlyValues(node) {
       const { children, key } = node
       const childs = children.map(this.treeToListOnlyValues).flat()
@@ -409,23 +397,14 @@ export default {
           {{ format(totalPrice) }}
         </th>
       </tr>
-      <tr v-if="sale" class="results-table__row results-table__row--head">
-        <th class="results-table__cell">ИТОГО СО СКИДКОЙ</th>
-        <th
-          v-for="price in priceOfRoomsWithSale"
-          :key="price.id"
-          class="results-table__cell price"
-        >
-          {{ format(price.result) }}
-        </th>
-        <th class="results-table__cell price">
-          {{ format(totalPriceWithSale + specMontage) }}
-        </th>
-      </tr>
     </table>
     <table class="subtable">
       <template v-for="item in subTableData" :key="item.text">
-        <tr v-if="item.render" class="subtable__row">
+        <tr
+          v-if="item.render"
+          class="subtable__row"
+          :class="{ gray: item.gray }"
+        >
           <td class="subtable__cell">
             {{ item.text }}
           </td>
@@ -493,6 +472,11 @@ export default {
 
   &__row {
     break-inside: avoid;
+
+    &.gray {
+      background-color: #ccc;
+      font-weight: 600;
+    }
   }
 
   &__cell {

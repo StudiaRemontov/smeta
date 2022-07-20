@@ -35,7 +35,6 @@ export default {
       'showOnlyChecked',
       'currentRoomData',
       'currentNode',
-      'initNodes',
     ]),
     data() {
       return this.node.data
@@ -75,7 +74,8 @@ export default {
     sum() {
       const quantity = this.data[this.quantityKey.id]
       const price = this.data[this.priceKey.id]
-      return quantity * price
+      const coef = this.node.coef
+      return quantity * (price * coef)
     },
     selected() {
       return this.selectedValues.includes(this.node.key)
@@ -84,13 +84,7 @@ export default {
       return this.currentNode?.key === this.node.key
     },
     changed() {
-      const initNode = this.initNodes.find(n => n.key === this.node.key)
-      if (!initNode) {
-        return false
-      }
-      const currentPrice = this.node.data[this.priceKey.id]
-      const initPrice = initNode.data[this.priceKey.id]
-      return currentPrice !== initPrice
+      return this.node.coef !== 1
     },
   },
   methods: {
@@ -99,23 +93,25 @@ export default {
       'updateNodeChildren',
       'toggleNodeEditing',
       'setCurrentNode',
+      'setNodeEditing',
     ]),
     ...mapActions('outlay', ['selectJob', 'unSelectJob', 'toggleCategoryJobs']),
-    rowClickHandler(e) {
-      if (this.isCategory) {
-        return this.toggleCategoryJobs(this.node)
-      }
+    async rowClickHandler(e) {
       const { target } = e
       const { cellindex } = target.dataset
       const index = parseInt(cellindex)
       if (index > 0 || isNaN(index)) {
         return
       }
-      if (this.node.isEditing) {
-        return
-      }
+
       this.selectJob(this.node)
       this.setCurrentNode(this.node)
+      const quantity = this.data[this.quantityKey.id]
+      if (!isNaN(quantity) && quantity === 0) {
+        this.setNodeEditing({ node: this.node, value: false })
+        await this.$nextTick()
+        this.setNodeEditing({ node: this.node, value: true })
+      }
     },
     getNodeFromTree(node, nodeKey, parents) {
       const { key, children } = node
@@ -174,7 +170,13 @@ export default {
   <div
     class="table-row"
     v-bind="rowAttrs"
-    :class="{ parent: isCategory, selected, striped, current }"
+    :class="{
+      parent: isCategory,
+      selected,
+      striped,
+      current,
+      editing: node.isEditing && selected,
+    }"
     :style="[rowStyle, $attrs.style]"
     @click="rowClickHandler"
   >
@@ -233,11 +235,15 @@ export default {
     border: 2px black solid;
   }
 
-  &:not(.parent):hover {
+  &.editing {
+    pointer-events: none;
+  }
+
+  &:not(.parent):not(.striped):hover {
     background-color: rgb(233, 233, 233) !important;
   }
 
-  &:not(.parent).selected:hover {
+  &:not(.parent):not(.striped).selected:hover {
     background-color: #d1eeb4 !important;
   }
 }

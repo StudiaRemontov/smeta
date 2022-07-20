@@ -15,8 +15,8 @@ export default {
     roomList() {
       return [...this.rooms].reverse()
     },
-    sum() {
-      const total = this.rooms.reduce((total, room) => {
+    total() {
+      return this.rooms.reduce((total, room) => {
         const roomsDataClone = JSON.parse(
           JSON.stringify(this.actsData[this.act._id][room.id]),
         )
@@ -31,7 +31,9 @@ export default {
         }, 0)
         return total + sum
       }, 0)
-      return formatNumber(total)
+    },
+    sum() {
+      return formatNumber(this.total)
     },
   },
   methods: {
@@ -59,7 +61,7 @@ export default {
       :room="room"
       ref="table"
     />
-    <div class="results-row">
+    <div v-if="total > 0" class="results-row">
       <div class="table-row table-row--stretched" :style="rowStyle">
         <div v-for="key in keys" :key="key" class="table-cell"></div>
       </div>

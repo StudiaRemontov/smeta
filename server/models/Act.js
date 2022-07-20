@@ -10,6 +10,10 @@ jobsSchema.add({
   added: {
     type: Boolean,
   },
+  coef: {
+    type: Number,
+    default: 1,
+  },
 })
 
 const roomSchema = new mongoose.Schema(

@@ -1,16 +1,20 @@
 <script>
-import { mapActions, mapGetters } from 'vuex'
+import { mapActions, mapGetters, mapMutations } from 'vuex'
 import JobList from './JobList.vue'
 import HeaderCells from './HeaderCells.vue'
 
+import ViewListIcon from '@/components/UI/Icons/ViewListIcon.vue'
+
 import { isObjectId } from '@/helpers/isObjectId'
 import { formatNumber } from '@/helpers/formatNumber'
+import emitter from '@/modules/eventBus'
 
 export default {
   name: 'TableGroup',
   components: {
     JobList,
     HeaderCells,
+    ViewListIcon,
   },
   inject: ['editable'],
   props: {
@@ -32,6 +36,7 @@ export default {
       'selectedRoom',
       'showOnlyChecked',
       'selectedValues',
+      'invalidJobs',
     ]),
     data() {
       return this.node.data
@@ -63,15 +68,16 @@ export default {
           this.selectedValues.includes(n.key),
         )
         const sum = selected.reduce((acc, node) => {
-          const { data } = node
-          const price = data[this.priceKey.id] * data[this.quantityKey.id]
+          const { data, coef } = node
+          const price =
+            data[this.priceKey.id] * coef * data[this.quantityKey.id]
           return acc + price
         }, 0)
         return formatNumber(sum)
       }
       const sum = allNodes.reduce((acc, node) => {
-        const { data } = node
-        const price = data[this.priceKey.id] * data[this.quantityKey.id]
+        const { data, coef } = node
+        const price = data[this.priceKey.id] * coef * data[this.quantityKey.id]
         return acc + price
       }, 0)
       return formatNumber(sum)
@@ -96,8 +102,20 @@ export default {
     selected() {
       return this.selectedValues.includes(this.node.key)
     },
+    invalidNodes() {
+      return this.invalidJobs[this.selectedRoom.id]
+    },
+    viewMode: {
+      get() {
+        return this.showOnlyChecked
+      },
+      set(value) {
+        this.setViewMode(value)
+      },
+    },
   },
   methods: {
+    ...mapMutations('outlay', ['setShowOnlyChecked']),
     ...mapActions('outlay', ['toggleCategoryJobs']),
     treeToListOnlyValues(node) {
       const { children, key } = node
@@ -109,9 +127,19 @@ export default {
 
       return [node]
     },
-    toggleCategory() {
-      if (!this.editable) return
-      this.toggleCategoryJobs(this.node)
+    async setViewMode(value) {
+      if (value) {
+        await this.$nextTick()
+        if (this.invalidNodes.length > 0) {
+          return this.scrollToInvalid()
+        }
+      }
+      this.setShowOnlyChecked(value)
+    },
+    async scrollToInvalid() {
+      await this.$nextTick()
+      const invalidNode = this.invalidNodes[0]
+      return emitter.$emit('scrollTo', invalidNode.key)
     },
   },
 }
@@ -120,10 +148,22 @@ export default {
 <template>
   <div class="table-group">
     <div v-if="isRoom" class="title-row">
-      {{ title }}
+      <button
+        v-if="selectedRoom"
+        class="button title-row__button"
+        @click="viewMode = !viewMode"
+      >
+        <ViewListIcon
+          class="title-row__icon"
+          :class="{ active: showOnlyChecked }"
+        />
+      </button>
+      <span class="title-row__title">
+        {{ title }}
+      </span>
     </div>
     <div v-else class="table-row table-row--category" :style="categoryRowStyle">
-      <HeaderCells :title="title" @name-click="toggleCategory" />
+      <HeaderCells :title="title" />
     </div>
     <template v-if="isRoom && children.length > 0">
       <TableGroup
@@ -201,6 +241,22 @@ export default {
   font-size: 16px;
   line-height: 19px;
   background-color: $table-color-room;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &__button {
+    left: 10px;
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+  }
+
+  &__icon.active {
+    color: #00afec;
+  }
 }
 
 .results-row {

@@ -45,9 +45,21 @@ export default {
     type() {
       return this.key.type
     },
+    coef: {
+      get() {
+        return this.node.coef
+      },
+      set(value) {
+        this.setNodeCoef({ node: this.node, value })
+      },
+    },
   },
   methods: {
-    ...mapMutations('outlay', ['setNodeEditing', 'toggleNodeEditing']),
+    ...mapMutations('outlay', [
+      'setNodeEditing',
+      'toggleNodeEditing',
+      'setNodeCoef',
+    ]),
     closeEditing() {
       this.setNodeEditing({ node: this.node, value: false })
     },
@@ -60,7 +72,11 @@ export default {
 
 <template>
   <template v-for="(key, index) in keysWithType" :key="key.id">
-    <PriceCell v-if="key.type === InputType.PRICE" v-model="data[key.id]" />
+    <PriceCell
+      v-if="key.type === InputType.PRICE"
+      v-model="coef"
+      :price="data[key.id]"
+    />
     <QuantityCell
       v-else-if="key.type === InputType.QUANTITY"
       v-model="data[key.id]"

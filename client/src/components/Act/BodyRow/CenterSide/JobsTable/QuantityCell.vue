@@ -4,12 +4,17 @@ import InputNumber from '@/components/UI/InputNumber.vue'
 
 export default {
   components: { TableCellWrapper, InputNumber },
+  inject: ['selectedNodes'],
   props: {
     modelValue: {
       required: true,
     },
+    selected: {
+      type: Boolean,
+      default: false,
+    },
   },
-  emits: ['update:modelValue', 'change'],
+  emits: ['update:modelValue', 'change', 'focused', 'blured'],
   computed: {
     newValue: {
       get() {
@@ -20,12 +25,27 @@ export default {
       },
     },
   },
+  methods: {
+    onFocus() {
+      this.$emit('focused')
+    },
+    async onBlur() {
+      this.$emit('blured')
+    },
+  },
 }
 </script>
 
 <template>
   <TableCellWrapper>
-    <InputNumber v-model="newValue" class="input" @click.stop />
+    <InputNumber
+      v-model="newValue"
+      class="input"
+      :class="{ invalid: selected && newValue === 0 }"
+      @mousedown.stop
+      @focus="onFocus"
+      @blur="onBlur"
+    />
   </TableCellWrapper>
 </template>
 

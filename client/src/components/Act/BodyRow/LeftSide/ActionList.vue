@@ -4,9 +4,10 @@ import SaveIcon from '@/components/UI/Icons/SaveIcon.vue'
 import DownloadIcon from '@/components/UI/Icons/DownloadIcon.vue'
 import PrintIcon from '@/components/UI/Icons/PrintIcon.vue'
 import ConfirmIcon from '@/components/UI/Icons/ConfirmIcon.vue'
+import DocumentIcon from '@/components/UI/Icons/DocumentIcon.vue'
 import PrintPage from '@/components/PrintAct/PrintPage.vue'
 
-import { mapActions, mapGetters } from 'vuex'
+import { mapActions, mapGetters, mapMutations } from 'vuex'
 
 import OutlayBlock from '@/components/Layout/OutlayBlock.vue'
 
@@ -22,6 +23,7 @@ export default {
     PrintPage,
     OutlayBlock,
     ConfirmIcon,
+    DocumentIcon,
   },
   data() {
     return {
@@ -33,7 +35,7 @@ export default {
   },
   computed: {
     ...mapGetters('outlay', ['outlay']),
-    ...mapGetters('acts', ['act']),
+    ...mapGetters('acts', ['act', 'activeTab']),
     actions() {
       return [
         {
@@ -63,18 +65,12 @@ export default {
           loading: this.isInConfirmation,
         },
         {
-          text: 'Скачать',
-          handler: this.download,
-          icon: 'DownloadIcon',
-          disabled:
-            this.isDownloading || this.act.status !== actStatus.CONFIRMED,
-          loading: this.isDownloading,
-        },
-        {
-          text: 'Распечатать',
-          handler: this.printHandler,
-          icon: 'PrintIcon',
-          disabled: this.isPrinting,
+          text: 'Показать смету',
+          handler: () => {
+            this.setActiveTab(null)
+          },
+          icon: 'DocumentIcon',
+          disabled: false,
           loading: false,
         },
       ]
@@ -89,6 +85,7 @@ export default {
     window.removeEventListener('keydown', this.keydownHandler)
   },
   methods: {
+    ...mapMutations('acts', ['setActiveTab']),
     ...mapActions('acts', ['save', 'setAct', 'update', 'print']),
     async saveHandler() {
       try {

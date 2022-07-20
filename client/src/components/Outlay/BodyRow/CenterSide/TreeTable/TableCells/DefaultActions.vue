@@ -1,10 +1,6 @@
 <script>
-import { mapGetters } from 'vuex'
 export default {
   emits: ['clone'],
-  computed: {
-    ...mapGetters('outlay', ['showOnlyChecked']),
-  },
 }
 </script>
 

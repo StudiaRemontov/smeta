@@ -37,7 +37,8 @@ export default {
     sum() {
       const quantity = this.node.data[this.quantityKey.id]
       const price = this.node.data[this.priceKey.id]
-      return formatNumber(quantity * price)
+      const { coef } = this.node
+      return formatNumber(quantity * (price * coef))
     },
     viewData() {
       if (this.isCategory) {
@@ -51,9 +52,12 @@ export default {
       const formattedKeys = [this.quantityKey.id, this.priceKey.id, 'quantity']
       return this.keys.map(k => {
         if (formattedKeys.includes(k.id)) {
+          const price = formatNumber(this.data[k.id])
+          const value =
+            k.id === this.priceKey.id ? `${price} (${this.node.coef})` : price
           return {
             key: k.id,
-            value: formatNumber(this.data[k.id]),
+            value,
           }
         }
         return {

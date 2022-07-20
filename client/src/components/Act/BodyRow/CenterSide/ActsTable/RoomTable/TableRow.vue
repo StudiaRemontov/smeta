@@ -32,10 +32,12 @@ export default {
     isCategory() {
       return this.children.length > 0
     },
-    sum() {
-      const quantity = this.node.data[this.quantityKey.id]
-      const price = this.node.data[this.priceKey.id]
-      return formatNumber(quantity * price)
+    left() {
+      const outlayQuantity = this.node.data[this.quantityKey.id]
+      const actQuantity = this.node.data.quantity
+      const diff = outlayQuantity - actQuantity
+      const value = diff < 0 ? 0 : diff
+      return formatNumber(value)
     },
     hovered() {
       if (!this.hoveredItem) {
@@ -70,6 +72,12 @@ export default {
         }
       })
     },
+    added() {
+      return this.node.added
+    },
+    overWorked() {
+      return this.data[this.quantityKey.id] < this.data.quantity
+    },
   },
   methods: {
     ...mapMutations('acts', ['setHoveredItem']),
@@ -89,7 +97,13 @@ export default {
 <template>
   <TableRowWrapper
     class="table-row"
-    :class="{ category: isCategory, striped, hovered, selected }"
+    :class="{
+      category: isCategory,
+      striped,
+      hovered,
+      selected,
+      oranged: added || overWorked,
+    }"
     :data-id="node.key"
     :data-level="level"
     :data-room="room"
@@ -121,7 +135,7 @@ export default {
       </div>
     </template>
     <div v-if="!isCategory" class="table-cell">
-      {{ sum }}
+      {{ left }}
     </div>
   </TableRowWrapper>
   <template v-if="isCategory">

@@ -1,8 +1,10 @@
 import { roomOptions } from '../enum/roomOptions'
 import mathExp from 'math-expression-evaluator'
+import { mapGetters } from 'vuex'
 
 export default {
   computed: {
+    ...mapGetters('outlay', ['rooms']),
     roomOptions() {
       return roomOptions
     },
@@ -45,6 +47,21 @@ export default {
           [roomOptions.spaces]: spaces,
         },
       }
+    },
+    sumParameters(obj1, obj2) {
+      return Object.entries(obj2).reduce((props, [key, value]) => {
+        const sum = value + (obj1[key] || 0)
+        props[key] = sum
+        return props
+      }, {})
+    },
+    getTotalParametersOfRooms(rooms) {
+      const roomsWithOptions = rooms.filter(r => r.options)
+      return roomsWithOptions.reduce((acc, room) => {
+        const { options } = room
+        const { computed } = this.calculateAllParameters(options)
+        return this.sumParameters(acc, computed)
+      }, {})
     },
   },
 }

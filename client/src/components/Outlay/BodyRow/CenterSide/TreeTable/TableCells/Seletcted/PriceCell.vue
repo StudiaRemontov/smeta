@@ -5,6 +5,9 @@ import { formatNumber } from '@/helpers/formatNumber'
 export default {
   components: { InputNumber },
   props: {
+    price: {
+      required: true,
+    },
     modelValue: {
       required: true,
     },
@@ -13,8 +16,6 @@ export default {
   data() {
     return {
       isEditing: false,
-      coef: 1,
-      initValue: null,
     }
   },
   computed: {
@@ -30,14 +31,7 @@ export default {
       return formatNumber(this.modelValue)
     },
   },
-  mounted() {
-    this.initValue = this.modelValue
-  },
   methods: {
-    changePrice() {
-      if (this.coef < 1) this.coef = 1
-      this.newValue = this.initValue * this.coef
-    },
     async toggleEditMode() {
       this.isEditing = !this.isEditing
       if (this.isEditing) {
@@ -52,18 +46,18 @@ export default {
 </script>
 
 <template>
+  <div v-if="isEditing" class="blocker"></div>
   <div class="table-cell" @click.stop="toggleEditMode">
     <div class="table-cell__wrapper">
       <span>
-        {{ viewValue }}
+        {{ price }} <template v-if="!isEditing"> ({{ newValue }}) </template>
       </span>
       <template v-if="isEditing">
         <span>x</span>
         <InputNumber
-          v-model="coef"
+          v-model="newValue"
           class="input"
           ref="input"
-          @update:modelValue="changePrice"
           @blur="isEditing = false"
           @keyup.enter="isEditing = false"
         />
@@ -86,5 +80,13 @@ export default {
 
 .input {
   width: 30px;
+}
+
+.blocker {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
 }
 </style>

@@ -3,11 +3,13 @@ import { mapActions, mapGetters } from 'vuex'
 
 import HeaderRow from '@/components/Act/HeaderRow.vue'
 import BodyRow from '@/components/Act/BodyRow.vue'
+import OutlayView from '@/components/Act/OutlayView.vue'
 
 export default {
   components: {
     HeaderRow,
     BodyRow,
+    OutlayView,
   },
   data() {
     return {
@@ -17,6 +19,7 @@ export default {
   computed: {
     ...mapGetters('outlays', ['outlays']),
     ...mapGetters('acts', ['act']),
+    ...mapGetters('outlay', ['outlay']),
     id() {
       return this.$route.params.id
     },
@@ -55,6 +58,9 @@ export default {
   <main class="main">
     <HeaderRow />
     <BodyRow v-if="act && !loading" />
+    <div v-else-if="outlay" class="outlay-wrapper">
+      <OutlayView />
+    </div>
   </main>
   <div id="act-print" class="print"></div>
 </template>
@@ -67,6 +73,13 @@ export default {
   grid-template-rows: 60px 1fr;
   gap: 10px;
   font-family: $outlay-font-family;
+}
+
+.outlay-wrapper {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0px;
 }
 
 .print {

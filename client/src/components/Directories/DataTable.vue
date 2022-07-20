@@ -9,6 +9,8 @@ import Button from 'primevue/button'
 
 import TableCell from './Table/TableCell.vue'
 
+import { deepEqual } from '@/helpers/deepEqual'
+
 export default {
   components: {
     KeyModal,
@@ -23,6 +25,12 @@ export default {
       type: Object,
       required: true,
     },
+  },
+  data() {
+    return {
+      ordering: false,
+      loading: false,
+    }
   },
   computed: {
     ...mapGetters('directory', ['root']),
@@ -164,6 +172,7 @@ export default {
       return keysToUpdate
     },
     async change(index, field, value) {
+      this.loading = true
       try {
         const keysToEdit = this.getKeysToEdit(index, field, value)
         const tableData = JSON.parse(JSON.stringify(this.values))
@@ -189,6 +198,8 @@ export default {
         }
       } catch (error) {
         this.updateDirectory({ id: this.directory._id, data: this.directory })
+      } finally {
+        this.loading = false
       }
     },
     async createKeyHandler() {
@@ -235,6 +246,32 @@ export default {
         })
       }
     },
+    async onRowReorder(e) {
+      this.ordering = true
+      try {
+        const { value } = e
+        const newValues = value.map(val => {
+          return this.values.find(v => deepEqual(v.data, val))
+        })
+        const removed = this.directory.values.filter(v => v.removed)
+        const ordered = [...newValues, ...removed]
+        await this.updateValues({
+          id: this.directoryId,
+          values: ordered,
+        })
+      } catch (error) {
+        const { response } = error
+        const message = response ? response.data.message : error.message
+        this.$toast.add({
+          severity: 'error',
+          summary: 'Ошибка',
+          detail: message,
+          life: 3000,
+        })
+      } finally {
+        this.ordering = false
+      }
+    },
   },
 }
 </script>
@@ -248,12 +285,20 @@ export default {
     showGridlines
     :scrollable="true"
     scrollHeight="flex"
+    :reorderableColumns="true"
+    :loading="ordering || loading"
+    @rowReorder="onRowReorder"
   >
     <template #header v-if="allKeys && allKeys.length > 0">
       <div class="table-header">
         <Button @click="createRow">Добавить элемент</Button>
       </div>
     </template>
+    <Column
+      :rowReorder="true"
+      style="max-width: 50px; cursor: move"
+      :reorderableColumn="false"
+    />
     <Column v-if="counter" :field="counter.id" :header="counter.name">
       <template #header>
         <Button

@@ -13,6 +13,7 @@ export default {
     InputNumber,
     TableRowWrapper,
   },
+  inject: ['overWorked'],
   props: {
     node: {
       type: Object,
@@ -76,6 +77,12 @@ export default {
         this.room === this.selectedItem.room
       )
     },
+    added() {
+      return this.node.added
+    },
+    isOverWorked() {
+      return !!this.overWorked.find(n => n.key === this.node.key)
+    },
   },
   watch: {
     selected(value) {
@@ -118,7 +125,13 @@ export default {
 <template>
   <TableRowWrapper
     class="table-row"
-    :class="{ category: isCategory, striped, hovered, selected }"
+    :class="{
+      category: isCategory,
+      striped,
+      hovered,
+      selected,
+      oranged: added || isOverWorked,
+    }"
     :data-id="node.key"
     :data-level="level"
     :data-room="room"

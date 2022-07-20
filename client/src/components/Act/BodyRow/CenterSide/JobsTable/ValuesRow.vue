@@ -19,11 +19,12 @@ export default {
   data() {
     return {
       timeout: null,
+      focused: false,
     }
   },
   computed: {
     selected() {
-      return this.selectedNodes[this.node.key]
+      return !!this.selectedNodes[this.node.key]
     },
     data() {
       return this.node.data
@@ -31,6 +32,9 @@ export default {
   },
   methods: {
     clickNode() {
+      if (this.focused) {
+        return
+      }
       this.$emit('checked')
     },
     updateHandler() {
@@ -46,12 +50,19 @@ export default {
 </script>
 
 <template>
-  <TableRowWrapper class="values-row" :class="{ selected }" @click="clickNode">
+  <TableRowWrapper
+    class="values-row"
+    :class="{ selected }"
+    @mousedown="clickNode"
+  >
     <template v-for="key in keys" :key="key.id">
       <QuantityCell
         v-if="key.type === InputType.QUANTITY"
         v-model="data[key.id]"
+        :selected="selected"
         @update:modelValue="updateHandler"
+        @focused="focused = true"
+        @blured="focused = false"
       />
       <TableCellWrapper v-else>
         {{ data[key.id] }}
@@ -62,6 +73,7 @@ export default {
 
 <style lang="scss" scoped>
 .values-row {
+  position: relative;
   &:hover {
     background: rgb(233, 233, 233);
   }

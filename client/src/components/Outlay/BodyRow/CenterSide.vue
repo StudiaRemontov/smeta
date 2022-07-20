@@ -306,6 +306,11 @@ export default {
         acc = [...acc, ...array]
         return acc
       }, [])
+      const { table } = this.$refs
+
+      if (added[0] && added[0].value[0]) {
+        table.scrollTo(added[0].value[0])
+      }
       return this.unselectArrayOfJobs(mergedArrays)
     },
   },

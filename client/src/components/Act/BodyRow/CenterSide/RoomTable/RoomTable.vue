@@ -1,5 +1,6 @@
 <script>
 import { mapGetters } from 'vuex'
+import { computed } from 'vue'
 
 import TableGroup from './TableGroup.vue'
 import ActTable from '../ActTable/ActTable.vue'
@@ -9,6 +10,11 @@ import { getValuesInside } from '@/store/modules/outlay.module'
 export default {
   components: { TableGroup, ActTable },
   mixins: [actsTable],
+  provide() {
+    return {
+      overWorked: computed(() => this.overWorked),
+    }
+  },
   props: {
     room: {
       required: true,
@@ -18,7 +24,7 @@ export default {
     actTable: Boolean,
   },
   computed: {
-    ...mapGetters('outlay', ['rooms', 'keys']),
+    ...mapGetters('outlay', ['rooms', 'keys', 'quantityKey']),
     ...mapGetters('acts', [
       'showOnlyCompleted',
       'completedValues',
@@ -123,6 +129,10 @@ export default {
           },
         ],
       }
+    },
+    overWorked() {
+      const nodes = this.data.map(getValuesInside).flat()
+      return nodes.filter(n => n.data.quantity > n.data[this.quantityKey.id])
     },
   },
   methods: {

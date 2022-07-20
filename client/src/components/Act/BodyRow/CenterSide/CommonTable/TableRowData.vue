@@ -20,19 +20,18 @@ export default {
   emits: ['remove'],
   computed: {
     ...mapGetters('outlay', ['keys', 'quantityKey', 'priceKey']),
-    sum() {
-      const quantity = this.data.quantity
-      const price = this.data[this.priceKey.id]
-      return formatNumber(quantity * price)
+    left() {
+      const actQuantity = this.data.quantity
+      const outlayQuantity = this.data[this.quantityKey.id]
+      const diff = outlayQuantity - actQuantity
+      const left = diff < 0 ? 0 : diff
+      return formatNumber(left)
     },
     rowData() {
       const formattedKeys = [this.quantityKey.id, this.priceKey.id, 'quantity']
       return this.keys.map(key => {
         if (formattedKeys.includes(key.id)) {
-          const value =
-            key.id === this.quantityKey.id
-              ? this.data.quantity
-              : this.data[key.id]
+          const value = this.data[key.id]
           return {
             key: key.id,
             value: formatNumber(value),
@@ -84,7 +83,7 @@ export default {
     </div>
   </template>
   <div v-if="!isCategory" class="table-cell">
-    {{ sum }}
+    {{ left }}
   </div>
 </template>
 

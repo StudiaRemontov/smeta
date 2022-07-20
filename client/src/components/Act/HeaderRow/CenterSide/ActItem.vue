@@ -37,7 +37,7 @@ export default {
       return new Date(this.act.createdAt).toLocaleDateString()
     },
     color() {
-      return this.isSelected ? '#00afec' : '#808080'
+      return this.isSelected ? '#00afec' : '#fff'
     },
   },
   methods: {

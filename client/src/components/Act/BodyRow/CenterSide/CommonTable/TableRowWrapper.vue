@@ -12,12 +12,21 @@
   overflow: hidden;
   height: 32px;
 
-  &.hovered {
+  &:not(.striped).hovered {
     background-color: #e1e1e1;
   }
 
   &.selected:not(.category) {
     background-color: #e0ffc0;
+  }
+
+  &.oranged {
+    background-color: #ffdc9a;
+  }
+
+  &.oranged.hovered,
+  &.oranged.selected {
+    background-color: #ffe2ac;
   }
 }
 </style>

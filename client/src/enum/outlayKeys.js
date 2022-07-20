@@ -7,8 +7,8 @@ export const requiredKeys = [
 ]
 
 export const outlayViewKeys = [
-  InputType.PRICE,
-  InputType.QUANTITY,
   InputType.STRING,
+  InputType.QUANTITY,
   InputType.SELECT,
+  InputType.PRICE,
 ]

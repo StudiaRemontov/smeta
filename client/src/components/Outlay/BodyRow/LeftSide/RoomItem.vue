@@ -1,14 +1,9 @@
 <script>
-import ViewListIcon from '@/components/UI/Icons/ViewListIcon.vue'
-
 import { mapGetters, mapMutations } from 'vuex'
 
 import emitter from '@/modules/eventBus'
 
 export default {
-  components: {
-    ViewListIcon,
-  },
   props: {
     room: {
       type: Object,
@@ -52,18 +47,6 @@ export default {
     textColor() {
       return this.active ? '#545454' : '#c8c8c8'
     },
-    viewMode: {
-      get() {
-        return this.showOnlyChecked && this.active
-      },
-      set(value) {
-        const invalidNodes = this.invalidJobs[this.selectedRoom?.id] || []
-        if (this.room.id !== this.selectedRoom?.id && invalidNodes.length > 0) {
-          return
-        }
-        this.setViewMode(value)
-      },
-    },
     invalidNodes() {
       return this.invalidJobs[this.room.id]
     },
@@ -80,16 +63,6 @@ export default {
       await this.$nextTick()
       const invalidNode = this.invalidNodes[0]
       return emitter.$emit('scrollTo', invalidNode.key)
-    },
-    async setViewMode(value) {
-      this.setSelectedRoom(this.room)
-      if (value) {
-        await this.$nextTick()
-        if (this.invalidNodes.length > 0) {
-          return this.scrollToInvalid()
-        }
-      }
-      this.setShowOnlyChecked(value)
     },
     clickHandler() {
       const invalidNodes = this.invalidJobs[this.selectedRoom?.id]
@@ -129,12 +102,6 @@ export default {
       </div>
     </div>
     <div class="room-item__actions" @click.stop>
-      <button class="button" @click="viewMode = !viewMode">
-        <ViewListIcon
-          class="icon"
-          :class="{ active: active && showOnlyChecked }"
-        />
-      </button>
       <button class="button room-item__button" @click.stop="openContext">
         <i class="pi pi-ellipsis-h icon"></i>
       </button>
@@ -194,10 +161,6 @@ export default {
 
   .icon {
     color: v-bind(textColor);
-
-    &.active {
-      color: #00afec;
-    }
   }
 }
 

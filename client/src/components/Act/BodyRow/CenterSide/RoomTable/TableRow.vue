@@ -77,13 +77,6 @@ export default {
     },
     rowData() {
       const cloneData = JSON.parse(JSON.stringify(this.data))
-      if (this.showLeftQuantity) {
-        const diff = cloneData[this.quantityKey.id] - cloneData.quantity
-        const quantity = diff < 0 ? 0 : diff
-        cloneData.quantity = quantity
-        return cloneData
-      }
-      cloneData.quantity = cloneData[this.quantityKey.id]
       return cloneData
     },
     canRemove() {
@@ -107,6 +100,13 @@ export default {
         return found.length > 0
       })
       return !isInConfirmed
+    },
+    added() {
+      return this.node.added
+    },
+    overWorked() {
+      const { data } = this.node
+      return data[this.quantityKey.id] < this.data.quantity
     },
   },
   methods: {
@@ -138,7 +138,13 @@ export default {
 <template>
   <TableRowWrapper
     class="table-row"
-    :class="{ category: isCategory, striped, hovered, selected }"
+    :class="{
+      category: isCategory,
+      striped,
+      hovered,
+      selected,
+      oranged: added || overWorked,
+    }"
     :data-id="node.key"
     :data-level="level"
     :data-room="room"

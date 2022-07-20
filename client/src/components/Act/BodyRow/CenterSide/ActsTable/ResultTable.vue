@@ -13,6 +13,7 @@ export default {
       bold: true,
     }
   },
+  inject: ['shortView'],
   props: {
     room: {
       required: true,
@@ -186,7 +187,7 @@ export default {
         </div>
       </div>
     </div>
-    <div class="tree-table">
+    <div v-if="shortView" class="tree-table">
       <div class="table-grid" ref="wrapper">
         <TableGroup
           v-for="node in leftData"

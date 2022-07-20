@@ -10,6 +10,10 @@ jobsSchema.add({
     type: Boolean,
     default: false,
   },
+  coef: {
+    type: Number,
+    default: 1,
+  },
 })
 
 const addedJobSchema = new mongoose.Schema(
@@ -27,6 +31,41 @@ addedJobSchema.add({
   },
 })
 
+const spaceSchema = {
+  id: String,
+  width: String,
+  height: String,
+  _id: false,
+}
+
+const defaultOptions = {
+  width: {
+    type: String,
+  },
+  height: {
+    type: String,
+  },
+  length: {
+    type: String,
+  },
+  spaces: {
+    dors: [spaceSchema],
+    windows: [spaceSchema],
+    others: String,
+  },
+  _id: false,
+}
+
+const specRoom = {
+  _id: false,
+  id: String,
+}
+
+const specOptions = {
+  rooms: [specRoom],
+  _id: false,
+}
+
 const roomSchema = new mongoose.Schema(
   {
     _id: false,
@@ -41,20 +80,7 @@ const roomSchema = new mongoose.Schema(
     jobs: [jobsSchema],
     newJobs: [addedJobSchema],
     dirId: String,
-    options: {
-      width: {
-        type: String,
-      },
-      height: {
-        type: String,
-      },
-      length: {
-        type: String,
-      },
-      spaces: {
-        type: String,
-      },
-    },
+    options: defaultOptions | specOptions,
   },
   { versionKey: false }
 )

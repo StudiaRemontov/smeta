@@ -1,4 +1,5 @@
 <script>
+import { computed } from 'vue'
 import AutoComplete from 'primevue/autocomplete'
 import InputSwitch from 'primevue/inputswitch'
 
@@ -8,6 +9,8 @@ import ActsTable from './CenterSide/ActsTable/ActsTable.vue'
 import OutlayTable from './CenterSide/OutlayTable/OutlayTable.vue'
 import OutlayBlock from '@/components/Layout/OutlayBlock.vue'
 import AddModal from './CenterSide/Modals/AddModal.vue'
+
+import OutlayView from '../OutlayView.vue'
 
 import { actStatus } from '../../../enum/actStatus'
 
@@ -27,6 +30,12 @@ export default {
     ActsTable,
     OutlayTable,
     AddModal,
+    OutlayView,
+  },
+  provide() {
+    return {
+      shortView: computed(() => this.shortView),
+    }
   },
   data() {
     return {
@@ -34,6 +43,7 @@ export default {
       selectedJob: null,
       filteredJobs: [],
       displayModal: false,
+      shortView: false,
     }
   },
   computed: {
@@ -54,14 +64,6 @@ export default {
       'actsData',
       'showOnlyCompleted',
     ]),
-    striped: {
-      get() {
-        return this.$store.getters['outlay/striped']
-      },
-      set(value) {
-        this.setStriped(value)
-      },
-    },
     changeView: {
       get() {
         return this.$store.getters['acts/changeView']
@@ -137,7 +139,6 @@ export default {
     window.removeEventListener('resize', this.windowResize)
   },
   methods: {
-    ...mapMutations('outlay', ['setStriped']),
     ...mapMutations('acts', [
       'setChangeView',
       'setSelectedItem',
@@ -361,20 +362,11 @@ export default {
           </button>
         </div>
         <div class="body-actions__group">
-          <div class="switch-wrapper">
+          <div v-if="activeTab === 'acts'" class="switch-wrapper">
             <div class="switch">
-              <InputSwitch v-model="striped" />
+              <InputSwitch v-model="shortView" />
             </div>
-            <span>Чередовние цветов</span>
-          </div>
-          <div
-            v-if="activeTab === 'room' || activeTab === 'completed'"
-            class="switch-wrapper"
-          >
-            <div class="switch">
-              <InputSwitch v-model="showLeftQuantity" />
-            </div>
-            <span>Всего / Осталось</span>
+            <span>Сокращенный вид</span>
           </div>
           <div v-else-if="activeTab === 'results'" class="switch-wrapper">
             <div class="switch">
@@ -397,6 +389,7 @@ export default {
         <template v-else-if="activeTab === 'room' && activeRoom">
           <RoomTable :room="activeRoom" ref="table" />
         </template>
+        <OutlayView v-else />
       </div>
     </div>
   </OutlayBlock>

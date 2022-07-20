@@ -6,7 +6,7 @@ import TableRowWrapper from '../../CommonTable/TableRowWrapper.vue'
 export default {
   name: 'TableRow',
   components: { TableRowWrapper },
-  inject: ['bold'],
+  inject: ['bold', 'overWorked'],
   props: {
     node: {
       type: Object,
@@ -52,7 +52,16 @@ export default {
       )
     },
     quantity() {
+      if (!this.data.quantity && !this.bold) {
+        return '-'
+      }
       return formatNumber(this.data.quantity)
+    },
+    added() {
+      return this.node.added
+    },
+    isOverWorked() {
+      return !!this.overWorked.find(n => n.key === this.node.key)
     },
   },
   methods: {
@@ -73,7 +82,14 @@ export default {
 <template>
   <TableRowWrapper
     class="table-row"
-    :class="{ category: isCategory, striped, hovered, selected, bold }"
+    :class="{
+      category: isCategory,
+      striped,
+      hovered,
+      selected,
+      bold,
+      oranged: added || isOverWorked,
+    }"
     :data-id="node.key"
     :data-level="level"
     :data-room="room"
@@ -81,9 +97,7 @@ export default {
     @mouseleave="mouseLeaveHandler"
   >
     <template v-if="!isCategory">
-      <div class="table-cell">
-        {{ quantity }}
-      </div>
+      <div class="table-cell">{{ quantity }}</div>
       <div class="table-cell">{{ sum }}</div>
     </template>
   </TableRowWrapper>

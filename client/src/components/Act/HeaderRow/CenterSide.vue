@@ -87,7 +87,7 @@ export default {
   overflow: auto;
 
   &__info {
-    background-color: $color-light;
+    background-color: $color-dark;
     border-radius: 0px 0px 10px 10px;
     max-width: 212px;
     width: 100%;
@@ -107,12 +107,12 @@ export default {
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      color: #fff;
     }
 
     &-name {
       font-weight: 400;
       font-size: 14px;
-      color: #000;
       line-height: 17px;
     }
 
@@ -120,7 +120,6 @@ export default {
       font-weight: 400;
       font-size: 22px;
       line-height: 27px;
-      color: #000000;
       text-overflow: ellipsis;
       overflow: hidden;
       white-space: nowrap;
@@ -134,12 +133,13 @@ export default {
     display: flex;
     gap: 15px;
     overflow: auto;
+    background-color: $color-dark;
   }
 }
 
 .create {
-  background: #28c430;
-  border: 1px solid #28c430;
+  background: $color-success;
+  border: 1px solid $color-success;
   border-radius: 10px;
   padding: 9px 15px;
   width: 41px;

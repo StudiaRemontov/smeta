@@ -1,9 +1,8 @@
 <script>
 import { mapGetters, mapMutations, mapState } from 'vuex'
 
-import CategoryList from './RightSide/CategoryList.vue'
+import InfoBlock from './RightSide/InfoBlock.vue'
 import ResultsForm from './RightSide/ResultsForm.vue'
-import ParameterList from './RightSide/ParameterList.vue'
 import OutlayBlock from '@/components/Layout/OutlayBlock.vue'
 import CollapseBlock from './LeftSide/CollapseBlock.vue'
 
@@ -17,9 +16,8 @@ import { isObjectId } from '@/helpers/isObjectId'
 
 export default {
   components: {
-    CategoryList,
+    InfoBlock,
     ResultsForm,
-    ParameterList,
     OutlayBlock,
     CollapseBlock,
   },
@@ -321,9 +319,10 @@ export default {
 <template>
   <div class="wrapper">
     <CollapseBlock v-model="showRightSide" :position="'right'" />
-    <ParameterList class="wrapper__parameters" />
+    <OutlayBlock class="wrapper__info">
+      <InfoBlock />
+    </OutlayBlock>
     <OutlayBlock class="wrapper__results">
-      <CategoryList :categories="data" />
       <ResultsForm :data="data" />
     </OutlayBlock>
   </div>
@@ -338,8 +337,19 @@ export default {
   flex: 1;
   overflow: auto;
 
-  &__results {
+  &__info {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    &-item {
+      padding-bottom: 10px;
+      border-bottom: 1px #ccc solid;
+    }
+  }
+
+  &__results {
     min-height: 0px;
     display: flex;
     flex-direction: column;

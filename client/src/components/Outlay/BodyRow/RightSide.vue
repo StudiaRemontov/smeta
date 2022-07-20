@@ -50,6 +50,27 @@ export default {
         return this.getRoomWithSum(room, values)
       })
     },
+    viewParameters() {
+      if (!this.rooms || (this.rooms && !this.rooms.length)) {
+        return false
+      }
+
+      if (!this.selectedRoom) {
+        return true
+      }
+
+      const { options } = this.selectedRoom
+
+      if (!options) {
+        return false
+      }
+
+      if (options.rooms && !options.rooms.length) {
+        return false
+      }
+
+      return true
+    },
   },
   methods: {
     ...mapMutations('outlay', ['setShowRightSide']),
@@ -72,7 +93,8 @@ export default {
         const selectedNodes = this.getSelectedItems(allNodes, selected)
         const sum = selectedNodes.reduce((acc, val) => {
           const sumData =
-            val.data[this.quantityKey.id] * val.data[this.priceKey.id]
+            val.data[this.quantityKey.id] *
+            (val.data[this.priceKey.id] * val.coef)
           return acc + sumData
         }, 0)
 
@@ -118,10 +140,7 @@ export default {
 <template>
   <div class="wrapper">
     <CollapseBlock v-model="showRightSide" :position="'right'" />
-    <ParameterList
-      v-if="(selectedRoom && selectedRoom.options) || !selectedRoom"
-      class="wrapper__parameters"
-    />
+    <ParameterList v-if="viewParameters" class="wrapper__parameters" />
     <OutlayBlock class="wrapper__results">
       <CategoryList :categories="data" />
       <ResultsForm :data="data" />

@@ -122,7 +122,7 @@ export default {
     getDataWithRooms() {
       const rooms = [...this.rooms].reverse()
       const clone = JSON.parse(JSON.stringify(rooms))
-      return clone.map(room => {
+      const data = clone.map(room => {
         const roomValues = this.roomsData[room.id].flat()
         const values = roomValues.reduce((acc, data) => {
           const nodes = getValuesInside(data)
@@ -150,6 +150,7 @@ export default {
           level: 0,
         }
       })
+      return data.filter(d => d.children.length > 0)
     },
     getDataWithCategories() {
       const data = JSON.parse(JSON.stringify(this.dataWithRooms))

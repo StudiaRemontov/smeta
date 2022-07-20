@@ -53,5 +53,6 @@ export default {
 <style lang="scss" scoped>
 .table-cell {
   @include table-cell;
+  text-transform: lowercase;
 }
 </style>

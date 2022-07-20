@@ -55,22 +55,6 @@ export default {
           disabled: this.isSaving,
           loading: this.isSaving,
         },
-        {
-          text: 'Скачать',
-          handler: () => {
-            this.download()
-          },
-          icon: 'DownloadIcon',
-          disabled: this.isDownloading || this.isActionsDisabled,
-          loading: this.isDownloading,
-        },
-        {
-          text: 'Распечатать',
-          handler: this.printHandler,
-          icon: 'PrintIcon',
-          disabled: this.isPrinting || this.isActionsDisabled,
-          loading: false,
-        },
       ]
     },
   },

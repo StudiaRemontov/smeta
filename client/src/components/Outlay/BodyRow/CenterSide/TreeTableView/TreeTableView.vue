@@ -52,12 +52,6 @@ export default {
         }
       })
     },
-    headerStyle() {
-      const keysLength = this.keys.length
-      return {
-        gridTemplateColumns: `4fr repeat(${keysLength}, minmax(100px, 1fr))`,
-      }
-    },
   },
   mounted() {
     const depths = this.data.map(d => this.getTreeDepth(d, 0))
@@ -75,20 +69,6 @@ export default {
         result = max
       }
       return result
-    },
-    treeToList(node, list) {
-      const { children } = node
-      if (children && children.length > 0) {
-        if (children[0].children.length === 0) {
-          return [node]
-        }
-        return [
-          ...list,
-          node,
-          ...node.children.map(c => this.treeToList(c, list)).flat(),
-        ]
-      }
-      return list
     },
     scrollTo(roomId, nodeKey) {
       const { wrapper } = this.$refs

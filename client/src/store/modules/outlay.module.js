@@ -80,10 +80,13 @@ const updateNodeInTree = (node, key, children) => {
 export const mergeTree = (node, nodes) => {
   const { key, children } = node
   const isExistsInNodes = nodes.find(n => n.key === key)
-
   if (isExistsInNodes) {
     node.children = uniqBy([...isExistsInNodes.children, ...children], 'key')
-    node.children = node.children.map(n => ({ ...n, isEditing: false }))
+    node.children = node.children.map(n => ({
+      ...n,
+      isEditing: false,
+      coef: n.coef || 1,
+    }))
     return [node]
   }
 
@@ -91,6 +94,8 @@ export const mergeTree = (node, nodes) => {
     {
       ...node,
       children: children.map(child => mergeTree(child, nodes)).flat(),
+      coef: node.coef || 1,
+      isEditing: false,
     },
   ]
 }
@@ -98,6 +103,9 @@ export const mergeTree = (node, nodes) => {
 const setQuantity = (room, data, quantityKey, formulaKey) => {
   const clone = JSON.parse(JSON.stringify(data))
   const { options } = room
+  if (!options) {
+    return clone
+  }
   const { computed } = methods.calculateAllParameters(options)
   clone.forEach(n => getQuantityByFormula(n, computed, quantityKey, formulaKey))
   return clone
@@ -302,6 +310,12 @@ export default {
     setNodeEditing(_, { node, value }) {
       node.isEditing = value
     },
+    setNodeCoef(_, { node, value }) {
+      if (value < 1) {
+        value = 1
+      }
+      node.coef = value
+    },
     resetOutlay(state) {
       state.outlay = null
       state.edition = null
@@ -378,17 +392,47 @@ export default {
         filterTree(c, roomCollections),
       )
       const { options } = room
-      if (options) {
-        const { computed } = methods.calculateAllParameters(options)
+
+      if (!options) {
+        const merged = mergeNodes([...filteredEdition, ...jobs])
+        const mergedWithReplacedValues = merged
+          .map(c => mergeTree(c, nodes))
+          .flat()
+
+        state.roomsData[id] = mergedWithReplacedValues
+        return
+      }
+      const { rooms } = options
+      if (rooms) {
+        const roomsData = options.rooms.map(roomId => {
+          return state.outlay.rooms.find(r => r.id === roomId)
+        })
+        const totalParameters = methods.getTotalParametersOfRooms(roomsData)
         filteredEdition.forEach(n =>
           getQuantityByFormula(
             n,
-            computed,
+            totalParameters,
             state.quantityKey.id,
             state.formulaKey.id,
           ),
         )
+        const merged = mergeNodes([...filteredEdition, ...jobs])
+        const mergedWithReplacedValues = merged
+          .map(c => mergeTree(c, nodes))
+          .flat()
+
+        state.roomsData[id] = mergedWithReplacedValues
+        return
       }
+      const { computed } = methods.calculateAllParameters(options)
+      filteredEdition.forEach(n =>
+        getQuantityByFormula(
+          n,
+          computed,
+          state.quantityKey.id,
+          state.formulaKey.id,
+        ),
+      )
       const merged = mergeNodes([...filteredEdition, ...jobs])
       const mergedWithReplacedValues = merged
         .map(c => mergeTree(c, nodes))
@@ -417,7 +461,10 @@ export default {
       const cloneInitData = JSON.parse(JSON.stringify(initData))
       state.initNodes = cloneInitData.map(getValuesInside).flat()
       state.initData = initData
-      state.keys = directory.keys.filter(k => outlayViewKeys.includes(k.type))
+      const orderedKeys = outlayViewKeys.map(keyType => {
+        return directory.keys.find(key => key.type === keyType)
+      })
+      state.keys = orderedKeys
       const rooms = JSON.parse(JSON.stringify(state.outlay.rooms))
       rooms.map(room => {
         const roomClone = JSON.parse(JSON.stringify(room))
@@ -620,6 +667,14 @@ export default {
     async removeRoom({ state, commit, dispatch }, roomId) {
       if (!state.outlay) return
       state.outlay.rooms = state.outlay.rooms.filter(r => r.id !== roomId)
+      state.outlay.rooms = state.outlay.rooms.map(room => {
+        const { options } = room
+        if (!options.rooms) {
+          return room
+        }
+        options.rooms = options.rooms.filter(id => id !== roomId)
+        return room
+      })
       if (state.room === roomId) {
         state.room = null
       }

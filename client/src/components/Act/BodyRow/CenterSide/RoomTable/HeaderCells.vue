@@ -11,8 +11,8 @@ export default {
       const keys = [
         ...this.keys,
         {
-          id: 'Сумма',
-          name: 'Сумма',
+          id: 'Осталось',
+          name: 'Осталось',
         },
       ]
 

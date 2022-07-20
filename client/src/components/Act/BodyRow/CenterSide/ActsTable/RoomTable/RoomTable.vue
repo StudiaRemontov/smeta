@@ -1,13 +1,21 @@
 <script>
+import { computed } from 'vue'
 import TableGroup from './TableGroup.vue'
 import ActTable from '../ActTable.vue'
 import ResultTable from '../ResultTable.vue'
 import actsTable from '@/mixins/actsTable.mixin'
 import { getValuesInside } from '@/store/modules/outlay.module'
+import { mapGetters } from 'vuex'
 
 export default {
   components: { TableGroup, ActTable, ResultTable },
   mixins: [actsTable],
+  provide() {
+    return {
+      overWorked: computed(() => this.overWorked),
+    }
+  },
+  inject: ['shortView'],
   props: {
     room: {
       required: true,
@@ -22,12 +30,13 @@ export default {
     actTable: Boolean,
   },
   computed: {
+    ...mapGetters('outlay', ['quantityKey']),
     completed() {
       const nodes = this.room.jobs.map(getValuesInside).flat()
       return nodes.map(({ key }) => key)
     },
     data() {
-      return [
+      const data = [
         {
           key: this.room.id,
           data: {
@@ -38,8 +47,15 @@ export default {
           level: 0,
         },
       ]
+      return data.filter(node => {
+        const { children } = node
+        return children.length > 0
+      })
     },
     actData() {
+      if (this.data.length === 0) {
+        return []
+      }
       return this.acts.map(act => {
         const children = this.data[0].children
         return {
@@ -56,6 +72,10 @@ export default {
           ],
         }
       })
+    },
+    overWorked() {
+      const nodes = this.room.jobs.map(getValuesInside).flat()
+      return nodes.filter(n => n.data.quantity > n.data[this.quantityKey.id])
     },
   },
   methods: {
@@ -101,7 +121,7 @@ export default {
 <template>
   <div class="table-wrapper" :class="{ acts: actTable }">
     <div class="tree-table" :class="{ acts: actTable }">
-      <div class="table-grid" ref="wrapper">
+      <div v-if="data && data.length > 0" class="table-grid" ref="wrapper">
         <TableGroup
           v-for="node in data"
           ref="table"
@@ -117,14 +137,16 @@ export default {
       </div>
     </div>
     <div v-if="actData && actData.length > 0" class="acts-wrapper">
-      <ActTable
-        v-for="act in actData"
-        :key="act.key"
-        :act="act.act"
-        :data="act.data"
-        :room="room"
-      />
-      <ResultTable :acts="actData" :room="room" />
+      <template v-if="!shortView">
+        <ActTable
+          v-for="act in actData"
+          :key="act.key"
+          :act="act.act"
+          :data="act.data"
+          :room="room"
+        />
+      </template>
+      <ResultTable :room="room" />
     </div>
   </div>
 </template>

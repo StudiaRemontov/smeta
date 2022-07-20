@@ -19,7 +19,7 @@ export default {
       return new Date(this.outlay.createdAt).toLocaleDateString()
     },
     color() {
-      return this.isSelected ? '#00afec' : '#808080'
+      return this.isSelected ? '#00afec' : '#fff'
     },
   },
   methods: {
