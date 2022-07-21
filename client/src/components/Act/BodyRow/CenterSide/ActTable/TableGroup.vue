@@ -64,23 +64,13 @@ export default {
       />
     </template>
     <template v-else>
-      <template v-if="categories.length > 0">
-        <JobList
-          v-for="child in children"
-          :key="child.key"
-          :node="child"
-          :level="level + 1"
-          :room="room"
-        />
-      </template>
-      <template v-else>
-        <JobList
-          :node="node"
-          :level="level + 1"
-          :room="room"
-          :hasTitle="false"
-        />
-      </template>
+      <JobList
+        v-for="child in children"
+        :key="child.key"
+        :node="child"
+        :level="level + 1"
+        :room="room"
+      />
     </template>
   </div>
 </template>

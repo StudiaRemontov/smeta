@@ -669,7 +669,7 @@ export default {
       state.outlay.rooms = state.outlay.rooms.filter(r => r.id !== roomId)
       state.outlay.rooms = state.outlay.rooms.map(room => {
         const { options } = room
-        if (!options.rooms) {
+        if (!options || (options && !options.rooms)) {
           return room
         }
         options.rooms = options.rooms.filter(id => id !== roomId)
@@ -730,8 +730,23 @@ export default {
   getters: {
     outlay: s => s.outlay,
     edition: s => s.edition,
-    rooms: s => {
-      return s.outlay?.rooms || []
+    rooms: (state, _, __, rootGetters) => {
+      const rooms = state.outlay?.rooms || []
+      const roomDirectory = rootGetters['directory/roomDirectory']
+      const { values } = roomDirectory
+      return rooms.sort((a, b) => {
+        const { dirId: aDirId } = a
+        const { dirId: bDirId } = b
+        if (!aDirId) {
+          return 1
+        }
+        if (!bDirId) {
+          return -1
+        }
+        const aIndex = values.findIndex(r => r.id === aDirId)
+        const bIndex = values.findIndex(r => r.id === bDirId)
+        return bIndex - aIndex
+      })
     },
     selectedRoom: s => s.selectedRoom,
     roomsData: s => s.roomsData,

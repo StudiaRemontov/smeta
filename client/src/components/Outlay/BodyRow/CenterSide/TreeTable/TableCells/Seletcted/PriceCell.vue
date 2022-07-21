@@ -41,6 +41,9 @@ export default {
         input.$el.select()
       }
     },
+    format(value) {
+      return formatNumber(value)
+    },
   },
 }
 </script>
@@ -50,7 +53,10 @@ export default {
   <div class="table-cell" @click.stop="toggleEditMode">
     <div class="table-cell__wrapper">
       <span>
-        {{ price }} <template v-if="!isEditing"> ({{ newValue }}) </template>
+        {{ price }}
+        <template v-if="!isEditing && newValue > 1">
+          ({{ format(newValue) }})
+        </template>
       </span>
       <template v-if="isEditing">
         <span>x</span>

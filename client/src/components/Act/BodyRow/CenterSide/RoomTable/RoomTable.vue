@@ -13,6 +13,8 @@ export default {
   provide() {
     return {
       overWorked: computed(() => this.overWorked),
+      categoriesData: computed(() => this.categoriesData),
+      setFilterLeft: this.setFilterLeft,
     }
   },
   props: {
@@ -22,6 +24,11 @@ export default {
       default: () => ({}),
     },
     actTable: Boolean,
+  },
+  data() {
+    return {
+      categoriesData: {},
+    }
   },
   computed: {
     ...mapGetters('outlay', ['rooms', 'keys', 'quantityKey']),
@@ -135,7 +142,53 @@ export default {
       return nodes.filter(n => n.data.quantity > n.data[this.quantityKey.id])
     },
   },
+  watch: {
+    room: {
+      handler() {
+        this.initCategoriesData()
+      },
+      immediate: true,
+    },
+  },
   methods: {
+    initCategoriesData() {
+      const cloneData = JSON.parse(JSON.stringify(this.data[0].children))
+      const categories = cloneData.map(this.getCategories).flat()
+      const overWorked = categories.filter(cat => {
+        const { children } = cat
+        const completed = children.filter(node => {
+          const { data } = node
+          const actQuantity = data.quantity
+          const outlayQuantity = data[this.quantityKey.id]
+          return outlayQuantity <= actQuantity
+        })
+        cat.children = completed
+        return completed.length > 0
+      })
+      this.categoriesData = overWorked.reduce((acc, cat) => {
+        const { key, children } = cat
+        const completed = children.map(c => c.key)
+        acc[key] = {
+          filterLeft: true,
+          completed,
+        }
+        return acc
+      }, {})
+    },
+    getCategories(node) {
+      const { children } = node
+      if (!children.length) {
+        return []
+      }
+      const subCategories = children.map(this.getCategories).flat()
+      if (children[0].children && !children[0].children.length) {
+        return [node, ...subCategories]
+      }
+      return subCategories
+    },
+    setFilterLeft(categoryKey, value) {
+      this.categoriesData[categoryKey].filterLeft = value
+    },
     scrollTo(nodeKey) {
       const { wrapper } = this.$refs
       if (!wrapper) return

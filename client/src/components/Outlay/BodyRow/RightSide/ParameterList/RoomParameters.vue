@@ -14,11 +14,17 @@ export default {
   },
   mixins: [roomParameters],
   computed: {
-    ...mapGetters('outlay', ['selectedRoom']),
+    ...mapGetters('outlay', ['selectedRoom', 'rooms']),
     parameters() {
       return this.selectedRoom.options
     },
     allParameters() {
+      const { rooms } = this.parameters
+      if (rooms) {
+        const roomsInUse = this.rooms.filter(r => rooms.includes(r.id))
+        const computed = this.getTotalParametersOfRooms(roomsInUse)
+        return { computed }
+      }
       const parameters = this.calculateAllParameters(this.parameters)
       return Object.keys(parameters).reduce((p, key) => {
         p[key] = Object.entries(parameters[key]).reduce(

@@ -2,12 +2,11 @@
 import RoomItem from './RoomItem.vue'
 import RoomModal from './Modals/RoomModal.vue'
 import Menu from 'primevue/menu'
-import draggable from 'vuedraggable'
 
 import { mapActions, mapGetters, mapMutations } from 'vuex'
 
 export default {
-  components: { RoomItem, RoomModal, Menu, draggable },
+  components: { RoomItem, RoomModal, Menu },
   emits: ['open-edit', 'clone'],
   data() {
     return {
@@ -44,14 +43,8 @@ export default {
   },
   computed: {
     ...mapGetters('outlay', ['outlay', 'selectedRoom', 'rooms']),
-    roomsModel: {
-      get() {
-        return [...this.rooms].reverse()
-      },
-      set(value) {
-        const reversed = [...value].reverse()
-        this.updateRooms(reversed)
-      },
+    roomList() {
+      return [...this.rooms].reverse()
     },
     activeRoomId() {
       return this.selectedRoom?.id
@@ -97,28 +90,17 @@ export default {
 <template>
   <Menu ref="menu" :model="items" :popup="true" />
   <RoomModal ref="edit-modal" />
-  <draggable
-    v-model="roomsModel"
-    item-key="id"
-    tag="transition-group"
-    :component-data="{
-      tag: 'div',
-      type: 'transition-group',
-    }"
-    v-bind="dragOptions"
-    class="room-list"
-  >
-    <template #item="{ element }">
-      <RoomItem
-        :key="element.id"
-        :room="element"
-        :active="activeRoomId === element.id"
-        @edit="openEditModal"
-        @remove="removeRoom"
-        @open-menu="openMenu"
-      />
-    </template>
-  </draggable>
+  <div class="room-list">
+    <RoomItem
+      v-for="room in roomList"
+      :key="room.id"
+      :room="room"
+      :active="activeRoomId === room.id"
+      @edit="openEditModal"
+      @remove="removeRoom"
+      @open-menu="openMenu"
+    />
+  </div>
 </template>
 
 <style lang="scss" scoped>

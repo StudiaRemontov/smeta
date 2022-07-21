@@ -52,9 +52,16 @@ export default {
       const formattedKeys = [this.quantityKey.id, this.priceKey.id, 'quantity']
       return this.keys.map(k => {
         if (formattedKeys.includes(k.id)) {
-          const price = formatNumber(this.data[k.id])
-          const value =
-            k.id === this.priceKey.id ? `${price} (${this.node.coef})` : price
+          const value = formatNumber(this.data[k.id])
+          if (k.id === this.priceKey.id) {
+            const { coef } = this.node
+            const priceValue =
+              coef > 1 ? `${value} (${formatNumber(coef)})` : value
+            return {
+              key: k.id,
+              value: priceValue,
+            }
+          }
           return {
             key: k.id,
             value,

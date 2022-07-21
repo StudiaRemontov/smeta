@@ -34,7 +34,6 @@ export default {
       'completedValues',
       'hoveredItem',
       'selectedItem',
-      'showLeftQuantity',
       'act',
       'acts',
     ]),
@@ -48,9 +47,6 @@ export default {
         )
       }
       return this.node.children || []
-    },
-    isCategory() {
-      return this.children.length > 0
     },
     sum() {
       const quantity = this.node.data[this.quantityKey.id]
@@ -113,9 +109,6 @@ export default {
     ...mapMutations('acts', ['setHoveredItem']),
     ...mapActions('acts', ['removeAddedJob']),
     mouseEnterHandler() {
-      if (this.isCategory) {
-        return
-      }
       this.setHoveredItem({ id: this.node.key, room: this.room })
     },
     mouseLeaveHandler() {
@@ -139,7 +132,6 @@ export default {
   <TableRowWrapper
     class="table-row"
     :class="{
-      category: isCategory,
       striped,
       hovered,
       selected,
@@ -154,35 +146,18 @@ export default {
   >
     <TableRowData
       :data="rowData"
-      :isCategory="isCategory"
       :canRemove="canRemove"
       :added="node.added"
       :loading="isRemoving"
       @remove="remove"
     />
   </TableRowWrapper>
-  <template v-if="isCategory">
-    <TableRow
-      v-for="child in children"
-      :key="child.key"
-      :node="child"
-      :room="room"
-      :level="level + 1"
-    />
-  </template>
 </template>
 
 <style lang="scss" scoped>
 .table-row {
-  &.category {
-    font-weight: 600;
-    text-align: center;
-    position: sticky;
-    top: calc(32px * v-bind(level));
-    height: 32px;
-  }
-
-  &:not(.category).striped:nth-child(even) {
+  font-weight: 400;
+  &.striped:nth-child(even) {
     background-color: rgb(232, 232, 232);
   }
 
