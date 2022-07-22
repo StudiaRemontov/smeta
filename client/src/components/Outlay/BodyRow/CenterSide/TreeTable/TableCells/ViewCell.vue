@@ -1,4 +1,6 @@
 <script>
+import { formatNumber } from '@/helpers/formatNumber'
+import { mapGetters } from 'vuex'
 export default {
   inject: ['changed'],
   props: {
@@ -14,10 +16,29 @@ export default {
       default: false,
     },
     index: Number,
+    keyData: {
+      type: Object,
+      default: () => ({}),
+    },
+    isSum: {
+      type: Boolean,
+      default: false,
+    },
   },
   computed: {
+    ...mapGetters('outlay', ['quantityKey', 'priceKey']),
     isValidQuantity() {
-      return this.value > 0
+      if (this.keyData.id === this.quantityKey.id) {
+        return this.value > 0
+      }
+      return true
+    },
+    viewValue() {
+      const formattedKeys = [this.quantityKey.id, this.priceKey.id]
+      if (this.isSum || formattedKeys.includes(this.keyData.id)) {
+        return formatNumber(this.value)
+      }
+      return this.value
     },
   },
 }
@@ -31,7 +52,7 @@ export default {
     :data-cellIndex="index"
   >
     <span v-if="index === 0 && changed"> * </span>
-    {{ value }}
+    {{ viewValue }}
   </div>
 </template>
 

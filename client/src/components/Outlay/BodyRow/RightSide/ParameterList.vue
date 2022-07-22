@@ -1,6 +1,6 @@
 <script>
 import { mapGetters } from 'vuex'
-import OutlayBlock from '@/components/Layout/OutlayBlock.vue'
+import OutlayBlock from '@/components/Layout/Outlay/OutlayBlock.vue'
 import RoomParameters from './ParameterList/RoomParameters.vue'
 import TotalParameters from './ParameterList/TotalParameters.vue'
 

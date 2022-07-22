@@ -2,13 +2,11 @@
 import BackIcon from '@/components/UI/Icons/ArrowRight.vue'
 import SaveIcon from '@/components/UI/Icons/SaveIcon.vue'
 import DownloadIcon from '@/components/UI/Icons/DownloadIcon.vue'
+import DocumentIcon from '@/components/UI/Icons/DocumentIcon.vue'
 import PrintIcon from '@/components/UI/Icons/PrintIcon.vue'
 import ConfirmIcon from '@/components/UI/Icons/ConfirmIcon.vue'
-import DocumentIcon from '@/components/UI/Icons/DocumentIcon.vue'
-import PrintPage from '@/components/PrintAct/PrintPage.vue'
 
-import { mapGetters } from 'vuex'
-
+import PrintPage from '@/components/Print/PrintPage.vue'
 import OutlayBlock from '@/components/Layout/Outlay/OutlayBlock.vue'
 
 export default {
@@ -16,48 +14,18 @@ export default {
     BackIcon,
     SaveIcon,
     DownloadIcon,
+    DocumentIcon,
     PrintIcon,
+    ConfirmIcon,
     PrintPage,
     OutlayBlock,
-    ConfirmIcon,
-    DocumentIcon,
   },
-  data() {
-    return {
-      isDownloading: false,
-      isPrinting: false,
-    }
-  },
-  computed: {
-    ...mapGetters('outlay', ['outlay']),
-    ...mapGetters('acts', ['act', 'activeTab']),
-  },
-  mounted() {
-    window.addEventListener('afterprint', this.afterPrint)
-    window.addEventListener('keydown', this.keydownHandler)
-  },
-  unmounted() {
-    window.removeEventListener('afterprint', this.afterPrint)
-    window.removeEventListener('keydown', this.keydownHandler)
-  },
-  methods: {
-    keydownHandler(e) {
-      const { ctrlKey, code } = e
-      if (!ctrlKey || code !== 'KeyP') {
-        return
-      }
-      e.preventDefault()
-      this.printHandler()
-    },
-    async printHandler() {
-      await this.$nextTick()
-      this.isPrinting = true
-    },
-    afterPrint() {
-      this.isPrinting = false
-    },
-    readyForPrint() {
-      window.print()
+  props: {
+    actions: {
+      type: Array,
+      default: () => {
+        return []
+      },
     },
   },
 }
@@ -78,9 +46,6 @@ export default {
         <i v-if="action.loading" class="pi pi-spin pi-spinner"></i>
       </button>
     </div>
-    <Teleport to="#act-print">
-      <PrintPage v-if="act && isPrinting" :act="act" @mounted="readyForPrint" />
-    </Teleport>
   </OutlayBlock>
 </template>
 

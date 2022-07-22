@@ -1,4 +1,3 @@
-import axios from '../../modules/axios'
 import { uniqBy } from 'lodash'
 import idb from '../local/idb'
 import OutlayService from '../../api/OutlayService'
@@ -572,6 +571,7 @@ export default {
         name: newName,
         options,
         jobs: [],
+        newJobs: [],
         dirId,
       }
       state.outlay.rooms.push(room)
@@ -682,17 +682,6 @@ export default {
       delete state.selectedValues[roomId]
       commit('setSelectedRoom', null)
       return await dispatch('saveLocaly')
-    },
-    async create({ rootGetters }, data) {
-      try {
-        const response = await axios.post('/outlay', {
-          ...data,
-          edition: rootGetters['edition/active']._id,
-        })
-        return response
-      } catch (error) {
-        return Promise.reject(error)
-      }
     },
     async update({ state, commit }) {
       if (!state.outlay) return

@@ -1,5 +1,5 @@
 <script>
-import ContentBody from '@/components/Layout/ContentBody.vue'
+import ContentBody from '@/components/Layout/App/ContentBody.vue'
 import CreatePriceList from '@/components/PriceLists/Create/Modals/CreatePriceList.vue'
 import TreeTable from 'primevue/treetable'
 import SelectButton from 'primevue/selectbutton'

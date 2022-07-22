@@ -1,79 +1,39 @@
 <script>
 import InfoCircleFill from '@/components/UI/Icons/InfoCircleFill.vue'
-import OutlayList from '../HeaderRow/CenterSide/OutlayList.vue'
 import InfoModal from './CenterSide/Modals/InfoModal.vue'
-import CreateModal from './CenterSide/Modals/CreateModal.vue'
-import OutlayBlock from '@/components/Layout/OutlayBlock.vue'
-
-import { mapActions, mapGetters } from 'vuex'
+import OutlayBlock from '@/components/Layout/Outlay/OutlayBlock.vue'
 
 export default {
   components: {
     InfoCircleFill,
-    OutlayList,
     InfoModal,
-    CreateModal,
     OutlayBlock,
   },
-  computed: {
-    ...mapGetters('outlay', ['invalidJobs']),
-    invalidNodes() {
-      const values = Object.values(this.invalidJobs)
-      return values.some(v => v.length > 0)
-    },
-  },
+  inject: ['objectData'],
+
   methods: {
-    ...mapActions('outlays', ['create']),
     showInfo() {
       this.$refs['info-modal'].show()
-    },
-    async createOutlay() {
-      const response = await this.$refs['create-modal'].show({
-        okButton: 'Создать',
-        cancelButton: 'Отмена',
-      })
-      if (response) {
-        try {
-          await this.create(response)
-        } catch (error) {
-          const { response } = error
-          const message = response ? response.data.message : error.message
-          this.$toast.add({
-            severity: 'error',
-            summary: 'Ошибка',
-            detail: message,
-            life: 3000,
-          })
-        }
-      }
     },
   },
 }
 </script>
 <template>
-  <CreateModal ref="create-modal" />
   <InfoModal ref="info-modal" />
   <div class="center">
     <OutlayBlock class="center__info">
       <div class="center__info-wrapper">
         <div class="center__info-text">
-          <span class="center__info-id"> 12345 </span>
-          <span class="center__info-name">Сергей Алексеевич</span>
+          <span class="center__info-id"> {{ objectData.id }} </span>
+          <span class="center__info-name">{{ objectData.user }}</span>
         </div>
         <button class="button" @click="showInfo">
-          <InfoCircleFill />
+          <InfoCircleFill class="info-icon" />
         </button>
       </div>
     </OutlayBlock>
-    <OutlayBlock class="center__outlays" :class="{ disabled: invalidNodes }">
-      <button
-        class="button create"
-        :disabled="invalidNodes"
-        @click="createOutlay"
-      >
-        <i class="pi pi-plus create__icon" />
-      </button>
-      <OutlayList />
+    <OutlayBlock class="center__outlays">
+      <slot />
     </OutlayBlock>
   </div>
 </template>
@@ -141,16 +101,7 @@ export default {
   }
 }
 
-.create {
-  background: $color-success;
-  border: 1px solid $color-success;
-  border-radius: 10px;
-  padding: 9px 15px;
-  width: 41px;
-  justify-content: center;
-
-  &__icon {
-    color: #fff;
-  }
+.info-icon {
+  color: #fff;
 }
 </style>

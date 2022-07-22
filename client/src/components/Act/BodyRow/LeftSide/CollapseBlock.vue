@@ -1,5 +1,5 @@
 <script>
-import OutlayBlock from '@/components/Layout/OutlayBlock.vue'
+import OutlayBlock from '@/components/Layout/Outlay/OutlayBlock.vue'
 
 export default {
   components: { OutlayBlock },

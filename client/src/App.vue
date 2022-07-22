@@ -2,7 +2,6 @@
 import MainLayout from '@/layouts/MainLayout.vue'
 import OutlayLayout from '@/layouts/OutlayLayout.vue'
 import PrintLayout from '@/layouts/PrintLayout.vue'
-import ActLayout from '@/layouts/ActLayout.vue'
 import Toast from 'primevue/toast'
 
 import { mapActions, mapGetters, mapMutations } from 'vuex'
@@ -11,7 +10,6 @@ export default {
   components: {
     MainLayout,
     OutlayLayout,
-    ActLayout,
     PrintLayout,
     Toast,
   },

@@ -6,7 +6,7 @@ import MultiSelect from 'primevue/multiselect'
 import TreeTable from './CenterSide/TreeTable/TreeTable.vue'
 import TreeTableView from './CenterSide/TreeTableView/TreeTableView.vue'
 import ResultsTable from './CenterSide/Results/ResultsTable.vue'
-import OutlayBlock from '@/components/Layout/OutlayBlock.vue'
+import OutlayBlock from '@/components/Layout/Outlay/OutlayBlock.vue'
 
 import { isObjectId } from '@/helpers/isObjectId'
 import directoryNames from '@/enum/directoryNames'
@@ -125,6 +125,7 @@ export default {
       }
       await this.$nextTick()
       const { autocomplete } = this.$refs
+      if (!autocomplete) return
       const { top } = autocomplete.$el.getBoundingClientRect()
       this.screenHeight = window.innerHeight - top
     },

@@ -1,6 +1,6 @@
 <script>
-import AppLogo from '../UI/AppLogo.vue'
-import NavMenu from '../UI/NavMenu.vue'
+import AppLogo from '../../UI/AppLogo.vue'
+import NavMenu from '../../UI/NavMenu.vue'
 
 export default {
   components: { AppLogo, NavMenu },

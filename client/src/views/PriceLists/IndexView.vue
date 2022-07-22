@@ -1,5 +1,5 @@
 <script>
-import ContentBody from '@/components/Layout/ContentBody.vue'
+import ContentBody from '@/components/Layout/App/ContentBody.vue'
 import TreeTable from 'primevue/treetable'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'

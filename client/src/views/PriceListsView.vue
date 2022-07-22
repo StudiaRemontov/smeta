@@ -1,5 +1,5 @@
 <script>
-import AppContent from '@/components/Layout/AppContent.vue'
+import AppContent from '@/components/Layout/App/AppContent.vue'
 import IndexView from './PriceLists/IndexView.vue'
 import CloneView from './PriceLists/CloneView.vue'
 import IndexActions from '@/components/PriceLists/Actions/IndexActions.vue'

@@ -3,7 +3,7 @@ import Button from 'primevue/button'
 import RoomsIcon from '@/components/UI/Icons/RoomsIcon.vue'
 import DocumentIcon from '@/components/UI/Icons/DocumentIcon.vue'
 import CirclePlusIcon from '@/components/UI/Icons/CirclePlusIcon.vue'
-import OutlayBlock from '@/components/Layout/OutlayBlock.vue'
+import OutlayBlock from '@/components/Layout/Outlay/OutlayBlock.vue'
 
 import RoomModal from './Modals/RoomModal.vue'
 import RoomList from './RoomList.vue'
@@ -21,13 +21,12 @@ export default {
     OutlayBlock,
   },
   computed: {
-    ...mapGetters('outlay', [
-      'selectedRoom',
-      'showResults',
-      'quantityKey',
-      'invalidJobs',
-    ]),
-    mainTabs() {
+    ...mapGetters('outlay', ['invalidJobs', 'showResults', 'selectedRoom']),
+    invalidNodes() {
+      const values = Object.values(this.invalidJobs)
+      return values.some(v => v.length > 0)
+    },
+    tabs() {
       return [
         {
           text: 'Все помещения',
@@ -47,13 +46,9 @@ export default {
         },
       ]
     },
-    invalidNodes() {
-      const values = Object.values(this.invalidJobs)
-      return values.some(v => v.length > 0)
-    },
   },
   methods: {
-    ...mapMutations('outlay', ['setSelectedRoom', 'setShowResults']),
+    ...mapMutations('outlay', ['setShowResults', 'setSelectedRoom']),
     ...mapActions('outlay', ['createRoom', 'cloneRoom']),
     async openCreateModal() {
       const response = await this.$refs['room-modal'].show({
@@ -108,7 +103,7 @@ export default {
     </div>
     <div class="main-tabs">
       <button
-        v-for="tab in mainTabs"
+        v-for="tab in tabs"
         :key="tab.text"
         class="button main-tab"
         :class="{ active: tab.active }"

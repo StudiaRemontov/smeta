@@ -1,6 +1,6 @@
 <script>
-import AppSidebar from '@/components/Layout/AppSidebar.vue'
-import AppContainer from '@/components/Layout/AppContainer.vue'
+import AppSidebar from '@/components/Layout/App/AppSidebar.vue'
+import AppContainer from '@/components/Layout/App/AppContainer.vue'
 
 export default {
   components: { AppSidebar, AppContainer },

@@ -1,7 +1,7 @@
 <script>
 import LeftSide from './HeaderRow/LeftSide.vue'
 import CenterSide from './HeaderRow/CenterSide.vue'
-import RightSide from '@/components/Layout/Header/RightSide.vue'
+import RightSide from '../App/Header/RightSide.vue'
 import { mapMutations } from 'vuex'
 
 export default {
@@ -19,7 +19,9 @@ export default {
 <template>
   <div class="header-row">
     <LeftSide />
-    <CenterSide />
+    <CenterSide>
+      <slot />
+    </CenterSide>
     <div class="right-side-wrapper">
       <button class="button" @click="toggleSides">
         <i class="pi pi-arrows-h icon"></i>

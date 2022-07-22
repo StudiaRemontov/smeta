@@ -3,7 +3,7 @@ import Button from 'primevue/button'
 import RoomsIcon from '@/components/UI/Icons/RoomsIcon.vue'
 import DocumentIcon from '@/components/UI/Icons/DocumentIcon.vue'
 import CirclePlusIcon from '@/components/UI/Icons/CirclePlusIcon.vue'
-import OutlayBlock from '@/components/Layout/OutlayBlock.vue'
+import OutlayBlock from '@/components/Layout/Outlay/OutlayBlock.vue'
 
 import RoomList from './RoomList.vue'
 

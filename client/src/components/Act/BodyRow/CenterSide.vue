@@ -7,7 +7,7 @@ import RoomTable from './CenterSide/RoomTable/RoomTable.vue'
 import CompletedTable from './CenterSide/CompletedTable/CompletedTable.vue'
 import ActsTable from './CenterSide/ActsTable/ActsTable.vue'
 import OutlayTable from './CenterSide/OutlayTable/OutlayTable.vue'
-import OutlayBlock from '@/components/Layout/OutlayBlock.vue'
+import OutlayBlock from '@/components/Layout/Outlay/OutlayBlock.vue'
 import AddModal from './CenterSide/Modals/AddModal.vue'
 
 import OutlayView from '../OutlayView.vue'

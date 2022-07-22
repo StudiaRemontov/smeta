@@ -4,7 +4,7 @@ import { mapGetters, mapMutations, mapState } from 'vuex'
 import CategoryList from './RightSide/CategoryList.vue'
 import ResultsForm from './RightSide/ResultsForm.vue'
 import ParameterList from './RightSide/ParameterList.vue'
-import OutlayBlock from '@/components/Layout/OutlayBlock.vue'
+import OutlayBlock from '@/components/Layout/Outlay/OutlayBlock.vue'
 import CollapseBlock from '../../Act/BodyRow/LeftSide/CollapseBlock.vue'
 
 import { isObjectId } from '@/helpers/isObjectId'

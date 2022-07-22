@@ -5,7 +5,7 @@ import DirectoryForm from './DirectoryForm.vue'
 import RemoveModal from './Modals/RemoveModal.vue'
 import AlertModal from './Modals/AlertModal.vue'
 
-import { mapActions } from 'vuex'
+import { mapActions, mapGetters } from 'vuex'
 
 import draggable from 'vuedraggable'
 
@@ -32,6 +32,7 @@ export default {
     }
   },
   computed: {
+    ...mapGetters('directory', ['root']),
     listItems: {
       get() {
         return this.items
@@ -87,7 +88,7 @@ export default {
     item-key="id"
     :animation="200"
     :ghostClass="'ghost'"
-    :disabled="loading"
+    :disabled="loading || !root"
     class="directory-list"
     :class="{ loading }"
   >

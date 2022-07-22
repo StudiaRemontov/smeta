@@ -1,19 +1,15 @@
 <script>
 import AppContent from '@/components/Layout/App/AppContent.vue'
-import NavigationLinks from '@/components/Directories/NavigationLinks.vue'
 
 export default {
-  components: {
-    AppContent,
-    NavigationLinks,
-  },
+  components: { AppContent },
 }
 </script>
 
 <template>
   <AppContent>
     <template #header>
-      <NavigationLinks />
+      <span class="page-title">Сметы</span>
     </template>
     <template #body>
       <RouterView />

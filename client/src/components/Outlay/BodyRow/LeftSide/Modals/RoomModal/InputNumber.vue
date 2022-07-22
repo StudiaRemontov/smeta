@@ -45,6 +45,7 @@ export default {
       const numberRegex = /[-]?\d+(\.\d+)?/g
       const matches = value.match(numberRegex)
       if (!matches) {
+        this.newValue = '0'
         return
       }
       matches.forEach(n => {

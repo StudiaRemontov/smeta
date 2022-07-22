@@ -1,5 +1,5 @@
 <script>
-import ContentBody from '@/components/Layout/ContentBody.vue'
+import ContentBody from '@/components/Layout/App/ContentBody.vue'
 import SearchInput from '@/components/UI/SearchInput.vue'
 import DirectoryList from '@/components/Directories/DirectoryList.vue'
 import { mapGetters } from 'vuex'

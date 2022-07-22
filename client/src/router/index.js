@@ -13,7 +13,9 @@ import PriceListsClone from '@/views/PriceLists/CloneView.vue'
 
 import OutlayIndexView from '@/views/Outlay/IndexView.vue'
 
+import OutlaysView from '@/views/OutlaysView.vue'
 import OutlayView from '@/views/OutlayView.vue'
+import ActView from '@/views/ActView.vue'
 import PrintView from '@/views/PrintView.vue'
 import PrintActView from '@/views/PrintActView.vue'
 
@@ -76,7 +78,7 @@ const router = createRouter({
     {
       path: '/outlay',
       name: 'outlay',
-      component: OutlayView,
+      component: OutlaysView,
       meta: {
         layout: 'MainLayout',
       },
@@ -115,9 +117,9 @@ const router = createRouter({
     {
       path: '/outlay/:id/acts',
       name: 'actsView',
-      component: OutlayView,
+      component: ActView,
       meta: {
-        layout: 'ActLayout',
+        layout: 'OutlayLayout',
       },
     },
   ],

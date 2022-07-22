@@ -7,7 +7,7 @@ import DataTable from '@/components/Directories/DataTable.vue'
 import ExcelModal from '@/components/Directories/Modals/ExcelModal.vue'
 import ExcelUploader from '@/components/Directories/ExcelUploader.vue'
 import RemoveModal from '@/components/Directories/Modals/RemoveModal.vue'
-import ContentBody from '@/components/Layout/ContentBody.vue'
+import ContentBody from '@/components/Layout/App/ContentBody.vue'
 
 import { mapActions, mapGetters } from 'vuex'
 

@@ -103,9 +103,11 @@ export default {
       if (index > 0 || isNaN(index)) {
         return
       }
-
       this.selectJob(this.node)
       this.setCurrentNode(this.node)
+      if (this.isClone) {
+        return
+      }
       const quantity = this.data[this.quantityKey.id]
       if (!isNaN(quantity) && quantity === 0) {
         this.setNodeEditing({ node: this.node, value: false })
@@ -175,7 +177,7 @@ export default {
       selected,
       striped,
       current,
-      editing: node.isEditing && selected,
+      editing: !isClone && node.isEditing && selected,
     }"
     :style="[rowStyle, $attrs.style]"
     @click="rowClickHandler"

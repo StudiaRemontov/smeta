@@ -114,11 +114,16 @@ export default {
         [this.roomOptions.wallArea]: this.wallArea,
       }
     },
+    isValidDorsAndWindows() {
+      const validDors = this.checkSpaces(this.dors)
+      const validWindows = this.checkSpaces(this.windows)
+      return validDors && validWindows
+    },
     isCorrectFields() {
-      if (!this.name || this.invalid) {
+      if (!this.name || this.invalid || !this.room) {
         return false
       }
-      if (this.room && !this.room.parameters) {
+      if (!this.room.parameters) {
         return true
       }
 
@@ -126,11 +131,12 @@ export default {
         return this.optionRooms.length > 0
       }
 
-      return (
+      const correctFiles =
         this.isCorrectField(this.calculatedWidth) &&
         this.isCorrectField(this.calculatedLength) &&
         this.isCorrectField(this.calculatedHeight)
-      )
+
+      return correctFiles && this.isValidDorsAndWindows
     },
     placeholders() {
       const placeholders = {
@@ -192,6 +198,17 @@ export default {
     },
   },
   methods: {
+    checkSpaces(items) {
+      if (!items || !items?.length) {
+        return true
+      }
+      return items.every(item => {
+        const { width, height } = item
+        const calculatedWidth = this.calculate(width)
+        const calculatedHeight = this.calculate(height)
+        return calculatedWidth && calculatedHeight
+      })
+    },
     getRoomsFromDirectory() {
       const directory = this.directories.find(
         d => d.name === directoryNames.ROOMS,
@@ -347,6 +364,7 @@ export default {
       const { values: rooms, keys } = this.roomDirectory
       const directoryRoom = rooms.find(r => r.id === room.roomId)
       if (!directoryRoom) {
+        this.invalid = false
         return
       }
       const { data } = directoryRoom
@@ -483,6 +501,9 @@ export default {
 
           <div class="modal__section section spaces">
             <span class="section-title">Проемы</span>
+            <span v-if="!isValidDorsAndWindows" class="error-message"
+              >Заполните поля у проемов</span
+            >
             <div class="form__flex form__lists">
               <ListItems
                 title="Двери"
@@ -615,5 +636,11 @@ export default {
 
 .section-title {
   font-size: 16px;
+}
+
+.error-message {
+  color: $color-danger;
+  display: block;
+  font-weight: 600;
 }
 </style>

@@ -3,7 +3,7 @@ import { mapGetters, mapMutations, mapState } from 'vuex'
 
 import InfoBlock from './RightSide/InfoBlock.vue'
 import ResultsForm from './RightSide/ResultsForm.vue'
-import OutlayBlock from '@/components/Layout/OutlayBlock.vue'
+import OutlayBlock from '@/components/Layout/Outlay/OutlayBlock.vue'
 import CollapseBlock from './LeftSide/CollapseBlock.vue'
 
 import {
@@ -43,7 +43,7 @@ export default {
     ]),
     showRightSide: {
       get() {
-        return this.$store.getters['acts/showRightSide']
+        return this.$store.getters['outlay/showRightSide']
       },
       set(value) {
         return this.setShowRightSide(value)
@@ -127,7 +127,7 @@ export default {
     },
   },
   methods: {
-    ...mapMutations('acts', ['setShowRightSide']),
+    ...mapMutations('outlay', ['setShowRightSide']),
     mergeChildren(nodes) {
       const groupped = nodes.reduce((acc, node) => {
         acc[node.key] = acc[node.key] || []

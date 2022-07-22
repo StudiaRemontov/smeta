@@ -1,17 +1,9 @@
 <script>
-import CenterSide from './BodyRow/CenterSide.vue'
-import RightSide from './BodyRow/RightSide.vue'
-import LeftSide from './BodyRow/LeftSide.vue'
-import { mapGetters, mapMutations } from 'vuex'
-
+import { mapMutations } from 'vuex'
 export default {
-  components: {
-    LeftSide,
-    CenterSide,
-    RightSide,
-  },
-  computed: {
-    ...mapGetters('outlay', ['showLeftSide', 'showRightSide']),
+  props: {
+    showLeftSide: Boolean,
+    showRightSide: Boolean,
   },
   mounted() {
     document.addEventListener('keydown', this.onKeyDown)
@@ -34,11 +26,11 @@ export default {
 <template>
   <div class="body-row">
     <div class="left-side" :class="{ hidden: !showLeftSide }">
-      <LeftSide />
+      <slot name="left-side" />
     </div>
-    <CenterSide />
+    <slot name="center" />
     <div class="right-side" :class="{ hidden: !showRightSide }">
-      <RightSide />
+      <slot name="right-side" />
     </div>
   </div>
 </template>
@@ -67,18 +59,6 @@ export default {
     .wrapper {
       overflow: hidden;
     }
-  }
-}
-
-.center {
-  background-color: $color-light;
-  border-radius: 10px;
-
-  &__body {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    min-height: 0px;
   }
 }
 </style>
